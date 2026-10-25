@@ -25,7 +25,19 @@ export async function runInPage(url, fn, args = {}, { timeoutMs = 25000, userAge
     url: url.split('?')[0],
     finalUrl: res?.finalUrl?.split('?')[0],
     timedOut: !!res?.timedOut,
-    snippet: value ? JSON.stringify(value).slice(0, 1500) : undefined,
+    // Each part's status and start, so one long body does not hide the rest
+    snippet: value ? JSON.stringify(summarize(value)).slice(0, 4000) : undefined,
   })
   return value
+}
+
+function summarize(value) {
+  if (!value || typeof value !== 'object') return value
+  const out = {}
+  for (const [k, v] of Object.entries(value)) {
+    if (v && typeof v === 'object' && 'body' in v) out[k] = { status: v.status, length: v.body?.length, body: String(v.body).slice(0, 400) }
+    else if (Array.isArray(v)) out[k] = v.slice(0, 8).map((x) => (typeof x === 'object' ? { ...x, text: String(x.text).slice(0, 120) } : x))
+    else out[k] = v
+  }
+  return out
 }

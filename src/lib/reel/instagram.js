@@ -256,6 +256,46 @@ export async function instagramInPage(a) {
     }
     const h1 = document.querySelector('h1')
     out.h1 = h1 && h1.innerText.length > 40 ? h1.innerText : null
+    // Comments the page itself renders (logged out, the API refuses them).
+    // User text is in span[dir=auto]; the author link is the nearest
+    // profile link above it. Class names change too often to rely on.
+    const readDom = () => {
+      for (const b of document.querySelectorAll('[role=button], button, span')) {
+        const t = (b.innerText || '').trim().toLowerCase()
+        if ((t === 'more' || t === 'více' || t === '… more' || t === '… více') && !b.__clicked) {
+          b.__clicked = true
+          try {
+            b.click()
+          } catch (e) {
+            /* ignore */
+          }
+        }
+      }
+      const found = []
+      for (const el of document.querySelectorAll('span[dir=auto], h1[dir=auto]')) {
+        const text = (el.innerText || el.textContent || '').trim()
+        if (text.length < 25 || el.querySelector('span[dir=auto]')) continue
+        let author = null
+        let node = el
+        for (let i = 0; i < 8 && node && !author; i++) {
+          node = node.parentElement
+          const link = node && node.querySelector('a[href^="/"][role=link]')
+          const m = link && link.getAttribute('href').match(/^\/([A-Za-z0-9._]+)\/$/)
+          if (m) author = m[1]
+        }
+        found.push({ author: author, text: text })
+      }
+      return found
+    }
+    let dom = []
+    const tries = a.domTries == null ? 16 : a.domTries
+    for (let i = 0; i < tries; i++) {
+      dom = readDom()
+      if (dom.length > 1 && i >= 4) break
+      await new Promise((r) => setTimeout(r, 500))
+    }
+    out.dom = dom.slice(0, 40)
+    out.pageText = (document.body && document.body.innerText.length) || 0
   } catch (e) {
     out.error = String((e && e.message) || e)
   }
@@ -279,7 +319,13 @@ export function parseInPageResult(r) {
     listed = []
   }
   return {
-    comments: normalizeComments([...(media?.comments ?? []), ...(fromGraphql?.comments ?? []), ...listed]),
+    comments: normalizeComments([
+      ...(media?.comments ?? []),
+      ...(fromGraphql?.comments ?? []),
+      ...listed,
+      // The caption shows up in the DOM too; leave it out of the comments
+      ...(r.dom ?? []).filter((c) => c.text !== (media?.description || fromGraphql?.description)),
+    ]),
     description: media?.description || fromGraphql?.description || r.h1 || null,
     author: media?.author || fromGraphql?.author || null,
     videoUrl: media?.videoUrl || fromGraphql?.videoUrl || null,

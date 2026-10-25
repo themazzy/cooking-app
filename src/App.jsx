@@ -120,6 +120,16 @@ export default function App() {
         reel = await loadReel(url)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30) }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
+        if (reel.platform === 'instagram') {
+          step(
+            r.comments.length
+              ? `Found ${r.comments.length} comment${r.comments.length > 1 ? 's' : ''}.`
+              : reel.signedIn
+                ? 'No comments found.'
+                : 'No comments found. Instagram may only show them when signed in (Settings).',
+            r.comments.length ? 'ok' : 'warn',
+          )
+        }
         setResult(r)
 
         if (settings.transcribe) {
@@ -137,12 +147,13 @@ export default function App() {
         step(failure, 'error')
       } finally {
         if (r.description || r.transcript) saveResult(r)
-        if (failure || !reel?.description || !reel?.videoUrl) {
+        const noComments = reel?.platform === 'instagram' && !reel.comments?.length
+        if (failure || !reel?.description || !reel?.videoUrl || noComments) {
           setReport(
             debugReport({
               url,
               platform: reel?.platform,
-              found: { description: !!reel?.description, video: !!reel?.videoUrl },
+              found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
               errors: [...(reel?.errors ?? []), ...(failure ? [failure] : [])],
             }),
           )
