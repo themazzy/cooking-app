@@ -56,8 +56,22 @@ export default function App() {
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
 
+  // Re-checked whenever the app comes back to the front: signing in happens
+  // on Instagram's own page, and Back may restore this page from cache
   useEffect(() => {
-    if (native) isInstagramSignedIn().then(setIgSignedIn)
+    if (!native) return
+    const check = () => isInstagramSignedIn().then(setIgSignedIn)
+    check()
+    window.addEventListener('pageshow', check)
+    window.addEventListener('focus', check)
+    document.addEventListener('visibilitychange', check)
+    const sub = CapApp.addListener('resume', check)
+    return () => {
+      window.removeEventListener('pageshow', check)
+      window.removeEventListener('focus', check)
+      document.removeEventListener('visibilitychange', check)
+      sub.then((h) => h.remove())
+    }
   }, [native])
 
   const signOutInstagram = async () => {
@@ -115,6 +129,7 @@ export default function App() {
       try {
         step('Loading the reel page…')
         reel = await loadReel(url)
+        if (reel.signedIn != null) setIgSignedIn(reel.signedIn)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30) }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
         if (reel.platform === 'instagram') {
