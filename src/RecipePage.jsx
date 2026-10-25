@@ -10,6 +10,7 @@ import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients } from './lib/scale.js'
 import { splitSteps } from './lib/cook.js'
 import { isOut, planCooking } from './lib/stock.js'
+import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -26,7 +27,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onDelete, onDiscard, onBack, onAddToList, onUseStock }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -43,14 +44,18 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
     if (!recipe.id) setEdit(true)
   }, [recipe.id])
   const factor = recipe.servings ? cookFor / recipe.servings : cookFor
-  const shown = factor !== 1 ? scaleIngredients(recipe.ingredients, factor) : recipe.ingredients
+  const scaled = factor !== 1 ? scaleIngredients(recipe.ingredients, factor) : recipe.ingredients
+  // Metric or US amounts for reading and cooking; stock maths uses `scaled`
+  const shown = convertIngredients(scaled, units)
+  const stepsText = convertTemperatures(recipe.steps, units)
+  const convertible = hasUnits(recipe.ingredients, 'metric') || hasUnits(recipe.ingredients, 'imperial') || /\d\s*°/.test(recipe.steps)
   const videoSrc = useMemo(() => (videoBlob ? URL.createObjectURL(videoBlob) : null), [videoBlob])
   useEffect(() => () => videoSrc && URL.revokeObjectURL(videoSrc), [videoSrc])
 
   const set = (patch) => onChange({ ...recipe, ...patch })
   const raw = recipe.raw ?? {}
   const comments = raw.comments ?? []
-  const steps = splitSteps(recipe.steps)
+  const steps = splitSteps(stepsText)
   const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
   const ingredientCount = recipe.ingredients.filter((i) => i.name?.trim()).length
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
@@ -278,6 +283,19 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
             </button>
           </div>
         </div>
+        {convertible && onUnits && (
+          <div className="segmented" role="group" aria-label="Units">
+            {[
+              ['original', 'As written'],
+              ['metric', 'Metric'],
+              ['imperial', 'US'],
+            ].map(([k, label]) => (
+              <button key={k} className={units === k ? 'on' : ''} aria-pressed={units === k} onClick={() => onUnits(k)}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         {ingredientCount === 0 ? (
           <p className="hint">No ingredients yet. Add them with Edit.</p>
         ) : (
@@ -318,7 +336,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           </ol>
         )}
         <div className="row">
-          <button className="secondary" onClick={() => copyText(recipeToText({ ingredients: shown, steps: recipe.steps }, recipe.title))}>
+          <button className="secondary" onClick={() => copyText(recipeToText({ ingredients: shown, steps: stepsText }, recipe.title))}>
             {copied ? 'Copied' : 'Copy recipe'}
           </button>
         </div>
@@ -330,8 +348,8 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         <CookMode
           title={recipe.title}
           ingredients={shown}
-          steps={recipe.steps}
-          stockPlan={planCooking(shown, pantry, canonical)}
+          steps={stepsText}
+          stockPlan={planCooking(scaled, pantry, canonical)}
           onUseStock={onUseStock}
           onClose={() => setCooking(false)}
         />

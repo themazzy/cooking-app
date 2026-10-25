@@ -538,3 +538,6 @@ label.field input { color: var(--text); }
 .stock-plan ul { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
 .stock-plan li { display: flex; justify-content: space-between; gap: 10px; margin: 0; flex-wrap: wrap; }
 .badge.muted { color: var(--muted); background: var(--sunken); }
+.segmented { display: inline-flex; background: var(--sunken); border-radius: 10px; padding: 3px; gap: 2px; margin: 4px 0 8px; }
+.segmented button { min-height: 30px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; background: transparent; color: var(--muted); border-radius: 8px; }
+.segmented button.on { background: var(--card); color: var(--text); box-shadow: var(--shadow); }

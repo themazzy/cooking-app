@@ -1,0 +1,65 @@
+import { canonicalUnit, formatAmount, parseAmount } from './scale.js'
+
+// Showing recipes in metric or US units. Amounts are converted for display
+// only; the saved recipe keeps the units it was written in.
+
+const TO_METRIC = { oz: ['g', 28.35], lb: ['g', 453.6], floz: ['ml', 29.57], pint: ['ml', 473.2], quart: ['ml', 946.4], cup: ['ml', 240] }
+const FROM_METRIC = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000] }
+
+function toMetric(n, unit) {
+  const [base, mult] = TO_METRIC[unit]
+  const v = n * mult
+  if (base === 'g' && v >= 1000) return [v / 1000, 'kg']
+  if (base === 'ml' && v >= 1000) return [v / 1000, 'l']
+  return [v, base]
+}
+
+function toImperial(n, unit) {
+  const [base, mult] = FROM_METRIC[unit]
+  const v = n * mult
+  if (base === 'g') return v >= 453.6 ? [v / 453.6, 'lb'] : [v / 28.35, 'oz']
+  // Small volumes read better in spoons, then cups, then quarts
+  if (v < 15) return [v / 4.93, 'tsp']
+  if (v < 60) return [v / 14.79, 'tbsp']
+  if (v >= 1892) return [v / 946.4, 'quart']
+  return [v / 240, 'cup']
+}
+
+const LABEL = { floz: 'fl oz', quart: 'qt' }
+// "1 cup" and "½ cup", but "1 ½ cups"
+const label = (unit, text) => (unit === 'cup' ? (/^(1|½|⅓|⅔|¼|¾|0,\d+)$/.test(text) ? 'cup' : 'cups') : (LABEL[unit] ?? unit))
+
+// Ounces and pounds round to a quarter so they read like a recipe
+const quarter = (n) => (n >= 10 ? Math.round(n) : Math.round(n * 4) / 4)
+
+/** One ingredient ({ qty, unit, name }) in `system` ('metric' or 'imperial'); anything else is left as it is. */
+export function convertIngredient(ing, system) {
+  const unit = canonicalUnit(ing.unit)
+  const table = system === 'metric' ? TO_METRIC : system === 'imperial' ? FROM_METRIC : null
+  if (!table || !unit || !table[unit]) return ing
+  const a = parseAmount(ing.qty)
+  if (!a) return ing
+  const conv = system === 'metric' ? toMetric : toImperial
+  const [min, u] = conv(a.min, unit)
+  const max = a.max != null ? conv(a.max, unit)[0] : null
+  const fmt = (n) => (['oz', 'lb', 'quart'].includes(u) ? formatAmount(quarter(n), 'cup') : formatAmount(n, u))
+  const last = fmt(max ?? min)
+  return { ...ing, qty: max != null ? `${fmt(min)}–${last}` : last, unit: label(u, last) }
+}
+
+export const convertIngredients = (list, system) => list.map((i) => convertIngredient(i, system))
+
+/** Oven temperatures in step text: "350°F" → "175 °C" (metric), "180 °C" → "355 °F" (imperial). */
+export function convertTemperatures(text, system) {
+  if (system !== 'metric' && system !== 'imperial') return text
+  return String(text ?? '').replace(/(\d{2,3})\s*°?\s*(?:degrees\s*)?([CF])\b/gi, (all, num, scale) => {
+    const n = Number(num)
+    const f = scale.toUpperCase() === 'F'
+    if (system === 'metric' && f) return `${Math.round(((n - 32) * 5) / 9 / 5) * 5} °C`
+    if (system === 'imperial' && !f) return `${Math.round(((n * 9) / 5 + 32) / 5) * 5} °F`
+    return all
+  })
+}
+
+/** Whether a recipe uses any units that `system` would change. */
+export const hasUnits = (list, system) => list.some((i) => convertIngredient(i, system) !== i)
