@@ -16,7 +16,7 @@ import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.j
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
-const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website', pasted: 'Pasted text', file: 'Video file' }
+const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website', photo: 'Photo', pasted: 'Pasted text', file: 'Video file' }
 const hostOf = (url) => {
   try {
     return new URL(url).hostname.replace(/^www\./, '')

@@ -619,3 +619,7 @@ label.field input { color: var(--text); }
 .amount-row select { flex: 0 0 6.5em; font-size: 1rem; }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 button.link.more { margin-top: 10px; }
+.receipt-list { flex: 1 1 auto; overflow-y: auto; }
+.receipt-list ul.shopping li { display: flex; align-items: center; gap: 8px; }
+.receipt-list ul.shopping li.checked span { text-decoration: none; }
+.unknown ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }

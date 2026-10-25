@@ -4,7 +4,7 @@ import { IngredientIcon, useCatalog } from './catalog.jsx'
 const matches = (r, q) =>
   !q || r.title?.toLowerCase().includes(q) || r.ingredients?.some((i) => i.name?.toLowerCase().includes(q))
 
-const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website' }
+const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website', photo: 'Photo' }
 
 /** The video's picture, or the first ingredients' pictures when there is no video. */
 function Thumb({ recipe }) {

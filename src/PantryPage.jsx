@@ -2,7 +2,10 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { addToPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
-import { daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
+import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
+import { readReceiptPhotos } from './lib/ocr.js'
+import { readReceipt } from './lib/receipt.js'
+import ReceiptSheet from './ReceiptSheet.jsx'
 import { STOCK_UNITS, defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
 
 const SOON = 3 // days
@@ -173,7 +176,8 @@ function Picker({ items, onPick, onClose, added }) {
 
 /** The household's stock: amounts, staples to keep (with a minimum) and use-by dates. */
 export default function PantryPage({ items, onChanged }) {
-  const { match } = useCatalog()
+  const { entries, match } = useCatalog()
+  const [receipt, setReceipt] = useState(null) // { reading: pct } or { found }
   const [message, setMessage] = useState(null)
   const [query, setQuery] = useState('')
   const [picking, setPicking] = useState(false)
@@ -207,6 +211,43 @@ export default function PantryPage({ items, onChanged }) {
     if (picking) setAdded(`${item.name}${patch.amount ? `, ${patch.amount}` : ''}`)
   }
 
+  const onReceipt = async (e) => {
+    const files = [...(e.target.files ?? [])]
+    e.target.value = ''
+    if (!files.length) return
+    setMessage(null)
+    setReceipt({ reading: 0, status: 'Reading the receipt…' })
+    try {
+      const text = await readReceiptPhotos(files, (p) =>
+        setReceipt({
+          reading: Math.round((p.progress ?? 0) * 100),
+          status: p.status === 'recognizing text' ? 'Reading the receipt…' : 'Downloading the text reader (once)…',
+        }),
+      )
+      setReceipt({ found: readReceipt(text, entries) })
+    } catch (err) {
+      setReceipt(null)
+      setMessage(err?.message ?? String(err))
+    }
+  }
+  // Each ingredient once, its amounts added up, then added to what is at home
+  const addFromReceipt = async (rows) => {
+    const merged = new Map()
+    for (const r of rows) {
+      const prev = merged.get(r.entry.name)
+      merged.set(r.entry.name, prev == null ? r.amount : addTo(prev, ...(r.amount.match(/^(\S+)\s*(.*)$/)?.slice(1) ?? ['', ''])))
+    }
+    await run(async () => {
+      for (const [name, amount] of merged) {
+        const key = name.toLowerCase()
+        const have = items.find((i) => (match(i.name)?.name ?? i.name).toLowerCase() === key)
+        if (have) await updatePantryItem(have.id, { amount: amount ? addTo(have.amount, ...amount.match(/^(\S+)\s*(.*)$/).slice(1)) : have.amount })
+        else await addToPantry(name, amount)
+      }
+    })
+    setReceipt(null)
+  }
+
   const aisleOf = (i) => match(i.name)?.aisle ?? 'Other'
   const days = (i) => daysLeft(i.expires_on)
   const q = query.trim().toLowerCase()
@@ -231,9 +272,15 @@ export default function PantryPage({ items, onChanged }) {
     <>
       <header className="main-header">
         <h1>At home</h1>
-        <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
-          + Add
-        </button>
+        <div className="actions">
+          <label className="button small secondary">
+            📷 Receipt
+            <input type="file" accept="image/*" multiple hidden disabled={!!receipt} onChange={onReceipt} />
+          </label>
+          <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
+            + Add
+          </button>
+        </div>
       </header>
       <p className="hint top">
         {items.length} item{items.length === 1 ? '' : 's'}
@@ -241,6 +288,12 @@ export default function PantryPage({ items, onChanged }) {
         {low ? ` · ${low} running low, on the shopping list` : ''}
       </p>
       {message && !editing && <p className="hint error">{message}</p>}
+      {receipt?.reading != null && (
+        <div className="card">
+          {receipt.status} {receipt.reading}%
+          <progress max="100" value={receipt.reading} />
+        </div>
+      )}
       {items.length === 0 ? (
         <div className="empty">
           <div className="empty-icon" aria-hidden="true">
@@ -294,6 +347,7 @@ export default function PantryPage({ items, onChanged }) {
         </section>
       )}
 
+      {receipt?.found && <ReceiptSheet found={receipt.found} onAdd={addFromReceipt} onClose={() => setReceipt(null)} />}
       {picking && !editing && <Picker items={items} added={added} onPick={open} onClose={() => setPicking(false)} />}
       {editing && (
         <ItemSheet

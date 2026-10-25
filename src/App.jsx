@@ -22,6 +22,7 @@ import ShoppingList from './ShoppingList.jsx'
 import { addToList, makeList } from './lib/shopping.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
+import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
@@ -265,10 +266,11 @@ export default function App() {
 
   /** Shows an import (or paste) as a new, unsaved recipe page. */
   const openDraft = useCallback(
-    (r, videoBlob = null) => {
+    (r, videoBlob = null, extra = {}) => {
       const key = newId()
       const recipe = {
         ...draftFromImport(r),
+        ...extra,
         key,
         video: videoBlob ? { size: videoBlob.size, originalSize: videoBlob.size, type: videoBlob.type, shrunk: false } : null,
       }
@@ -541,6 +543,33 @@ export default function App() {
     }
   }
 
+  // Photos of a printed (or neatly handwritten) recipe, read on the phone
+  const onPhotos = async (e) => {
+    const files = [...(e.target.files ?? [])]
+    e.target.value = ''
+    if (!files.length) return
+    setBusy(true)
+    setLog([])
+    setReport(null)
+    try {
+      step(`Reading the text in ${files.length} photo${files.length > 1 ? 's' : ''}…`)
+      const text = await readRecipePhotos(files, (p) => {
+        if (p.status === 'loading language traineddata' || p.status === 'loading tesseract core') setDownload({ file: 'text reader', pct: Math.round((p.progress ?? 0) * 100) })
+        else setDownload(null)
+      })
+      if (!text.trim()) throw new Error('No text found in the photo. Try a sharper, closer photo in good light.')
+      step(`Read ${text.split('\n').filter(Boolean).length} lines.`, 'ok')
+      const r = { url: null, platform: 'photo', description: text, at: Date.now() }
+      remember(r)
+      openDraft(r, null, { thumb: await photoThumb(files[0]) })
+    } catch (err) {
+      step(err?.message ?? String(err), 'error')
+    } finally {
+      setDownload(null)
+      setBusy(false)
+    }
+  }
+
   const onPasteParse = () => {
     if (!pasted.trim()) return
     const r = { url: null, platform: 'pasted', description: pasted, at: Date.now() }
@@ -775,6 +804,15 @@ export default function App() {
         </section>
 
         <section className="card">
+          <label>From photos</label>
+          <p className="hint top">A cookbook page, a recipe card or a screenshot. Pick several photos for a recipe over more pages. Neat handwriting may work too.</p>
+          <label className="button">
+            📷 Take or pick photos
+            <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={onPhotos} />
+          </label>
+        </section>
+
+        <section className="card">
           <label htmlFor="pasted">Or paste a recipe text</label>
           <textarea id="pasted" rows={4} value={pasted} onChange={(e) => setPasted(e.target.value)} />
           <div className="row">
@@ -797,7 +835,7 @@ export default function App() {
             ))}
             {download && (
               <div>
-                Downloading speech model ({download.file}): {download.pct}%
+                {download.file === 'text reader' ? 'Downloading the text reader (once)' : `Downloading speech model (${download.file})`}: {download.pct}%
                 <progress max="100" value={download.pct} />
               </div>
             )}
