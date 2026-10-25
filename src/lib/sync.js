@@ -172,6 +172,8 @@ export async function subscribeHousehold(onChange) {
     .channel(`household-${hid}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'recipes', filter: `household_id=eq.${hid}` }, () => onChange('recipes'))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_lists', filter: `household_id=eq.${hid}` }, () => onChange('shopping'))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pantry_items', filter: `household_id=eq.${hid}` }, () => onChange('pantry'))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients', filter: `household_id=eq.${hid}` }, () => onChange('ingredients'))
     .subscribe()
   return () => supabase.removeChannel(channel)
 }

@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { SEED_INGREDIENTS } from './data/ingredients.js'
-import { buildCatalogIndex, imageUrl, matchIngredient } from './lib/catalog.js'
+import { buildCatalogIndex, imageUrl, matchIngredient, normalizeName } from './lib/catalog.js'
 import { supabase } from './lib/supabase.js'
+import { getHousehold } from './lib/sync.js'
 
 const CACHE_KEY = 'cooking-app:catalog'
+const COLUMNS = 'id, household_id, name, aisle, image, image_data, base, aliases'
 
 const readCache = () => {
   try {
@@ -13,17 +15,27 @@ const readCache = () => {
   }
 }
 
+/** Custom entries inherit the picture and aisle of the ingredient they stand for. */
+function withBase(entries) {
+  const byName = new Map(entries.filter((e) => !e.household_id).map((e) => [e.name.toLowerCase(), e]))
+  return entries.map((e) => {
+    const base = e.base ? byName.get(e.base.toLowerCase()) : null
+    return base ? { ...e, image: e.image ?? base.image, aisle: e.aisle || base.aisle } : e
+  })
+}
+
 const CatalogContext = createContext(null)
 
 /**
- * The ingredient catalog for the whole app: the shared one from Supabase
- * (cached on the phone), or the built-in starting list until that loads.
+ * The ingredient catalog for the whole app: the shared list plus the
+ * household's own ingredients from Supabase (cached on the phone), or the
+ * built-in starting list until that loads.
  */
 export function CatalogProvider({ children }) {
   const [entries, setEntries] = useState(() => readCache() ?? SEED_INGREDIENTS)
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.from('ingredients').select('name, aisle, image, aliases').order('name')
+    const { data, error } = await supabase.from('ingredients').select(COLUMNS).order('name')
     if (error || !data?.length) return
     setEntries(data)
     try {
@@ -39,7 +51,24 @@ export function CatalogProvider({ children }) {
 
   const add = useCallback(
     async (entry) => {
-      const { error } = await supabase.from('ingredients').insert(entry)
+      const household_id = (await getHousehold()).id
+      const { error } = await supabase.from('ingredients').insert({ ...entry, household_id })
+      if (error) throw error
+      await refresh()
+    },
+    [refresh],
+  )
+  const update = useCallback(
+    async (id, patch) => {
+      const { error } = await supabase.from('ingredients').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
+      if (error) throw error
+      await refresh()
+    },
+    [refresh],
+  )
+  const remove = useCallback(
+    async (id) => {
+      const { error } = await supabase.from('ingredients').delete().eq('id', id)
       if (error) throw error
       await refresh()
     },
@@ -47,9 +76,17 @@ export function CatalogProvider({ children }) {
   )
 
   const value = useMemo(() => {
-    const index = buildCatalogIndex(entries)
-    return { entries, add, refresh, match: (name) => matchIngredient(index, name) }
-  }, [entries, add, refresh])
+    const all = withBase(entries)
+    // The household's own names are matched first
+    const index = buildCatalogIndex([...all.filter((e) => e.household_id), ...all.filter((e) => !e.household_id)])
+    const match = (name) => matchIngredient(index, name)
+    /** The same key for an ingredient however it is written, and for a brand and what it stands for. */
+    const canonical = (name) => {
+      const e = match(name)
+      return e ? (e.base ?? e.name).toLowerCase() : normalizeName(name)
+    }
+    return { entries: all, add, update, remove, refresh, match, canonical }
+  }, [entries, add, update, remove, refresh])
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>
 }
 
@@ -72,16 +109,37 @@ const AISLE_COLORS = {
   Drinks: '#7b6fc9',
 }
 
-/** Small picture of a catalog ingredient, or its first letter when there is none. */
+/** Small picture of a catalog ingredient (own photo, TheMealDB picture), or its first letter. */
 export function IngredientIcon({ entry, size = 28 }) {
-  const [failed, setFailed] = useState(false)
-  const src = imageUrl(entry)
-  if (src && !failed) {
-    return <img className="ing-icon" src={src} alt="" width={size} height={size} loading="lazy" onError={() => setFailed(true)} />
+  const src = entry?.image_data || imageUrl(entry)
+  const [failedSrc, setFailedSrc] = useState(null)
+  if (src && failedSrc !== src) {
+    return <img className="ing-icon" src={src} alt="" width={size} height={size} loading="lazy" onError={() => setFailedSrc(src)} />
   }
   return (
     <span className="ing-icon letter" style={{ width: size, height: size, background: AISLE_COLORS[entry?.aisle] ?? 'var(--border)' }} aria-hidden="true">
       {entry?.name?.[0] ?? '?'}
     </span>
   )
+}
+
+/** A photo from the camera or gallery as a small square WebP data URL for the catalog. */
+export async function photoToIcon(file, size = 96) {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    const side = Math.min(img.naturalWidth, img.naturalHeight)
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    canvas
+      .getContext('2d')
+      .drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size)
+    const webp = canvas.toDataURL('image/webp', 0.8)
+    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.8)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }

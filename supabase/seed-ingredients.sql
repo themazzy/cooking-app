@@ -225,4 +225,4 @@ insert into public.ingredients (name, aisle, image, aliases) values
   ('Red wine', 'Drinks', 'Red Wine', array[]::text[]),
   ('Beer', 'Drinks', 'Stout', array['stout', 'lager']::text[]),
   ('Ice cream', 'Frozen', 'Ice Cream', array['vanilla ice cream']::text[])
-on conflict (lower(name)) do update set aisle = excluded.aisle, image = excluded.image, aliases = excluded.aliases, updated_at = now();
+on conflict (coalesce(household_id, '00000000-0000-0000-0000-000000000000'::uuid), lower(name)) do update set aisle = excluded.aisle, image = excluded.image, aliases = excluded.aliases, updated_at = now();
