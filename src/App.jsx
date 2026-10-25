@@ -9,6 +9,8 @@ import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js
 import RecipePage from './RecipePage.jsx'
 import RecipeList from './RecipeList.jsx'
 import Account from './Account.jsx'
+import LoginPage from './LoginPage.jsx'
+import { emptyIngredient } from './lib/recipeEdit.js'
 import { supabase } from './lib/supabase.js'
 import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
@@ -48,7 +50,7 @@ function sharedTextFromUrl(url) {
   }
 }
 
-/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import), #/shopping, #/ingredients */
+/** #/ (recipes), #/import, #/settings, #/recipe/<id>, #/new (unsaved recipe), #/shopping, #/ingredients */
 function parseRoute() {
   const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
   return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
@@ -78,7 +80,7 @@ export default function App() {
   const [shrink, setShrink] = useState(null)
   const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
   const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(undefined) // undefined while the saved session loads
   const [syncState, setSyncState] = useState(null) // { at } or { error }
   const savedIds = useRef({})
   const shoppingRef = useRef(null) // draft key → saved id, for a shrink that finishes after saving
@@ -159,7 +161,7 @@ export default function App() {
     ;(async () => {
       const recipe = await getRecipe(route.id)
       if (cancelled) return
-      if (!recipe) return go('#/recipes', { replace: true })
+      if (!recipe) return go('#/', { replace: true })
       let videoBlob = null
       try {
         videoBlob = recipe.video || recipe.videoPath ? await loadVideo(recipe) : null
@@ -251,6 +253,13 @@ export default function App() {
     [settings.saveVideos, settings.videoQuality, startShrink],
   )
 
+  const addManually = () => {
+    const key = newId()
+    const recipe = { ...draftFromImport({ platform: null }), key, title: '', ingredients: [emptyIngredient()], steps: '', source: null }
+    setEditing({ recipe, videoBlob: null, dirty: true })
+    go('#/new')
+  }
+
   const saveEditing = async () => {
     if (!editing) return
     const { recipe, videoBlob } = editing
@@ -282,7 +291,7 @@ export default function App() {
     setEditing(null)
     refreshRecipes()
     runSync()
-    go('#/recipes', { replace: true })
+    go('#/', { replace: true })
   }
 
   const shoppingTimer = useRef(null)
@@ -416,6 +425,7 @@ export default function App() {
       const text = sharedTextFromUrl(url)
       const shared = extractUrl(text)
       if (shared) {
+        go('#/import')
         setLink(shared)
         runRef.current?.(shared)
       }
@@ -453,6 +463,9 @@ export default function App() {
     openDraft(r)
   }
 
+  if (user === undefined) return <main className="hint">Loading…</main>
+  if (!user) return <LoginPage />
+
   const showing =
     editing && ((route.page === 'recipe' && editing.recipe.id === route.id) || (route.page === 'new' && !editing.recipe.id))
   if (route.page === 'recipe' && !showing) return <main className="hint">Loading…</main>
@@ -470,51 +483,6 @@ export default function App() {
           onDelete={deleteEditing}
           onBack={back}
         />
-      </main>
-    )
-  }
-
-  if (route.page === 'recipes') {
-    const count = selection ? Object.values(selection).filter((v) => v != null).length : 0
-    return (
-      <main>
-        <div className="topbar">
-          <button className="link" onClick={back}>
-            ← Back
-          </button>
-          <button className="link" onClick={() => go('#/shopping')}>
-            Shopping list →
-          </button>
-        </div>
-        <section className="card">
-          <h2>Saved recipes ({recipes.length})</h2>
-          {recipes.length > 0 &&
-            (selection ? (
-              <p className="hint">Tick the recipes to shop for and set how many portions of each.</p>
-            ) : (
-              <div className="row">
-                <button className="secondary" onClick={() => setSelection({})}>
-                  Make a shopping list
-                </button>
-              </div>
-            ))}
-          <RecipeList
-            recipes={recipes}
-            onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
-            selection={selection}
-            onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
-          />
-        </section>
-        {selection && (
-          <div className="bottom-bar">
-            <button className="secondary" onClick={() => setSelection(null)}>
-              Cancel
-            </button>
-            <button disabled={!count} onClick={makeShoppingList}>
-              Make list from {count} recipe{count === 1 ? '' : 's'}
-            </button>
-          </div>
-        )}
       </main>
     )
   }
@@ -545,81 +513,36 @@ export default function App() {
           onChange={updateShopping}
           onNew={() => {
             setSelection({})
-            go('#/recipes')
+            go('#/')
           }}
         />
       </main>
     )
   }
 
-  const unsaved = editing && !editing.recipe.id && editing.dirty
+  const topbar = (
+    <div className="topbar">
+      <button className="link" onClick={back}>
+        ← Back
+      </button>
+    </div>
+  )
 
-  return (
-    <main>
-      <header>
-        <h1>Cooking App</h1>
-        <p className="sub">{native ? 'Android app' : 'website'}</p>
-      </header>
-
-      {unsaved && (
+  if (route.page === 'settings') {
+    return (
+      <main>
+        {topbar}
         <section className="card">
-          <button className="link" onClick={() => go('#/new')}>
-            Continue with the unsaved recipe: {editing.recipe.title}
-          </button>
+          <h2>Settings</h2>
+          <Account user={user} onChanged={() => setSyncState(null)} />
         </section>
-      )}
-
-      <section className="card">
-        <label htmlFor="link">Link to a reel, Short or recipe page</label>
-        <div className="row">
-          <input
-            id="link"
-            type="url"
-            inputMode="url"
-            placeholder="Instagram, TikTok, Facebook, YouTube or a recipe site"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && !busy && importLink(link)}
-          />
-          <button disabled={busy || !link.trim() || !native} onClick={() => importLink(link)}>
-            Get recipe
-          </button>
-        </div>
-        {!native && (
-          <p className="hint">
-            Websites can't load Instagram, TikTok or Facebook pages. Use the Android app for links, or paste the description
-            and upload the video below.
-          </p>
-        )}
-
-        <details>
-          <summary>Settings</summary>
+        <section className="card">
+          <h3>Importing</h3>
           <div className="settings">
             <label>
-              <input
-                type="checkbox"
-                checked={settings.transcribe}
-                onChange={(e) => setSettings({ ...settings, transcribe: e.target.checked })}
-              />{' '}
+              <input type="checkbox" checked={settings.transcribe} onChange={(e) => setSettings({ ...settings, transcribe: e.target.checked })} />{' '}
               Transcribe the audio
             </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={settings.saveVideos}
-                onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })}
-              />{' '}
-              Save a copy of the video with each recipe
-            </label>
-            {settings.saveVideos && (
-              <label>
-                Video quality{' '}
-                <select value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
-                  <option value="small">Small, 480p (about 2.5 MB a minute)</option>
-                  <option value="hd">HD, 720p (about 4 MB a minute, bigger download)</option>
-                </select>
-              </label>
-            )}
             <label>
               Speech model{' '}
               <select value={settings.model} onChange={(e) => setSettings({ ...settings, model: e.target.value })}>
@@ -639,127 +562,214 @@ export default function App() {
               </select>
             </label>
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
-            <Account user={user} onChanged={() => setSyncState(null)} />
-            {native && (
-              <div>
-                <strong>Instagram account:</strong> {igSignedIn ? 'signed in' : 'not signed in'}
-                <p className="hint">
-                  Some reels are shown only to logged-in users. Signing in opens Instagram inside this app; when you are
-                  logged in, press Back until you return here. The login stays on this phone.
-                </p>
-                <div className="row">
-                  {igSignedIn ? (
-                    <button className="secondary" onClick={signOutInstagram}>
-                      Sign out of Instagram
-                    </button>
-                  ) : (
-                    <button className="secondary" onClick={() => (window.location.href = INSTAGRAM_LOGIN_URL)}>
-                      Sign in to Instagram
-                    </button>
-                  )}
-                </div>
-              </div>
+            <label>
+              <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}
+              Save a copy of the video with each recipe
+            </label>
+            {settings.saveVideos && (
+              <label>
+                Video quality{' '}
+                <select value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
+                  <option value="small">Small, 480p (about 2.5 MB a minute)</option>
+                  <option value="hd">HD, 720p (about 4 MB a minute, bigger download)</option>
+                </select>
+              </label>
             )}
           </div>
-        </details>
-      </section>
-
-      <section className="card">
-        <label htmlFor="pasted">Or paste a description</label>
-        <textarea id="pasted" rows={4} value={pasted} onChange={(e) => setPasted(e.target.value)} />
-        <div className="row">
-          <button className="secondary" disabled={busy || !pasted.trim()} onClick={onPasteParse}>
-            Read ingredients
-          </button>
-          <label className="button secondary">
-            Transcribe a video file
-            <input type="file" accept="video/*,audio/*" hidden disabled={busy} onChange={onFile} />
-          </label>
-        </div>
-      </section>
-
-      {(log.length > 0 || download) && (
-        <section className="card log" aria-live="polite">
-          {log.map((l) => (
-            <div key={l.at + l.text} className={`log-${l.kind}`}>
-              {l.text}
-            </div>
-          ))}
-          {download && (
-            <div>
-              Downloading speech model ({download.file}): {download.pct}%
-              <progress max="100" value={download.pct} />
-            </div>
-          )}
-          {busy && <div className="spinner">Working…</div>}
-          {report && !busy && (
-            <div className="row">
-              <button
-                className="secondary"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(report)
-                    setCopied(true)
-                  } catch {
-                    setCopied(false)
-                  }
-                }}
-              >
-                {copied ? 'Copied, paste it to Claude' : 'Copy debug report'}
-              </button>
-            </div>
-          )}
         </section>
-      )}
+        {native && (
+          <section className="card">
+            <h3>Instagram</h3>
+            <p>{igSignedIn ? 'Signed in' : 'Not signed in'}</p>
+            <p className="hint">
+              Some reels, and all comments, are shown only to logged-in users. Signing in opens Instagram inside this app;
+              when you are logged in, press Back until you return here. The login stays on this phone.
+            </p>
+            <div className="row">
+              {igSignedIn ? (
+                <button className="secondary" onClick={signOutInstagram}>
+                  Sign out of Instagram
+                </button>
+              ) : (
+                <button className="secondary" onClick={() => (window.location.href = INSTAGRAM_LOGIN_URL)}>
+                  Sign in to Instagram
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+      </main>
+    )
+  }
 
-      <nav className="row nav">
-        <button className="secondary" onClick={() => go('#/recipes')}>
-          Saved recipes ({recipes.length})
+  if (route.page === 'import') {
+    return (
+      <main>
+        {topbar}
+        <section className="card">
+          <h2>Import a recipe</h2>
+          <label htmlFor="link">Link to a reel, Short or recipe page</label>
+          <div className="row">
+            <input
+              id="link"
+              type="url"
+              inputMode="url"
+              placeholder="Instagram, TikTok, Facebook, YouTube or a recipe site"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !busy && importLink(link)}
+            />
+            <button disabled={busy || !link.trim() || !native} onClick={() => importLink(link)}>
+              Get recipe
+            </button>
+          </div>
+          <p className="hint">
+            {native
+              ? 'Tip: share a reel or page to Cooking App from Instagram, TikTok, YouTube or the browser.'
+              : "Websites can't load Instagram, TikTok or Facebook pages. Use the Android app for links, or paste the text below."}
+          </p>
+        </section>
+
+        <section className="card">
+          <label htmlFor="pasted">Or paste a recipe text</label>
+          <textarea id="pasted" rows={4} value={pasted} onChange={(e) => setPasted(e.target.value)} />
+          <div className="row">
+            <button className="secondary" disabled={busy || !pasted.trim()} onClick={onPasteParse}>
+              Read ingredients
+            </button>
+            <label className="button secondary">
+              Transcribe a video file
+              <input type="file" accept="video/*,audio/*" hidden disabled={busy} onChange={onFile} />
+            </label>
+          </div>
+        </section>
+
+        {(log.length > 0 || download) && (
+          <section className="card log" aria-live="polite">
+            {log.map((l) => (
+              <div key={l.at + l.text} className={`log-${l.kind}`}>
+                {l.text}
+              </div>
+            ))}
+            {download && (
+              <div>
+                Downloading speech model ({download.file}): {download.pct}%
+                <progress max="100" value={download.pct} />
+              </div>
+            )}
+            {busy && <div className="spinner">Working…</div>}
+            {report && !busy && (
+              <div className="row">
+                <button
+                  className="secondary"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(report)
+                      setCopied(true)
+                    } catch {
+                      setCopied(false)
+                    }
+                  }}
+                >
+                  {copied ? 'Copied, paste it to Claude' : 'Copy debug report'}
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+
+        {history.length > 0 && (
+          <section className="card">
+            <h3>Recent imports</h3>
+            <ul className="history">
+              {history.map((h) => (
+                <li key={h.at}>
+                  <button className="link" onClick={() => openDraft(h)}>
+                    {h.platform} · {(h.description || h.transcript || '').slice(0, 60) || h.url}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </main>
+    )
+  }
+
+  // Main page: the household's recipes
+  const unsaved = editing && !editing.recipe.id && editing.dirty
+  const picked = selection ? Object.values(selection).filter((v) => v != null).length : 0
+  const toBuy = shopping ? shopping.items.filter((i) => !i.checked).length : 0
+
+  return (
+    <main>
+      <header className="main-header">
+        <h1>Recipes</h1>
+        <div className="actions">
+          <button className="small" onClick={() => go('#/import')}>
+            Import
+          </button>
+          <button className="small secondary" onClick={addManually}>
+            + Add
+          </button>
+          <button className="icon-button" aria-label="Settings" onClick={() => go('#/settings')}>
+            ⚙
+          </button>
+        </div>
+      </header>
+
+      <nav className="chips">
+        <button className="chip" onClick={() => go('#/shopping')}>
+          Shopping list{toBuy ? ` · ${toBuy}` : ''}
         </button>
-        <button className="secondary" onClick={() => go('#/shopping')}>
-          Shopping list{shopping ? ` (${shopping.items.filter((i) => !i.checked).length})` : ''}
-        </button>
-        <button className="secondary" onClick={() => go('#/ingredients')}>
+        <button className="chip" onClick={() => go('#/ingredients')}>
           Ingredients
         </button>
+        {recipes.length > 0 && !selection && (
+          <button className="chip" onClick={() => setSelection({})}>
+            Make a shopping list
+          </button>
+        )}
       </nav>
 
-      {user && (
-        <p className="hint sync">
-          {syncState?.error
-            ? `Sync failed: ${syncState.error}`
-            : syncState?.at
-              ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-              : 'Syncing…'}{' '}
-          <button className="link" onClick={runSync}>
-            Sync now
+      {unsaved && (
+        <section className="card">
+          <button className="link" onClick={() => go('#/new')}>
+            Continue with the unsaved recipe: {editing.recipe.title || 'New recipe'}
           </button>
-        </p>
+        </section>
       )}
 
       <section className="card">
-        <h3>Saved recipes</h3>
-        <RecipeList recipes={recipes} limit={5} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
-        {recipes.length > 5 && (
-          <button className="link" onClick={() => go('#/recipes')}>
-            All {recipes.length} saved recipes →
-          </button>
-        )}
+        {selection && <p className="hint">Tick the recipes to shop for and set how many portions of each.</p>}
+        <RecipeList
+          recipes={recipes}
+          onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
+          selection={selection}
+          onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
+        />
       </section>
 
-      {history.length > 0 && (
-        <section className="card">
-          <h3>Recent imports</h3>
-          <ul className="history">
-            {history.map((h) => (
-              <li key={h.at}>
-                <button className="link" onClick={() => openDraft(h)}>
-                  {h.platform} · {(h.description || h.transcript || '').slice(0, 60) || h.url}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <p className="hint sync">
+        {syncState?.error
+          ? `Sync failed: ${syncState.error}`
+          : syncState?.at
+            ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            : 'Syncing…'}{' '}
+        <button className="link" onClick={runSync}>
+          Sync now
+        </button>
+      </p>
+
+      {selection && (
+        <div className="bottom-bar">
+          <button className="secondary" onClick={() => setSelection(null)}>
+            Cancel
+          </button>
+          <button disabled={!picked} onClick={makeShoppingList}>
+            Make list from {picked} recipe{picked === 1 ? '' : 's'}
+          </button>
+        </div>
       )}
     </main>
   )

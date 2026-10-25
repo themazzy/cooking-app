@@ -54,7 +54,7 @@ export default function RecipeList({ recipes, limit, onOpen, selection, onSelect
           )
         })}
       </ul>
-      {shown.length === 0 && <p className="hint">{q ? 'No recipe matches.' : 'No saved recipes yet.'}</p>}
+      {shown.length === 0 && <p className="hint">{q ? 'No recipe matches.' : 'No recipes yet. Import one from a reel or a website, or add one by hand.'}</p>}
     </>
   )
 }

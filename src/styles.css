@@ -220,3 +220,13 @@ ul.catalog { list-style: none; padding: 0; margin: 8px 0 0; }
 ul.catalog li { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); margin: 0; }
 ul.catalog li.aisle { border: 0; padding: 14px 0 2px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 ul.catalog .from { display: block; color: var(--muted); font-size: 0.8rem; }
+.main-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.main-header .actions { display: flex; gap: 6px; align-items: center; }
+button.small { padding: 6px 12px; font-size: 0.9rem; }
+.icon-button { background: transparent; color: var(--muted); font-size: 1.3rem; padding: 4px 6px; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.chip { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-weight: 500; font-size: 0.9rem; }
+.login { max-width: 420px; padding-top: calc(48px + env(safe-area-inset-top)); }
+.login h1 { font-size: 1.8rem; margin: 0; }
+.login form h2 { text-transform: none; }
+.hint.error { color: var(--error); }
