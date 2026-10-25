@@ -17,7 +17,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions;
 
 /**
  * Reads printed text in a photo on the phone with Google ML Kit (Latin
- * script, bundled model, works offline). The web app sends the photo as a
+ * script; the model comes from Google Play services, then works offline). The web app sends the photo as a
  * base64 JPEG that it has already turned upright.
  */
 @CapacitorPlugin(name = "TextReader")
@@ -52,6 +52,11 @@ public class TextReaderPlugin extends Plugin {
                 ret.put("text", text.toString().trim());
                 call.resolve(ret);
             })
-            .addOnFailureListener(e -> call.reject(e.getMessage() != null ? e.getMessage() : "Text recognition failed"));
+            .addOnFailureListener(e -> {
+                String m = e.getMessage() != null ? e.getMessage() : "Text recognition failed";
+                // Right after installing, Play services may still be fetching the model
+                if (m.toLowerCase().contains("download")) m = "The text reader is still downloading from Google Play services. Try again in a minute.";
+                call.reject(m);
+            });
     }
 }

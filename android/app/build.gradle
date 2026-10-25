@@ -53,8 +53,9 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
-    // On-device text recognition for recipe photos (Latin script, model bundled in the app)
-    implementation "com.google.mlkit:text-recognition:16.0.1"
+    // On-device text recognition for recipe photos (Latin script). The model
+    // comes through Google Play services instead of inside the app (~20 MB less)
+    implementation "com.google.android.gms:play-services-mlkit-text-recognition:19.0.1"
 }
 
 apply from: 'capacitor.build.gradle'
