@@ -26,7 +26,7 @@ describe('detectPlatform / extractUrl', () => {
     ['https://www.facebook.com/reel/1234567890', 'facebook'],
     ['https://fb.watch/abcDEF/', 'facebook'],
     ['https://m.facebook.com/share/r/xyz/', 'facebook'],
-    ['https://www.recepty.cz/recept/x', null],
+    ['https://www.recepty.cz/recept/x', 'web'],
   ])('%s', (url, platform) => expect(detectPlatform(url)).toBe(platform))
 
   it('pulls the link out of shared text', () => {
@@ -260,5 +260,35 @@ describe('Instagram in-page fetch', async () => {
       author: 'chef',
       videoUrl: 'https://cdn/i.mp4',
     })
+  })
+})
+
+describe('TikTok and Facebook comments', async () => {
+  const { parseTikTokComments, tiktokVideoId } = await import('./tiktok.js')
+  const { parseFacebookComments } = await import('./facebook.js')
+
+  it('reads TikTok comments and marks the pinned one', () => {
+    const json = {
+      comments: [
+        { text: 'yum', user: { unique_id: 'fan' }, stick_position: 0 },
+        { text: 'Recipe: 400 g beef', user: { unique_id: 'chef' }, stick_position: 1 },
+      ],
+    }
+    expect(parseTikTokComments(json)).toEqual([
+      { author: 'fan', text: 'yum', pinned: false },
+      { author: 'chef', text: 'Recipe: 400 g beef', pinned: true },
+    ])
+    expect(tiktokVideoId('https://www.tiktok.com/@chef/video/7412345678901234567?lang=cs')).toBe('7412345678901234567')
+  })
+
+  it('reads Facebook comments that come with the page', () => {
+    const html =
+      '{"message":{"text":"Shawarma"}}' +
+      '{"author":{"__typename":"User","id":"1","name":"Chef Bob"},"body":{"text":"Ingredients:\\n400 g beef"}}' +
+      '{"author":{"__typename":"User","id":"2","name":"Ann"},"body":{"text":"Looks great"}}'
+    expect(parseFacebookComments(html, 'Shawarma')).toEqual([
+      { author: 'Chef Bob', text: 'Ingredients:\n400 g beef', pinned: false },
+      { author: 'Ann', text: 'Looks great', pinned: false },
+    ])
   })
 })

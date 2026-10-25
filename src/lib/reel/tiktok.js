@@ -19,6 +19,36 @@ export function parseTikTokPage(html) {
   }
 }
 
+/** [{ author, text, pinned }] from a TikTok comment list response. */
+export function parseTikTokComments(json) {
+  return (json?.comments ?? [])
+    .filter((c) => c?.text)
+    .map((c) => ({
+      author: c.user?.unique_id ?? c.user?.uniqueId ?? null,
+      text: c.text,
+      pinned: !!(c.stick_position > 0 || c.author_pin || c.is_pinned),
+    }))
+}
+
+export const tiktokVideoId = (url) => url.match(/\/(?:video|photo)\/(\d+)/)?.[1] ?? null
+
+/** Comment pages until the author's comment shows up (recipes often hide there). */
+async function fetchTikTokComments(videoId, author, pages = 5) {
+  const out = []
+  let cursor = 0
+  for (let page = 0; page < pages; page++) {
+    const json = await getJson(
+      `https://www.tiktok.com/api/comment/list/?aid=1988&aweme_id=${videoId}&count=50&cursor=${cursor}`,
+      { headers: TIKTOK_HEADERS },
+    )
+    out.push(...parseTikTokComments(json))
+    if (out.some((c) => c.pinned || (author && c.author === author))) break
+    if (!json?.has_more) break
+    cursor = json.cursor
+  }
+  return out
+}
+
 export async function fetchTikTok(url) {
   // Short links (vm.tiktok.com) redirect to the full video URL
   const page = await getText(url)
@@ -34,5 +64,15 @@ export async function fetchTikTok(url) {
       // keep whatever the page gave us
     }
   }
-  return { platform: 'tiktok', url: page.url, ...parsed, downloadHeaders: TIKTOK_HEADERS }
+  const errors = []
+  let comments = []
+  const videoId = tiktokVideoId(page.url)
+  if (videoId) {
+    try {
+      comments = await fetchTikTokComments(videoId, parsed.author)
+    } catch (err) {
+      errors.push(`comments: ${err?.message ?? err}`)
+    }
+  }
+  return { platform: 'tiktok', url: page.url, ...parsed, comments, errors, downloadHeaders: TIKTOK_HEADERS }
 }
