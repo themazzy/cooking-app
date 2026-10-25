@@ -8,7 +8,7 @@ import { parseRecipeText } from './lib/ingredients.js'
 import { pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
-import { scaleIngredients } from './lib/scale.js'
+import { scaleIngredients, scaleSteps } from './lib/scale.js'
 import { seekableBlob } from './lib/webmFix.js'
 import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
@@ -53,7 +53,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   const scaled = factor !== 1 ? scaleIngredients(recipe.ingredients, factor) : recipe.ingredients
   // Metric or US amounts for reading and cooking; stock maths uses `scaled`
   const shown = convertIngredients(scaled, units)
-  const stepsText = convertTemperatures(recipe.steps, units)
+  const stepsText = convertTemperatures(scaleSteps(recipe.steps, factor, recipe.ingredients), units)
   const convertible = hasUnits(recipe.ingredients, 'metric') || hasUnits(recipe.ingredients, 'imperial') || /\d\s*°/.test(recipe.steps)
   // Copies saved before the seek fix get their length and seek index added on the fly
   const [videoSrc, setVideoSrc] = useState(null)
