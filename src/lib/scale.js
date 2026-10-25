@@ -62,7 +62,7 @@ export const scaleIngredients = (ingredients, factor) =>
   ingredients.map((i) => ({ ...i, qty: scaleAmount(i.qty, factor, i.unit) }))
 
 // Units that add up with each other, in their base unit
-export const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], oz: ['g', 28.35], lb: ['g', 453.6] }
+export const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], oz: ['g', 28.35], lb: ['g', 453.6], floz: ['ml', 29.57], pint: ['ml', 473.2], quart: ['ml', 946.4], cup: ['ml', 240] }
 
 /** The name without notes ("Salt and pepper, to taste" → "salt and pepper"), for matching. */
 const nameKey = (name) =>

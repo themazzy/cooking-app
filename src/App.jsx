@@ -78,6 +78,7 @@ export default function App() {
     saveVideos: true,
     videoQuality: 'small',
     ebagLinks: true,
+    units: 'original',
     ebagSearch: EBAG_SEARCH,
     ...readStore(SETTINGS_KEY, {}),
   }))
@@ -578,6 +579,8 @@ export default function App() {
           onBack={back}
           onAddToList={(entry) => updateShopping(addToList(shopping, entry, recipes, catalog.match))}
           onUseStock={useStock}
+          units={settings.units}
+          onUnits={(units) => setSettings((s) => ({ ...s, units }))}
         />
       </main>
     )
@@ -611,6 +614,7 @@ export default function App() {
           list={shopping}
           pantry={pantry}
           ebag={settings.ebagLinks ? settings.ebagSearch || EBAG_SEARCH : null}
+          units={settings.units}
           onToPantry={async (items) => {
             // Bought amounts add to what is at home when the units compare
             for (const i of items) {
@@ -680,6 +684,20 @@ export default function App() {
               </label>
             )}
           </div>
+        </section>
+        <section className="card">
+          <h3>Units</h3>
+          <div className="settings">
+            <label>
+              Show amounts{' '}
+              <select value={settings.units} onChange={(e) => setSettings({ ...settings, units: e.target.value })}>
+                <option value="original">As the recipe is written</option>
+                <option value="metric">Metric (g, ml, °C)</option>
+                <option value="imperial">US (oz, cups, °F)</option>
+              </select>
+            </label>
+          </div>
+          <p className="hint">Recipes keep their own units; this changes how amounts and oven temperatures are shown. You can also switch on any recipe.</p>
         </section>
         <section className="card">
           <h3>Shopping on eBag.bg</h3>

@@ -20,6 +20,9 @@ const UNITS = {
   slice: ['plátek', 'plátky', 'plátků', 'slice', 'slices'],
   bunch: ['svazek', 'svazky', 'svazku', 'bunch'],
   handful: ['hrst', 'hrsti', 'handful'],
+  floz: ['fl oz', 'fl. oz', 'fl.oz', 'floz', 'fluid ounce', 'fluid ounces'],
+  pint: ['pint', 'pints', 'pt'],
+  quart: ['quart', 'quarts', 'qt'],
   oz: ['oz', 'ounce', 'ounces'],
   lb: ['lb', 'lbs', 'pound', 'pounds'],
 }

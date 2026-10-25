@@ -4,12 +4,13 @@ import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
 import { isOut } from './lib/stock.js'
+import { convertIngredient } from './lib/units.js'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 
 /** The current shopping list by aisle: tick items off while shopping, add extras, copy it as text. */
 /** `ebag` is the eBag.bg search link template, or null when the links are off. */
-export default function ShoppingList({ list, pantry = [], ebag = null, onChange, onNew, onToPantry }) {
+export default function ShoppingList({ list, pantry = [], ebag = null, units = 'original', onChange, onNew, onToPantry }) {
   const [extra, setExtra] = useState('')
   const [copied, setCopied] = useState(false)
   const { match, canonical } = useCatalog()
@@ -54,7 +55,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, onChange,
   const copy = async () => {
     const lines = items
       .filter((i) => !i.checked)
-      .map((i) => `• ${[amountText(i), i.name].filter(Boolean).join(' ')}${i.extra.length ? ` (+ ${i.extra.join(', ')})` : ''}`)
+      .map((i) => `• ${[amountText(convertIngredient(i, units)), i.name].filter(Boolean).join(' ')}${i.extra.length ? ` (+ ${i.extra.join(', ')})` : ''}`)
     try {
       await navigator.clipboard.writeText(lines.join('\n'))
       setCopied(true)
@@ -95,7 +96,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, onChange,
                     <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
                     <IngredientIcon entry={match(i.name)} />
                     <span>
-                      {amountText(i) && <strong>{amountText(i)} </strong>}
+                      {amountText(convertIngredient(i, units)) && <strong>{amountText(convertIngredient(i, units))} </strong>}
                       {i.name}
                       {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
