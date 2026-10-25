@@ -92,7 +92,7 @@ describe('Instagram', () => {
 
   it('reads the GraphQL response and picks the smallest video', () => {
     const text = JSON.stringify({ data: { xig_polaris_media: { if_not_gated_logged_out: media } } })
-    expect(parseGraphqlResponse(text)).toEqual({ description: '200 g mouky\n2 vejce', author: 'chef', videoUrl: 'https://cdn/480.mp4' })
+    expect(parseGraphqlResponse(text)).toEqual({ description: '200 g mouky\n2 vejce', author: 'chef', videoUrl: 'https://cdn/480.mp4', comments: [] })
     expect(parseGraphqlResponse('for (;;);{"data":{}}')).toBeNull()
   })
 
@@ -195,7 +195,9 @@ describe('Instagram in-page fetch', async () => {
         ? JSON.stringify({ data: { xig_polaris_media: { if_not_gated_logged_out: { caption: { text: '200 g mouky' }, video_versions: [{ url: 'https://cdn/v.mp4' }] } } } })
         : u.includes('ruling')
           ? '{"title":"","status":"ok"}'
-          : '{"message":"login_required"}'
+          : u.includes('/comments/')
+            ? JSON.stringify({ comments: [{ user: { username: 'chef' }, text: 'Ingredients: 200 g mouky, 2 vejce' }] })
+            : '{"message":"login_required"}'
       return { status: 200, text: async () => body }
     })
     // Same path as the app: the function is turned into source text and evaluated
@@ -203,9 +205,15 @@ describe('Instagram in-page fetch', async () => {
     await (0, eval)(script)
     const r = window.__cookingResult
     expect(r.lsd).toBe(true)
-    expect(calls.map((c) => c[1])).toEqual(['GET', 'GET', 'POST'])
-    expect(calls[2][2]).toBe('AVlsd')
-    expect(parseInPageResult(r)).toEqual({ description: '200 g mouky', author: null, videoUrl: 'https://cdn/v.mp4', gate: null })
+    expect(calls.map((c) => c[1])).toEqual(['GET', 'GET', 'GET', 'POST'])
+    expect(calls[3][2]).toBe('AVlsd')
+    expect(parseInPageResult(r)).toEqual({
+      description: '200 g mouky',
+      author: null,
+      videoUrl: 'https://cdn/v.mp4',
+      gate: null,
+      comments: [{ author: 'chef', text: 'Ingredients: 200 g mouky, 2 vejce', pinned: false }],
+    })
   })
 
   it('prefers signed-in media info', () => {

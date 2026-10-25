@@ -16,6 +16,7 @@ const UNITS = {
   pinch: ['špetka', 'špetku', 'špetky', 'pinch'],
   can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins'],
   pack: ['balení', 'bal', 'balíček', 'balíčky', 'balíčku', 'pack', 'packs', 'packet', 'packets'],
+  head: ['hlava', 'hlavy', 'hlav', 'head', 'heads'],
   slice: ['plátek', 'plátky', 'plátků', 'slice', 'slices'],
   bunch: ['svazek', 'svazky', 'svazku', 'bunch'],
   handful: ['hrst', 'hrsti', 'handful'],
@@ -33,6 +34,8 @@ const UNIT = `(${UNIT_RE})\\.?(?![\\p{L}])`
 
 // "200 g mouky", "2 eggs", "1/2 cup sugar", "200g flour"
 const QTY_FIRST = new RegExp(`^${QTY}\\s*(?:${UNIT})?\\s*(?:of\\s+)?(.+)$`, 'iu')
+// "Garlic: 2 heads (for roasting)", "Spices — 1 teaspoon each": name, separator, amount, note
+const LABELLED = new RegExp(`^(.+?)\\s*[:–—-]\\s+${QTY}\\s*(?:${UNIT})?\\s*(.*)$`, 'iu')
 // "mouka 200 g", "Flour - 200g", "cukr: 2 lžíce"
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
@@ -80,6 +83,20 @@ export function parseIngredientLine(line) {
         name,
       }
   }
+  m = text.match(LABELLED)
+  if (m) {
+    const name = cleanName(m[1])
+    const note = m[5].trim()
+    if (name)
+      return {
+        raw: text,
+        quantity: parseQuantity(m[2]),
+        quantityMax: parseQuantity(m[3]),
+        unit: m[4] ? UNIT_LOOKUP.get(m[4].toLowerCase()) : null,
+        name,
+        ...(note ? { note } : {}),
+      }
+  }
   m = text.match(NAME_FIRST)
   if (m) {
     const name = cleanName(m[1])
@@ -99,12 +116,14 @@ const wordCount = (s) => s.split(/\s+/).filter(Boolean).length
 
 /**
  * Splits a caption or transcript into ingredients and steps.
- * Returns { ingredients: [{ raw, quantity, quantityMax, unit, name }], steps: [string] }.
+ * Returns { ingredients: [{ raw, quantity, quantityMax, unit, name, note?, group? }], steps: [string] }.
  */
 export function parseRecipeText(text) {
   const ingredients = []
   const steps = []
   let section = null // 'ingredients' | 'steps' | null
+  let group = null // sub-list inside the ingredients, e.g. "Tzatziki sauce"
+  const add = (ing) => ingredients.push(group ? { ...ing, group } : ing)
 
   for (const rawLine of (text ?? '').split(/\r?\n/)) {
     const line = cleanLine(rawLine)
@@ -132,12 +151,16 @@ export function parseRecipeText(text) {
     }
 
     const ing = parseIngredientLine(line)
+    if (!ing && section === 'ingredients' && /:\s*$/.test(line) && wordCount(line) <= 5) {
+      group = cleanName(line)
+      continue
+    }
     // Outside an ingredient list, only short lines with a quantity count, so
     // sentences like "Bake for 25 minutes at 180 °C" don't become ingredients
     if (ing && (section === 'ingredients' || ing.unit || wordCount(line) <= 5)) {
-      ingredients.push(ing)
-    } else if (section === 'ingredients' && wordCount(line) <= 6) {
-      ingredients.push({ raw: line, quantity: null, quantityMax: null, unit: null, name: cleanName(line) })
+      add(ing)
+    } else if (section === 'ingredients' && !/[.!?]$/.test(line) && wordCount(line) <= 20) {
+      add({ raw: line, quantity: null, quantityMax: null, unit: null, name: cleanName(line) })
     }
   }
   return { ingredients, steps }

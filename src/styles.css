@@ -107,3 +107,4 @@ pre {
   margin: 0;
 }
 .history { list-style: none; padding: 0; margin: 0; }
+.note { color: var(--muted); font-size: 0.9em; }

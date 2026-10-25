@@ -3,7 +3,7 @@ import { App as CapApp } from '@capacitor/app'
 import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
-import { parseRecipeText } from './lib/ingredients.js'
+import { pickRecipe } from './lib/recipeSource.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -118,7 +118,7 @@ export default function App() {
       try {
         step('Loading the reel page…')
         reel = await loadReel(url)
-        r = { ...r, platform: reel.platform, author: reel.author, description: reel.description }
+        r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30) }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
         setResult(r)
 
@@ -197,9 +197,7 @@ export default function App() {
 
   const parsed = useMemo(() => {
     if (!result) return null
-    const fromCaption = parseRecipeText(result.description)
-    if (fromCaption.ingredients.length || !result.transcript) return { ...fromCaption, source: 'description' }
-    return { ...parseRecipeText(result.transcript.replace(/([.!?])\s+/g, '$1\n')), source: 'transcript' }
+    return pickRecipe(result)
   }, [result])
 
   return (
@@ -349,7 +347,11 @@ export default function App() {
                     <tr key={n}>
                       <td className="qty">{fmtQty(i)}</td>
                       <td className="unit">{i.unit ?? ''}</td>
-                      <td>{i.name}</td>
+                      <td>
+                        {i.name}
+                        {i.note ? <span className="note"> · {i.note}</span> : null}
+                        {i.group ? <span className="note"> ({i.group})</span> : null}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -367,6 +369,12 @@ export default function App() {
             </>
           )}
 
+          {parsed?.source?.includes('comment') && (
+            <>
+              <h3>Recipe {parsed.source}</h3>
+              <pre>{parsed.text}</pre>
+            </>
+          )}
           <h3>Description</h3>
           <pre>{result.description || '—'}</pre>
           {result.transcript != null && (
