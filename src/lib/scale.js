@@ -129,3 +129,31 @@ export function buildShoppingList(selection, match = () => null) {
     }
   })
 }
+
+const STEP_NUM = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+[½⅓⅔¼¾⅛]|\\d+(?:[.,]\\d+)?|[½⅓⅔¼¾⅛])'
+const STEP_UNITS = [...UNIT_LOOKUP.keys()]
+  .sort((a, b) => b.length - a.length)
+  .map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Step text with its amounts scaled: "add 200 g flour" or "beat in 2 eggs".
+ * Only numbers followed by a unit, or by one of the recipe's ingredients
+ * (with at most one word between), change; times, temperatures and sizes stay.
+ */
+export function scaleSteps(text, factor, ingredients = []) {
+  if (!text || factor === 1 || !Number.isFinite(factor)) return text
+  const words = new Set()
+  for (const i of ingredients) {
+    for (const w of String(i.name ?? '').toLowerCase().split(/[^\p{L}]+/u)) if (w.length >= 3) words.add(w.replace(/(es|s)$/, ''))
+  }
+  const things = [...words].map(escape)
+  const unit = `(?:${STEP_UNITS.join('|')})(?![\\p{L}])`
+  const thing = things.length ? `|(?:[\\p{L}-]+\\s+)?(?:${things.join('|')})\\p{L}*` : ''
+  const re = new RegExp(`(?<![\\d.,/\\p{L}])(${STEP_NUM}(?:\\s*(?:–|-|to|až)\\s*${STEP_NUM})?)(\\s*)(?=(${unit}${thing}))`, 'giu')
+  return text.replace(re, (all, amount, space, after) => {
+    const u = after.match(new RegExp(`^${unit}`, 'iu'))?.[0] ?? ''
+    const scaled = scaleAmount(amount.replace(/\s*(?:–|-|to|až)\s*/, '–'), factor, u)
+    return scaled === amount ? all : `${scaled}${space}`
+  })
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShoppingList, formatAmount, parseAmount, scaleAmount } from './scale.js'
+import { buildShoppingList, formatAmount, parseAmount, scaleAmount, scaleSteps } from './scale.js'
 
 describe('scaling', () => {
   it('reads amounts', () => {
@@ -71,5 +71,17 @@ describe('shopping list with the catalog', async () => {
     )
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({ name: 'Ground beef', aisle: 'Meat', qty: '900', unit: 'g' })
+  })
+})
+
+describe('scaleSteps', () => {
+  const ings = [{ name: 'eggs' }, { name: 'all-purpose flour' }, { name: 'butter' }]
+  it('scales amounts with units or ingredients, not times or temperatures', () => {
+    expect(scaleSteps('Add 200 g flour and 2 large eggs. Bake 20 minutes at 180 °C in a 20 cm tin. Then 2-3 tbsp sugar and 50g butter.', 2, ings)).toBe(
+      'Add 400 g flour and 4 large eggs. Bake 20 minutes at 180 °C in a 20 cm tin. Then 4–6 tbsp sugar and 100g butter.',
+    )
+  })
+  it('leaves the text alone at the original size', () => {
+    expect(scaleSteps('Add 200 g flour', 1, ings)).toBe('Add 200 g flour')
   })
 })
