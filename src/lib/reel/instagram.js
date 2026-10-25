@@ -54,7 +54,24 @@ export function fromMedia(media) {
     description: item.caption?.text ?? null,
     author: item.user?.username ?? null,
     videoUrl: pickVideo(withVideo?.video_versions),
+    comments: normalizeComments([
+      ...(item.comments_connection?.edges ?? []).map((e) => e?.node),
+      ...(item.comments ?? []),
+      ...(item.preview_comments ?? []),
+    ]),
   }
+}
+
+/** [{ author, text, pinned }] from Instagram comment objects, without duplicates. */
+export function normalizeComments(list) {
+  const seen = new Set()
+  const out = []
+  for (const c of list ?? []) {
+    if (!c?.text || seen.has(c.text)) continue
+    seen.add(c.text)
+    out.push({ author: c.user?.username ?? c.owner?.username ?? c.author ?? null, text: c.text, pinned: !!(c.is_pinned ?? c.pinned) })
+  }
+  return out
 }
 
 export function parseGraphqlResponse(text) {
@@ -219,6 +236,12 @@ export async function instagramInPage(a) {
       await fetch('/api/v1/web/get_ruling_for_content/?content_type=MEDIA&target_id=' + a.mediaId, { headers: headers(), credentials: 'include' }),
     )
     out.info = await grab(await fetch('/api/v1/media/' + a.mediaId + '/info/', { headers: headers(), credentials: 'include' }))
+    out.comments = await grab(
+      await fetch('/api/v1/media/' + a.mediaId + '/comments/?can_support_threading=true&permalink_enabled=false', {
+        headers: headers(),
+        credentials: 'include',
+      }),
+    )
     if (lsd) {
       const body = new URLSearchParams({
         lsd: lsd,
@@ -249,7 +272,14 @@ export function parseInPageResult(r) {
     media = null
   }
   const fromGraphql = r.graphql ? parseGraphqlResponse(r.graphql.body) : null
+  let listed = []
+  try {
+    listed = JSON.parse(r.comments?.body ?? 'null')?.comments ?? []
+  } catch {
+    listed = []
+  }
   return {
+    comments: normalizeComments([...(media?.comments ?? []), ...(fromGraphql?.comments ?? []), ...listed]),
     description: media?.description || fromGraphql?.description || r.h1 || null,
     author: media?.author || fromGraphql?.author || null,
     videoUrl: media?.videoUrl || fromGraphql?.videoUrl || null,
@@ -290,7 +320,7 @@ export async function fetchInstagram(url) {
 
   const signedIn = await isInstagramSignedIn()
   const gate = { title: null }
-  const result = { description: null, author: null, videoUrl: null }
+  const result = { description: null, author: null, videoUrl: null, comments: [] }
   const errors = []
   const attempts = signedIn
     ? [viaBrowser, viaSignedIn, viaGraphql, viaPostPage, viaEmbed]
@@ -302,11 +332,12 @@ export async function fetchInstagram(url) {
         result.description ||= r.description || null
         result.author ||= r.author || null
         result.videoUrl ||= r.videoUrl || null
+        result.comments = normalizeComments([...result.comments, ...(r.comments ?? [])])
       }
     } catch (err) {
       errors.push(`${attempt.name}: ${err?.message ?? err}`)
     }
-    if (result.description && result.videoUrl) break
+    if (result.description && result.videoUrl && result.comments.length) break
   }
   if (!result.description && !result.videoUrl && gate.title) {
     throw new Error(

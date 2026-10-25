@@ -93,3 +93,52 @@ Mix everything and bake for 50 minutes at 180°C.`
     expect(steps).toHaveLength(0)
   })
 })
+
+describe('author comment from a real reel', () => {
+  const comment = `Ingredients for 2 servings:
+• Ground beef: 400g
+• Fresh tomatoes: 250g
+• Red onion (to taste)
+• Flatbreads (lavash, pita, or tortillas): 2 pcs
+• Spices for the meat: paprika, chili powder, black pepper, dried garlic, salt — 1 teaspoon each
+Tzatziki sauce:
+• Greek yogurt: 200g
+• Grated cucumber: 3 tablespoons
+• Garlic: 2 whole heads (for roasting)
+• Mint: 1 teaspoon
+• Salt and pepper: to taste
+• Lemon juice: 1 tablespoon
+Instructions:
+Preheat the oven to 200°C (392°F).
+Place the ground beef on a sheet of parchment paper, cover with another sheet, and roll it out into an even thin layer.`
+
+  const { ingredients, steps } = parseRecipeText(comment)
+  const byName = Object.fromEntries(ingredients.map((i) => [i.name, i]))
+
+  it('reads every ingredient line', () => {
+    expect(ingredients).toHaveLength(11)
+    expect(byName['Ground beef']).toMatchObject({ quantity: 400, unit: 'g' })
+    expect(byName['Flatbreads (lavash, pita, or tortillas)']).toMatchObject({ quantity: 2, unit: 'pcs' })
+    expect(byName['Red onion (to taste)']).toMatchObject({ quantity: null })
+  })
+
+  it('keeps notes after the amount', () => {
+    expect(byName['Spices for the meat: paprika, chili powder, black pepper, dried garlic, salt']).toMatchObject({
+      quantity: 1,
+      unit: 'tsp',
+      note: 'each',
+    })
+    expect(byName.Garlic).toMatchObject({ quantity: 2, unit: null, note: 'whole heads (for roasting)' })
+  })
+
+  it('groups the sauce ingredients', () => {
+    expect(byName['Greek yogurt']).toMatchObject({ quantity: 200, unit: 'g', group: 'Tzatziki sauce' })
+    expect(byName['Ground beef'].group).toBeUndefined()
+    expect(byName['Salt and pepper: to taste']).toMatchObject({ quantity: null, group: 'Tzatziki sauce' })
+  })
+
+  it('reads the instructions', () => {
+    expect(steps).toHaveLength(2)
+    expect(steps[0]).toBe('Preheat the oven to 200°C (392°F).')
+  })
+})
