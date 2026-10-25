@@ -48,5 +48,7 @@ export function draftFromImport(result) {
     source: picked?.source ?? null,
     raw: { description: result.description ?? null, transcript: result.transcript ?? null, comments: result.comments ?? [] },
     video: null,
+    // The website's own picture, shown when there is no photo or video
+    image: result.image ?? null,
   }
 }

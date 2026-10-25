@@ -34,3 +34,24 @@ const waitFor = (el, event, ms = 8000) =>
     el.addEventListener(event, () => (clearTimeout(t), resolve()), { once: true })
     el.addEventListener('error', () => (clearTimeout(t), reject(new Error('video error'))), { once: true })
   })
+
+/**
+ * A photo the cook took or picked for a recipe, scaled down to a WebP of a
+ * few hundred KB at most so it can sync with the recipe text.
+ */
+export async function recipePhoto(file, longSide = 1280) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  try {
+    const scale = Math.min(1, longSide / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    const ctx = canvas.getContext('2d')
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    const webp = canvas.toDataURL('image/webp', 0.8)
+    return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.82)
+  } finally {
+    bitmap.close?.()
+  }
+}
