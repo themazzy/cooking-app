@@ -4,6 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { pickRecipe } from './lib/recipeSource.js'
+import { parseRecipeText } from './lib/ingredients.js'
 import { toEditable } from './lib/recipeEdit.js'
 import RecipeEditor from './RecipeEditor.jsx'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
@@ -143,17 +144,16 @@ export default function App() {
         step(failure, 'error')
       } finally {
         if (r.description || r.transcript) saveResult(r)
-        const noComments = reel?.platform === 'instagram' && !reel.comments?.length
-        if (failure || !reel?.description || !reel?.videoUrl || noComments) {
-          setReport(
-            debugReport({
-              url,
-              platform: reel?.platform,
-              found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
-              errors: [...(reel?.errors ?? []), ...(failure ? [failure] : [])],
-            }),
-          )
-        }
+        // Always available, so a wrong result can be reported too
+        setReport(
+          debugReport({
+            url,
+            platform: reel?.platform,
+            found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
+            comments: (reel?.comments ?? []).map((c) => ({ ...c, text: c.text.slice(0, 300) })),
+            errors: [...(reel?.errors ?? []), ...(failure ? [failure] : [])],
+          }),
+        )
         setDownload(null)
         setBusy(false)
       }
@@ -368,11 +368,30 @@ export default function App() {
             }}
           />
 
-          {parsed?.source?.includes('comment') && (
-            <>
-              <h3>Recipe {parsed.source}</h3>
-              <pre>{parsed.text}</pre>
-            </>
+          {result.comments?.length > 0 && (
+            <details open={!!parsed?.source?.includes('comment')}>
+              <summary>
+                Comments ({result.comments.length}){parsed?.source?.includes('comment') ? ` · recipe from the ${parsed.source}` : ''}
+              </summary>
+              <ul className="comments">
+                {result.comments.map((c, n) => (
+                  <li key={n}>
+                    <div className="note">
+                      {c.author ?? 'someone'}
+                      {c.author && c.author === result.author ? ' · author' : ''}
+                      {c.pinned ? ' · pinned' : ''}
+                    </div>
+                    <pre>{c.text}</pre>
+                    <button
+                      className="link"
+                      onClick={() => updateResult({ ...result, recipe: toEditable(parseRecipeText(c.text)) })}
+                    >
+                      Use as recipe
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
           <h3>Description</h3>
           <pre>{result.description || '—'}</pre>
