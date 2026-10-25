@@ -236,12 +236,56 @@ export async function instagramInPage(a) {
       await fetch('/api/v1/web/get_ruling_for_content/?content_type=MEDIA&target_id=' + a.mediaId, { headers: headers(), credentials: 'include' }),
     )
     out.info = await grab(await fetch('/api/v1/media/' + a.mediaId + '/info/', { headers: headers(), credentials: 'include' }))
-    out.comments = await grab(
-      await fetch('/api/v1/media/' + a.mediaId + '/comments/?can_support_threading=true&permalink_enabled=false', {
-        headers: headers(),
-        credentials: 'include',
-      }),
-    )
+    // Comments, page by page until the author's (usually pinned) comment
+    // turns up. Collected from anywhere in the response, since pinned and
+    // threaded comments sit under different keys.
+    let owner = null
+    try {
+      owner = JSON.parse(out.info.body).items[0].user.username
+    } catch (e) {
+      owner = null
+    }
+    const list = []
+    const seen = {}
+    const collect = (o, depth) => {
+      if (!o || typeof o !== 'object' || depth > 12) return
+      if (Array.isArray(o)) return o.forEach((x) => collect(x, depth + 1))
+      if (typeof o.text === 'string' && o.user && o.user.username && (o.pk || o.id)) {
+        const key = String(o.pk || o.id)
+        if (!seen[key]) {
+          seen[key] = true
+          list.push({ user: { username: o.user.username }, text: o.text, is_pinned: !!(o.is_pinned || o.is_pinned_comment || o.pinned) })
+        }
+      }
+      for (const k in o) if (k !== 'user' && k !== 'caption') collect(o[k], depth + 1)
+    }
+    const authorFound = () => list.some((c) => (c.is_pinned || (owner && c.user.username === owner)) && c.text.length > 60)
+    out.commentPages = []
+    let cursor = ''
+    let status = null
+    for (let page = 0; page < (a.commentPages == null ? 8 : a.commentPages); page++) {
+      const res = await fetch(
+        '/api/v1/media/' + a.mediaId + '/comments/?can_support_threading=true&permalink_enabled=false' + cursor,
+        { headers: headers(), credentials: 'include' },
+      )
+      status = res.status
+      const text = await res.text()
+      let json = null
+      try {
+        json = JSON.parse(text)
+      } catch (e) {
+        json = null
+      }
+      const before = list.length
+      collect(json, 0)
+      out.commentPages.push({ status: res.status, keys: json ? Object.keys(json).join(',') : text.slice(0, 200), added: list.length - before })
+      if (!json || authorFound()) break
+      const next = json.next_min_id || json.next_max_id
+      if (!next) break
+      cursor = (json.next_min_id ? '&min_id=' : '&max_id=') + encodeURIComponent(typeof next === 'string' ? next : JSON.stringify(next))
+    }
+    out.owner = owner
+    out.comments = { status: status, body: JSON.stringify({ comments: list }) }
     if (lsd) {
       const body = new URLSearchParams({
         lsd: lsd,
@@ -341,7 +385,7 @@ async function viaBrowser(code, url, gate) {
     asbdId: API_HEADERS['X-ASBD-ID'],
     queryName: POST_QUERY.name,
     docId: POST_QUERY.docId,
-  }, { userAgent: DESKTOP_UA }) // the mobile site tries to open the Instagram app instead
+  }, { userAgent: DESKTOP_UA, timeoutMs: 45000 }) // the mobile site tries to open the Instagram app instead
   const parsed = parseInPageResult(r)
   if (parsed?.gate) gate.title = parsed.gate
   return parsed
@@ -393,5 +437,8 @@ export async function fetchInstagram(url) {
         : `Instagram says "${gate.title}": it only shows this reel to logged-in users. Sign in to Instagram under Settings and try again.`,
     )
   }
+  // Author's and pinned comments first: they are the ones that hold recipes
+  const rank = (c) => (c.pinned ? 2 : 0) + (result.author && c.author === result.author ? 1 : 0)
+  result.comments = [...result.comments].sort((x, y) => rank(y) - rank(x))
   return { platform: 'instagram', url, ...result, signedIn, errors, downloadHeaders: { Referer: `${IG}/` } }
 }

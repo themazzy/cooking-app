@@ -36,7 +36,7 @@ function summarize(value) {
   const out = {}
   for (const [k, v] of Object.entries(value)) {
     if (v && typeof v === 'object' && 'body' in v) out[k] = { status: v.status, length: v.body?.length, body: String(v.body).slice(0, 400) }
-    else if (Array.isArray(v)) out[k] = v.slice(0, 8).map((x) => (typeof x === 'object' ? { ...x, text: String(x.text).slice(0, 120) } : x))
+    else if (Array.isArray(v)) out[k] = v.slice(0, 8).map((x) => (x && typeof x === 'object' && 'text' in x ? { ...x, text: String(x.text).slice(0, 120) } : x))
     else out[k] = v
   }
   return out

@@ -186,6 +186,31 @@ describe('Instagram in-page fetch', async () => {
     delete window.__cookingResult
   })
 
+  it('pages through comments until the pinned author comment', async () => {
+    document.documentElement.innerHTML = '<body></body>'
+    const urls = []
+    vi.stubGlobal('fetch', async (u) => {
+      urls.push(u)
+      let body = '{}'
+      if (u.includes('/info/')) body = JSON.stringify({ items: [{ user: { username: 'chef' } }] })
+      else if (u.includes('/comments/') && !u.includes('min_id'))
+        body = JSON.stringify({ comments: [{ pk: 1, user: { username: 'fan' }, text: 'yum' }], next_min_id: '{"cursor":"x"}' })
+      else if (u.includes('/comments/'))
+        body = JSON.stringify({
+          comments: [{ pk: 2, user: { username: 'chef' }, is_pinned: true, text: 'Ingredients for 2 servings:\n• Ground beef: 400g\n• Fresh tomatoes: 250g' }],
+          next_min_id: 'more',
+        })
+      return { status: 200, text: async () => body }
+    })
+    await (0, eval)(`(${instagramInPage.toString()})(${JSON.stringify({ mediaId: '1', domTries: 0 })})`)
+    const r = window.__cookingResult
+    expect(urls.filter((u) => u.includes('/comments/'))).toHaveLength(2)
+    expect(urls.some((u) => u.includes('min_id=%7B%22cursor'))).toBe(true)
+    const parsed = parseInPageResult(r)
+    expect(parsed.comments.map((c) => c.author)).toEqual(['fan', 'chef'])
+    expect(parsed.comments[1].pinned).toBe(true)
+  })
+
   it('reads comments rendered in the page', async () => {
     document.documentElement.innerHTML =
       '<body><ul><li><div><a href="/derevensky.food/" role="link">derevensky.food</a><span dir="auto">Ingredients for 2 servings:\n• Ground beef: 400g\n• Fresh tomatoes: 250g</span></div></li>' +
@@ -208,7 +233,7 @@ describe('Instagram in-page fetch', async () => {
         : u.includes('ruling')
           ? '{"title":"","status":"ok"}'
           : u.includes('/comments/')
-            ? JSON.stringify({ comments: [{ user: { username: 'chef' }, text: 'Ingredients: 200 g mouky, 2 vejce' }] })
+            ? JSON.stringify({ comments: [{ pk: '9', user: { username: 'chef' }, text: 'Ingredients: 200 g mouky, 2 vejce' }] })
             : '{"message":"login_required"}'
       return { status: 200, text: async () => body }
     })
