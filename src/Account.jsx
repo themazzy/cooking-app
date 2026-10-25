@@ -57,7 +57,11 @@ export default function Account({ user, onChanged }) {
               run(async () => {
                 const { data, error } = await supabase.auth.signUp({ email, password })
                 if (error) throw error
-                if (!data.session) setMessage('Account created. Open the confirmation link in your email, then sign in here.')
+                if (!data.session) {
+                  // New accounts are confirmed on the server, so signing in works right away
+                  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+                  if (signInError) setMessage('Account created. Open the confirmation link in your email, then sign in here.')
+                }
                 onChanged()
               })
             }
