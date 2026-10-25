@@ -164,3 +164,16 @@ describe('html helpers', () => {
     expect(findJsonString('{"a":"line\\nnext \\u00e9"}', 'a')).toBe('line\nnext é')
   })
 })
+
+describe('Instagram gating', async () => {
+  const { parseRuling } = await import('./instagram.js')
+  it('reads a logged-in-only ruling', () => {
+    const text =
+      '{"title":"Obsah není dostupný pro všechny","category_id":null,"description":"Některé okruhy uživatelů to nevidí.","gating_type_thrift":3,"status":"ok"}'
+    expect(parseRuling(text)).toBe('Obsah není dostupný pro všechny')
+  })
+  it('treats an open post as not gated', () => {
+    expect(parseRuling('{"status":"ok"}')).toBeNull()
+    expect(parseRuling('<html>')).toBeNull()
+  })
+})
