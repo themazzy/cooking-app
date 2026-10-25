@@ -122,17 +122,19 @@ export function captionFromOgDescription(og) {
   return (m ? m[1] : og).trim() || null
 }
 
-async function viaGraphql(code, url) {
+async function viaGraphql(code, url, gate) {
   const home = await getText(`${IG}/`, { ua: DESKTOP_UA, allowError: true })
   const lsd = lsdToken(home.text)
-  if (!lsd) return null
   const mediaId = shortcodeToMediaId(code)
-  // Sets the csrftoken cookie for logged-out access
-  await getText(`${IG}/api/v1/web/get_ruling_for_content/?content_type=MEDIA&target_id=${mediaId}`, {
+  // Sets the csrftoken cookie for logged-out access, and says whether the
+  // post is gated ("not available to everyone" = logged-in users only)
+  const ruling = await getText(`${IG}/api/v1/web/get_ruling_for_content/?content_type=MEDIA&target_id=${mediaId}`, {
     ua: DESKTOP_UA,
     headers: API_HEADERS,
     allowError: true,
   })
+  gate.title = parseRuling(ruling.text)
+  if (!lsd) return null
   const csrf = await getCookie(IG, 'csrftoken')
   const { text } = await postForm(
     `${IG}/api/graphql`,
@@ -158,6 +160,34 @@ async function viaGraphql(code, url) {
   return parseGraphqlResponse(text)
 }
 
+/** Logged-in media info (needs the sessionid cookie from signing in). */
+async function viaSignedIn(code) {
+  const csrf = await getCookie(IG, 'csrftoken')
+  const { text } = await getText(`${IG}/api/v1/media/${shortcodeToMediaId(code)}/info/`, {
+    ua: DESKTOP_UA,
+    headers: { ...API_HEADERS, Referer: `${IG}/`, ...(csrf ? { 'X-CSRFToken': csrf } : {}) },
+    allowError: true,
+  })
+  try {
+    return fromMedia(JSON.parse(text)?.items?.[0])
+  } catch {
+    return null
+  }
+}
+
+export const INSTAGRAM_LOGIN_URL = `${IG}/accounts/login/`
+export const isInstagramSignedIn = async () => !!(await getCookie(IG, 'sessionid'))
+
+/** Title of a gating ruling, e.g. "Obsah není dostupný pro všechny", or null when the post is open. */
+export function parseRuling(text) {
+  try {
+    const r = JSON.parse(text)
+    return r?.gating_type_thrift != null && r?.title ? r.title : null
+  } catch {
+    return null
+  }
+}
+
 async function viaPostPage(code) {
   const page = await getText(`${IG}/p/${code}/`, { ua: DESKTOP_UA, allowError: true })
   return parsePostPageWithFallbacks(page.text)
@@ -176,11 +206,14 @@ export async function fetchInstagram(url) {
   const code = instagramShortcode(url)
   if (!code) throw new Error('This does not look like an Instagram reel or post link.')
 
+  const signedIn = await isInstagramSignedIn()
+  const gate = { title: null }
   const result = { description: null, author: null, videoUrl: null }
   const errors = []
-  for (const attempt of [viaGraphql, viaPostPage, viaEmbed]) {
+  const attempts = signedIn ? [viaSignedIn, viaGraphql, viaPostPage, viaEmbed] : [viaGraphql, viaPostPage, viaEmbed]
+  for (const attempt of attempts) {
     try {
-      const r = await attempt(code, url)
+      const r = await attempt(code, url, gate)
       if (r) {
         result.description ||= r.description || null
         result.author ||= r.author || null
@@ -191,5 +224,12 @@ export async function fetchInstagram(url) {
     }
     if (result.description && result.videoUrl) break
   }
-  return { platform: 'instagram', url, ...result, errors, downloadHeaders: { Referer: `${IG}/` } }
+  if (!result.description && !result.videoUrl && gate.title) {
+    throw new Error(
+      signedIn
+        ? `Instagram says "${gate.title}" and won't show this reel even when signed in.`
+        : `Instagram says "${gate.title}": it only shows this reel to logged-in users. Sign in to Instagram under Settings and try again.`,
+    )
+  }
+  return { platform: 'instagram', url, ...result, signedIn, errors, downloadHeaders: { Referer: `${IG}/` } }
 }

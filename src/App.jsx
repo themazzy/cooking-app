@@ -5,6 +5,8 @@ import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { parseRecipeText } from './lib/ingredients.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
+import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn } from './lib/reel/instagram.js'
+import { CapacitorCookies } from '@capacitor/core'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
@@ -52,9 +54,22 @@ export default function App() {
   const [history, setHistory] = useState(() => readStore(HISTORY_KEY, []))
   const [report, setReport] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [igSignedIn, setIgSignedIn] = useState(false)
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
+
+  useEffect(() => {
+    if (native) isInstagramSignedIn().then(setIgSignedIn)
+  }, [native])
+
+  const signOutInstagram = async () => {
+    try {
+      await CapacitorCookies.clearCookies({ url: 'https://www.instagram.com' })
+    } finally {
+      setIgSignedIn(await isInstagramSignedIn())
+    }
+  }
 
   const step = (text, kind = 'info') => setLog((l) => [...l, { text, kind, at: Date.now() }])
 
@@ -247,6 +262,26 @@ export default function App() {
               </select>
             </label>
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
+            {native && (
+              <div>
+                <strong>Instagram account:</strong> {igSignedIn ? 'signed in' : 'not signed in'}
+                <p className="hint">
+                  Some reels are shown only to logged-in users. Signing in opens Instagram inside this app; when you are
+                  logged in, press Back until you return here. The login stays on this phone.
+                </p>
+                <div className="row">
+                  {igSignedIn ? (
+                    <button className="secondary" onClick={signOutInstagram}>
+                      Sign out of Instagram
+                    </button>
+                  ) : (
+                    <button className="secondary" onClick={() => (window.location.href = INSTAGRAM_LOGIN_URL)}>
+                      Sign in to Instagram
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </details>
       </section>
