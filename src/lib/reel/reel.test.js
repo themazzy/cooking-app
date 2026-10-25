@@ -177,3 +177,43 @@ describe('Instagram gating', async () => {
     expect(parseRuling('<html>')).toBeNull()
   })
 })
+
+describe('Instagram in-page fetch', async () => {
+  const { instagramInPage, parseInPageResult } = await import('./instagram.js')
+  const { vi, afterEach } = await import('vitest')
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete window.__cookingResult
+  })
+
+  it('runs as standalone source text and stores the responses', async () => {
+    document.documentElement.innerHTML = '<head><script>x=["LSD",[],{"token":"AVlsd"},1]</script></head><body><h1>short</h1></body>'
+    const calls = []
+    vi.stubGlobal('fetch', async (u, opts) => {
+      calls.push([u, opts?.method ?? 'GET', opts?.headers?.['X-FB-LSD']])
+      const body = u.includes('graphql')
+        ? JSON.stringify({ data: { xig_polaris_media: { if_not_gated_logged_out: { caption: { text: '200 g mouky' }, video_versions: [{ url: 'https://cdn/v.mp4' }] } } } })
+        : u.includes('ruling')
+          ? '{"title":"","status":"ok"}'
+          : '{"message":"login_required"}'
+      return { status: 200, text: async () => body }
+    })
+    // Same path as the app: the function is turned into source text and evaluated
+    const script = `(${instagramInPage.toString()})(${JSON.stringify({ mediaId: '1', appId: 'a', asbdId: 'b', queryName: 'Q', docId: 'D' })})`
+    await (0, eval)(script)
+    const r = window.__cookingResult
+    expect(r.lsd).toBe(true)
+    expect(calls.map((c) => c[1])).toEqual(['GET', 'GET', 'POST'])
+    expect(calls[2][2]).toBe('AVlsd')
+    expect(parseInPageResult(r)).toEqual({ description: '200 g mouky', author: null, videoUrl: 'https://cdn/v.mp4', gate: null })
+  })
+
+  it('prefers signed-in media info', () => {
+    const info = { items: [{ caption: { text: 'Signed in caption' }, user: { username: 'chef' }, video_versions: [{ url: 'https://cdn/i.mp4' }] }] }
+    expect(parseInPageResult({ info: { status: 200, body: JSON.stringify(info) } })).toMatchObject({
+      description: 'Signed in caption',
+      author: 'chef',
+      videoUrl: 'https://cdn/i.mp4',
+    })
+  })
+})

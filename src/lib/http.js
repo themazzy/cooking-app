@@ -23,6 +23,7 @@ export class FetchError extends Error {
 let trace = []
 export const resetTrace = () => (trace = [])
 export const getTrace = () => trace
+export const recordTrace = (entry) => trace.push(entry)
 
 function record(method, url, res, text) {
   trace.push({

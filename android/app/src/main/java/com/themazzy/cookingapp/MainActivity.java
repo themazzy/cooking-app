@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setIntent(fromShare(getIntent()));
+        registerPlugin(PageReaderPlugin.class);
         super.onCreate(savedInstanceState);
     }
 
