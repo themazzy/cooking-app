@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "sync:android": "npm run build && npx cap sync android"
+    "sync:android": "npm run build && npx cap sync android",
+    "seed:ingredients": "node scripts/seed-ingredients.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

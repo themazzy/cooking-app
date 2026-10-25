@@ -56,3 +56,20 @@ describe('shopping list', () => {
     expect(salt.extra).toEqual(['pinch'])
   })
 })
+
+describe('shopping list with the catalog', async () => {
+  const { buildCatalogIndex, matchIngredient } = await import('./catalog.js')
+  const { SEED_INGREDIENTS } = await import('../data/ingredients.js')
+  const index = buildCatalogIndex(SEED_INGREDIENTS)
+  it('merges different names for the same ingredient', () => {
+    const list = buildShoppingList(
+      [
+        { recipe: { title: 'A', ingredients: [{ qty: '400', unit: 'g', name: 'Ground beef' }] }, factor: 1 },
+        { recipe: { title: 'B', ingredients: [{ qty: '0,5', unit: 'kg', name: 'lean minced beef' }] }, factor: 1 },
+      ],
+      (name) => matchIngredient(index, name),
+    )
+    expect(list).toHaveLength(1)
+    expect(list[0]).toMatchObject({ name: 'Ground beef', aisle: 'Meat', qty: '900', unit: 'g' })
+  })
+})

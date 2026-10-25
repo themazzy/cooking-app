@@ -81,16 +81,26 @@ function display(total, base) {
 /**
  * Shopping list from [{ recipe, factor }]: the same ingredient from several
  * recipes is added up when the units allow (g with kg, ml with dl and l).
- * Returns [{ key, name, qty, unit, from: [titles], extra: [texts that could not be added] }].
+ * With a catalog `match`, "minced beef" and "ground beef" become one line
+ * under the catalog's name and aisle.
+ * Returns [{ key, name, aisle, qty, unit, from: [titles], extra: [texts that could not be added] }].
  */
-export function buildShoppingList(selection) {
+export function buildShoppingList(selection, match = () => null) {
   const items = new Map()
   for (const { recipe, factor } of selection) {
     for (const ing of recipe.ingredients ?? []) {
       const name = String(ing.name ?? '').trim()
       if (!name) continue
-      const key = nameKey(name)
-      const item = items.get(key) ?? { key, name: name.split(/[,(]/)[0].trim() || name, totals: {}, extra: [], from: [] }
+      const entry = match(name)
+      const key = entry ? entry.name.toLowerCase() : nameKey(name)
+      const item = items.get(key) ?? {
+        key,
+        name: entry?.name ?? (name.split(/[,(]/)[0].trim() || name),
+        aisle: entry?.aisle ?? 'Other',
+        totals: {},
+        extra: [],
+        from: [],
+      }
       if (!item.from.includes(recipe.title)) item.from.push(recipe.title)
       const amount = parseAmount(ing.qty)
       const unit = canonicalUnit(ing.unit)
