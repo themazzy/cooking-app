@@ -21,6 +21,7 @@ import ShoppingList from './ShoppingList.jsx'
 import { addToList, makeList } from './lib/shopping.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
+import { EBAG_SEARCH } from './lib/ebag.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -75,6 +76,8 @@ export default function App() {
     transcribe: true,
     saveVideos: true,
     videoQuality: 'small',
+    ebagLinks: true,
+    ebagSearch: EBAG_SEARCH,
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
@@ -562,6 +565,7 @@ export default function App() {
         <ShoppingList
           list={shopping}
           pantry={pantry}
+          ebag={settings.ebagLinks ? settings.ebagSearch || EBAG_SEARCH : null}
           onToPantry={async (items) => {
             for (const i of items) await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
             setPantry(await loadPantry())
@@ -626,6 +630,27 @@ export default function App() {
               </label>
             )}
           </div>
+        </section>
+        <section className="card">
+          <h3>Shopping on eBag.bg</h3>
+          <div className="settings">
+            <label>
+              <input type="checkbox" checked={settings.ebagLinks} onChange={(e) => setSettings({ ...settings, ebagLinks: e.target.checked })} /> Show eBag links on the
+              shopping list
+            </label>
+            {settings.ebagLinks && (
+              <label>
+                Search link ({'{q}'} is the search word)
+                <input className="grow" value={settings.ebagSearch} onChange={(e) => setSettings({ ...settings, ebagSearch: e.target.value })} />
+              </label>
+            )}
+            {settings.ebagLinks && settings.ebagSearch !== EBAG_SEARCH && (
+              <button className="link" onClick={() => setSettings({ ...settings, ebagSearch: EBAG_SEARCH })}>
+                Reset the link
+              </button>
+            )}
+          </div>
+          <p className="hint">Each item opens eBag's search in Bulgarian. Your own ingredients search by their name, or by what they count as.</p>
         </section>
         {native && (
           <section className="card">
