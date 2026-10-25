@@ -541,3 +541,40 @@ label.field input { color: var(--text); }
 .segmented { display: inline-flex; background: var(--sunken); border-radius: 10px; padding: 3px; gap: 2px; margin: 4px 0 8px; }
 .segmented button { min-height: 30px; padding: 4px 12px; font-size: 0.82rem; font-weight: 600; background: transparent; color: var(--muted); border-radius: 8px; }
 .segmented button.on { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+
+/* Adding to the stock: picture grid and amount sheet */
+.sheet.tall { height: 92vh; max-height: 92vh; display: flex; flex-direction: column; padding-top: 12px; }
+.picker-top { display: flex; gap: 10px; align-items: center; }
+.picker-top .search { margin: 0; flex: 1 1 auto; }
+.aisle-chips { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 4px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; scrollbar-width: none; flex: 0 0 auto; }
+.aisle-chips::-webkit-scrollbar { display: none; }
+.chip-btn { flex: 0 0 auto; min-height: 34px; padding: 4px 14px; border-radius: 999px; background: var(--sunken); color: var(--text); font-weight: 500; font-size: 0.88rem; white-space: nowrap; }
+.chip-btn.on { background: var(--accent); color: var(--accent-text); }
+.grid { flex: 1 1 auto; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; padding: 8px 0 16px; align-content: start; }
+.grid-title { grid-column: 1 / -1; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); padding: 10px 0 0; }
+.tile {
+  position: relative;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 104px;
+  padding: 10px 4px 8px;
+  background: var(--sunken);
+  color: var(--text);
+  border-radius: 14px;
+  font-weight: 500;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+.tile.have { background: var(--accent-soft); }
+.tile-name { text-align: center; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; }
+.tile-check { position: absolute; top: 6px; right: 8px; color: var(--accent); font-weight: 700; }
+.tile-plus { font-size: 2rem; line-height: 48px; height: 48px; color: var(--accent); }
+.hint.added { color: var(--ok); margin: 6px 0 0; font-weight: 600; }
+.item-head { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.item-head h2 { margin: 0; }
+.amount-row { display: flex; gap: 8px; align-items: center; margin: 4px 0 10px; }
+.amount-row input { flex: 1 1 auto; font-size: 1.2rem; font-weight: 600; }
+.amount-row input[type='date'] { font-size: 1rem; font-weight: 400; }
+.amount-row select { flex: 0 0 6.5em; font-size: 1rem; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; }
+button.link.more { margin-top: 10px; }
