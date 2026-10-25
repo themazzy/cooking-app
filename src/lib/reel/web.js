@@ -47,14 +47,24 @@ function instructionLines(value) {
  * The recipe written out as text with "Ingredients:" and "Instructions:"
  * headers, so the same parser reads it as a reel caption.
  */
-export function recipeJsonLdToText(recipe) {
+export function recipeJsonLdToText(recipe, groups = []) {
   const lines = []
   const name = clean(recipe.name)
   if (name) lines.push(name)
   const yieldText = [].concat(recipe.recipeYield ?? [])[0]
   if (yieldText) lines.push(`(${clean(yieldText)})`)
   const ingredients = [].concat(recipe.recipeIngredient ?? recipe.ingredients ?? []).map(clean).filter(Boolean)
-  if (ingredients.length) lines.push('', 'Ingredients:', ...ingredients.map((i) => `- ${i}`))
+  if (groups.length) {
+    // The page's groups ("Dough:", "Topping:") become sub-headings the parser keeps.
+    // JSON-LD lines are tidier, so use them when they line up with the page's list.
+    const lineUp = groups.reduce((n, g) => n + g.items.length, 0) === ingredients.length
+    let n = 0
+    lines.push('', 'Ingredients:')
+    for (const g of groups) {
+      if (g.name) lines.push('', `${g.name}:`)
+      for (const item of g.items) lines.push(`- ${lineUp ? ingredients[n++] : item}`)
+    }
+  } else if (ingredients.length) lines.push('', 'Ingredients:', ...ingredients.map((i) => `- ${i}`))
   const steps = instructionLines(recipe.recipeInstructions)
   if (steps.length) lines.push('', 'Instructions:', ...steps)
   return lines.join('\n').trim()
@@ -69,12 +79,49 @@ export function jsonLdImage(image) {
   return null
 }
 
+// Where recipe plugins put the ingredient list (WP Recipe Maker, Tasty, Create, generic themes)
+const INGREDIENT_BOXES = ['.wprm-recipe-ingredients-container', '.tasty-recipes-ingredients', '.mv-create-ingredients', '[class*="recipe-ingredients"]', '[class*="ingredients"]']
+const GROUP_HEADINGS = 'h2, h3, h4, h5, h6, .wprm-recipe-group-name, p > strong:only-child, p > b:only-child, li'
+
+/**
+ * Ingredient groups as the page shows them ([{ name, items }]); schema.org
+ * has no place for them, so they only exist in the HTML. Empty when the
+ * list is not split into at least two named parts.
+ */
+export function ingredientGroups(html) {
+  if (typeof DOMParser === 'undefined') return []
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  for (const selector of INGREDIENT_BOXES) {
+    for (const box of doc.querySelectorAll(selector)) {
+      const groups = []
+      let current = null
+      // Some engines return a selector list grouped by selector, not in page order
+      const found = [...box.querySelectorAll(GROUP_HEADINGS)].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1))
+      for (const el of found) {
+        if (el.tagName === 'LI') {
+          if (el.querySelector('li')) continue
+          const text = clean(el.textContent)
+          if (!text) continue
+          if (!current) groups.push((current = { name: '', items: [] }))
+          current.items.push(text)
+        } else if (!el.closest('li')) {
+          const name = clean(el.textContent).replace(/:$/, '')
+          if (name && !/^ingredients?$/i.test(name)) groups.push((current = { name, items: [] }))
+        }
+      }
+      const filled = groups.filter((g) => g.items.length)
+      if (filled.length >= 2 && filled.filter((g) => g.name).length >= filled.length - 1) return filled
+    }
+  }
+  return []
+}
+
 export function parseRecipePage(html) {
   const recipe = findRecipeJsonLd(html)
   if (recipe) {
     const author = [].concat(recipe.author ?? [])[0]
     return {
-      description: recipeJsonLdToText(recipe),
+      description: recipeJsonLdToText(recipe, ingredientGroups(html)),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
       image: jsonLdImage(recipe.image) ?? metaContent(html, 'og:image'),
       structured: true,

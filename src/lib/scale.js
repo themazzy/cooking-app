@@ -100,8 +100,11 @@ export function buildShoppingList(selection, match = () => null) {
         totals: {},
         extra: [],
         from: [],
+        uses: [],
       }
       if (!item.from.includes(recipe.title)) item.from.push(recipe.title)
+      // What each recipe (and part of it) needs, for the tap-to-see breakdown
+      item.uses.push({ recipe: recipe.title ?? '', group: ing.group || '', qty: scaleAmount(ing.qty, factor, ing.unit) ?? '', unit: ing.unit ?? '', name })
       const amount = parseAmount(ing.qty)
       const unit = canonicalUnit(ing.unit)
       if (amount && unit !== null) {

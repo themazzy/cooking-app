@@ -13,6 +13,7 @@ const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).
 export default function ShoppingList({ list, pantry = [], ebag = null, units = 'original', onChange, onNew, onToPantry }) {
   const [extra, setExtra] = useState('')
   const [copied, setCopied] = useState(false)
+  const [open, setOpen] = useState(null) // key of the item showing what it is for
   const { match, canonical } = useCatalog()
   if (!list) {
     return (
@@ -91,19 +92,37 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
             return (
               <Fragment key={i.key}>
                 {heading && <li className="aisle">{heading}</li>}
-                <li className={i.checked ? 'checked' : ''}>
-                  <label>
+                <li className={`${i.checked ? 'checked' : ''}${open === i.key ? ' open' : ''}`}>
+                  <label className="shop-tick">
                     <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
                     <IngredientIcon entry={match(i.name)} />
-                    <span>
+                  </label>
+                  {/* Tapping the name shows which recipe needs how much; the box ticks it off */}
+                  <button
+                    className="item-text"
+                    aria-expanded={open === i.key}
+                    onClick={() => (i.uses?.length ? setOpen(open === i.key ? null : i.key) : toggle(i.key))}
+                  >
                       {amountText(convertIngredient(i, units)) && <strong>{amountText(convertIngredient(i, units))} </strong>}
                       {i.name}
                       {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
                       {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
                       {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
-                    </span>
-                  </label>
+                    {i.uses?.length > 0 && <span className="caret" aria-hidden="true">{open === i.key ? '▴' : '▾'}</span>}
+                  </button>
+                  {open === i.key && (
+                    <ul className="uses">
+                      {i.uses.map((u, k) => (
+                        <li key={k}>
+                          <span className="uses-for">{[list.recipes.length > 1 || !u.group ? u.recipe : null, u.group].filter(Boolean).join(' · ')}</span>
+                          <span>
+                            <strong>{amountText(convertIngredient(u, units)) || 'some'}</strong> {u.name}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {ebag && !i.checked && ebagQuery(i.name, match(i.name)) && (
                     <button className="ebag" aria-label={`Search ${i.name} on eBag`} onClick={() => openExternal(ebagUrl(ebagQuery(i.name, match(i.name)), ebag))}>
                       eBag ↗
