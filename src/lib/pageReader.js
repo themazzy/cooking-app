@@ -41,3 +41,9 @@ function summarize(value) {
   }
   return out
 }
+
+/** Opens a link outside the app (in Instagram, YouTube, the browser…). */
+export async function openExternal(url) {
+  if (canFetchCrossSite()) await PageReader.openExternal({ url })
+  else window.open(url, '_blank', 'noopener')
+}

@@ -13,6 +13,8 @@ public class MainActivity extends BridgeActivity {
         setIntent(fromShare(getIntent()));
         registerPlugin(PageReaderPlugin.class);
         super.onCreate(savedInstanceState);
+        // Shrinking a video for saving plays it without a tap
+        getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
     }
 
     @Override
