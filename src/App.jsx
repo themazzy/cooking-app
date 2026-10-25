@@ -4,7 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { parseRecipeText } from './lib/ingredients.js'
-import { extractUrl, loadReel } from './lib/reel/index.js'
+import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
@@ -50,6 +50,8 @@ export default function App() {
   const [download, setDownload] = useState(null)
   const [result, setResult] = useState(null)
   const [history, setHistory] = useState(() => readStore(HISTORY_KEY, []))
+  const [report, setReport] = useState(null)
+  const [copied, setCopied] = useState(false)
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
@@ -93,10 +95,14 @@ export default function App() {
       setBusy(true)
       setLog([])
       setResult(null)
+      setReport(null)
+      setCopied(false)
       let r = { url, at: Date.now() }
+      let reel = null
+      let failure = null
       try {
         step('Loading the reel page…')
-        const reel = await loadReel(url)
+        reel = await loadReel(url)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
         setResult(r)
@@ -112,9 +118,20 @@ export default function App() {
           }
         }
       } catch (err) {
-        step(err.message || String(err), 'error')
+        failure = err.message || String(err)
+        step(failure, 'error')
       } finally {
         if (r.description || r.transcript) saveResult(r)
+        if (failure || !reel?.description || !reel?.videoUrl) {
+          setReport(
+            debugReport({
+              url,
+              platform: reel?.platform,
+              found: { description: !!reel?.description, video: !!reel?.videoUrl },
+              errors: [...(reel?.errors ?? []), ...(failure ? [failure] : [])],
+            }),
+          )
+        }
         setDownload(null)
         setBusy(false)
       }
@@ -262,6 +279,23 @@ export default function App() {
             </div>
           )}
           {busy && <div className="spinner">Working…</div>}
+          {report && !busy && (
+            <div className="row">
+              <button
+                className="secondary"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(report)
+                    setCopied(true)
+                  } catch {
+                    setCopied(false)
+                  }
+                }}
+              >
+                {copied ? 'Copied, paste it to Claude' : 'Copy debug report'}
+              </button>
+            </div>
+          )}
         </section>
       )}
 

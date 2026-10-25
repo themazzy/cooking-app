@@ -1,6 +1,7 @@
 import { fetchFacebook } from './facebook.js'
 import { fetchInstagram } from './instagram.js'
 import { fetchTikTok } from './tiktok.js'
+import { getTrace, resetTrace } from '../http.js'
 
 export function detectPlatform(url) {
   let host
@@ -29,5 +30,11 @@ const FETCHERS = { tiktok: fetchTikTok, instagram: fetchInstagram, facebook: fet
 export async function loadReel(url) {
   const platform = detectPlatform(url)
   if (!platform) throw new Error('Only Instagram, TikTok and Facebook links are supported.')
+  resetTrace()
   return FETCHERS[platform](url)
+}
+
+/** What the platforms answered during the last import, for bug reports. */
+export function debugReport(extra = {}) {
+  return JSON.stringify({ app: __BUILD__, at: new Date().toISOString(), ...extra, requests: getTrace() }, null, 2)
 }
