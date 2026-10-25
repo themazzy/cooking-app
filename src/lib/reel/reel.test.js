@@ -186,6 +186,18 @@ describe('Instagram in-page fetch', async () => {
     delete window.__cookingResult
   })
 
+  it('reads comments rendered in the page', async () => {
+    document.documentElement.innerHTML =
+      '<body><ul><li><div><a href="/derevensky.food/" role="link">derevensky.food</a><span dir="auto">Ingredients for 2 servings:\n• Ground beef: 400g\n• Fresh tomatoes: 250g</span></div></li>' +
+      '<li><div><a href="/fan/" role="link">fan</a><span dir="auto">ok</span></div></li></ul></body>'
+    vi.stubGlobal('fetch', async () => ({ status: 200, text: async () => '{"message":"login_required"}' }))
+    await (0, eval)(`(${instagramInPage.toString()})(${JSON.stringify({ mediaId: '1', domTries: 1 })})`)
+    const r = parseInPageResult(window.__cookingResult)
+    expect(r.comments).toHaveLength(1)
+    expect(r.comments[0].author).toBe('derevensky.food')
+    expect(r.comments[0].text).toContain('Ground beef: 400g')
+  })
+
   it('runs as standalone source text and stores the responses', async () => {
     document.documentElement.innerHTML = '<head><script>x=["LSD",[],{"token":"AVlsd"},1]</script></head><body><h1>short</h1></body>'
     const calls = []
@@ -201,7 +213,7 @@ describe('Instagram in-page fetch', async () => {
       return { status: 200, text: async () => body }
     })
     // Same path as the app: the function is turned into source text and evaluated
-    const script = `(${instagramInPage.toString()})(${JSON.stringify({ mediaId: '1', appId: 'a', asbdId: 'b', queryName: 'Q', docId: 'D' })})`
+    const script = `(${instagramInPage.toString()})(${JSON.stringify({ mediaId: '1', appId: 'a', asbdId: 'b', queryName: 'Q', docId: 'D', domTries: 1 })})`
     await (0, eval)(script)
     const r = window.__cookingResult
     expect(r.lsd).toBe(true)
