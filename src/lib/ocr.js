@@ -2,7 +2,8 @@ import { registerPlugin } from '@capacitor/core'
 import { canFetchCrossSite } from './http.js'
 
 // Reading text from photos on the device, free and without a cloud service.
-// Recipes use Google ML Kit in the Android app (TextReaderPlugin.java), which
+// Recipes use Google ML Kit in the Android app (TextReaderPlugin.java; its
+// model comes from Play services), which
 // reads Latin script only; Bulgarian receipts and the website use Tesseract,
 // whose reader and language data download once on first use.
 
