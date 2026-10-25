@@ -18,7 +18,9 @@ import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry } from './lib/pantry.js'
 import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
-import { buildShoppingList } from './lib/scale.js'
+import { addToList, makeList } from './lib/shopping.js'
+import { videoThumb } from './lib/thumb.js'
+import TabBar from './TabBar.jsx'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -176,12 +178,23 @@ export default function App() {
       } catch {
         videoBlob = null // offline, or the video is not uploaded yet
       }
-      if (!cancelled) setEditing({ recipe, videoBlob, dirty: false })
+      if (cancelled) return
+      setEditing({ recipe, videoBlob, dirty: false })
+      // Recipes saved before thumbnails existed get one the first time they open
+      if (videoBlob && !recipe.thumb) {
+        const thumb = await videoThumb(videoBlob)
+        if (!thumb) return
+        const updated = { ...recipe, thumb, updatedAt: Date.now() }
+        await putRecipe(updated)
+        setEditing((e) => (e?.recipe.id === recipe.id ? { ...e, recipe: { ...e.recipe, thumb } } : e))
+        refreshRecipes()
+        runSyncRef.current?.()
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [route, editing?.recipe.id])
+  }, [route, editing?.recipe.id, refreshRecipes])
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -275,9 +288,11 @@ export default function App() {
     const now = Date.now()
     const keepVideo = !!videoBlob && settings.saveVideos
     const newVideo = keepVideo && !recipe.id
+    const thumb = recipe.thumb ?? (keepVideo ? await videoThumb(videoBlob) : null)
     const stored = {
       ...recipe,
       id,
+      thumb,
       video: keepVideo ? recipe.video : null,
       ...(newVideo ? { videoUploaded: false } : {}),
       createdAt: recipe.createdAt ?? now,
@@ -314,19 +329,33 @@ export default function App() {
   }
 
   const makeShoppingList = () => {
-    const picked = recipes.filter((r) => selection?.[r.id] != null)
-    const parts = picked.map((recipe) => {
-      const portions = selection[recipe.id]
-      return { recipe, factor: recipe.servings ? portions / recipe.servings : portions, portions }
-    })
-    updateShopping({
-      createdAt: Date.now(),
-      recipes: parts.map((p) => ({ id: p.recipe.id, title: p.recipe.title, servings: p.recipe.servings, portions: p.portions })),
-      items: buildShoppingList(parts, catalog.match).map((i) => ({ ...i, checked: false })),
-    })
+    const entries = recipes.filter((r) => selection?.[r.id] != null).map((r) => ({ id: r.id, portions: selection[r.id] }))
+    updateShopping(makeList(entries, recipes, catalog.match))
     setSelection(null)
-    go('#/shopping')
+    tabGo('#/shopping')
   }
+
+  // Discarding a new recipe drops it; on a saved one it goes back to the saved version
+  const discardEditing = async () => {
+    const id = editing?.recipe.id
+    if (!id) {
+      setEditing(null)
+      return go('#/', { replace: true })
+    }
+    const stored = await getRecipe(id)
+    if (stored) setEditing((e) => ({ ...e, recipe: stored, dirty: false }))
+  }
+
+  // Tabs: from Recipes they open on top of it, so Back returns there; between tabs they replace each other
+  const tabGo = (hash) => {
+    if (parseRoute().page === 'home') return go(hash)
+    if (hash === '#/') return window.history.length > 1 && tabStacked.current ? window.history.back() : go('#/', { replace: true })
+    go(hash, { replace: true })
+  }
+  const tabStacked = useRef(false)
+  useEffect(() => {
+    if (route.page === 'home') tabStacked.current = true
+  }, [route.page])
 
   const runSyncRef = useRef(null)
   runSyncRef.current = runSync
@@ -495,44 +524,41 @@ export default function App() {
           dirty={editing.dirty}
           report={editing.recipe.id ? null : report}
           onChange={(recipe) => setEditing((e) => ({ ...e, recipe, dirty: true }))}
+          pantry={pantry}
           onSave={saveEditing}
           onDelete={deleteEditing}
+          onDiscard={discardEditing}
           onBack={back}
+          onAddToList={(entry) => updateShopping(addToList(shopping, entry, recipes, catalog.match))}
         />
       </main>
     )
   }
 
+  const toBuy = shopping ? shopping.items.filter((i) => !i.checked).length : 0
+  const tabbar = <TabBar page={route.page} badges={{ shopping: toBuy }} onGo={tabGo} />
+
   if (route.page === 'pantry') {
     return (
-      <main>
-        {topbar}
+      <main className="tabbed">
         <PantryPage items={pantry} onChanged={() => loadPantry().then(setPantry)} />
+        {tabbar}
       </main>
     )
   }
 
   if (route.page === 'ingredients') {
     return (
-      <main>
-        <div className="topbar">
-          <button className="link" onClick={back}>
-            ← Back
-          </button>
-        </div>
+      <main className="tabbed">
         <IngredientsPage />
+        {tabbar}
       </main>
     )
   }
 
   if (route.page === 'shopping') {
     return (
-      <main>
-        <div className="topbar">
-          <button className="link" onClick={back}>
-            ← Back
-          </button>
-        </div>
+      <main className="tabbed">
         <ShoppingList
           list={shopping}
           pantry={pantry}
@@ -543,9 +569,10 @@ export default function App() {
           onChange={updateShopping}
           onNew={() => {
             setSelection({})
-            go('#/')
+            tabGo('#/')
           }}
         />
+        {tabbar}
       </main>
     )
   }
@@ -722,59 +749,52 @@ export default function App() {
   // Main page: the household's recipes
   const unsaved = editing && !editing.recipe.id && editing.dirty
   const picked = selection ? Object.values(selection).filter((v) => v != null).length : 0
-  const toBuy = shopping ? shopping.items.filter((i) => !i.checked).length : 0
 
   return (
-    <main>
+    <main className={selection ? 'selecting' : 'tabbed'}>
       <header className="main-header">
-        <h1>Recipes</h1>
-        <div className="actions">
-          <button className="small" onClick={() => go('#/import')}>
-            Import
-          </button>
-          <button className="small secondary" onClick={addManually}>
-            + Add
-          </button>
-          <button className="icon-button" aria-label="Settings" onClick={() => go('#/settings')}>
-            ⚙
-          </button>
-        </div>
+        <h1>{selection ? 'Pick recipes' : 'Recipes'}</h1>
+        {!selection && (
+          <div className="actions">
+            <button className="small" onClick={() => go('#/import')}>
+              Import
+            </button>
+            <button className="small secondary" onClick={addManually}>
+              + Add
+            </button>
+            <button className="icon-button" aria-label="Settings" onClick={() => go('#/settings')}>
+              ⚙
+            </button>
+          </div>
+        )}
       </header>
 
-      <nav className="chips">
-        <button className="chip" onClick={() => go('#/shopping')}>
-          Shopping list{toBuy ? ` · ${toBuy}` : ''}
-        </button>
-        <button className="chip" onClick={() => go('#/pantry')}>
-          At home{pantry.length ? ` · ${pantry.length}` : ''}
-        </button>
-        <button className="chip" onClick={() => go('#/ingredients')}>
-          Ingredients
-        </button>
-        {recipes.length > 0 && !selection && (
-          <button className="chip" onClick={() => setSelection({})}>
-            Make a shopping list
-          </button>
-        )}
-      </nav>
-
       {unsaved && (
-        <section className="card">
-          <button className="link" onClick={() => go('#/new')}>
-            Continue with the unsaved recipe: {editing.recipe.title || 'New recipe'}
-          </button>
-        </section>
+        <button className="banner" onClick={() => go('#/new')}>
+          <span>
+            <strong>Unsaved recipe</strong>
+            <span className="note">{editing.recipe.title || 'New recipe'}</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </button>
       )}
 
-      <section className="card">
-        {selection && <p className="hint">Tick the recipes to shop for and set how many portions of each.</p>}
-        <RecipeList
-          recipes={recipes}
-          onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
-          selection={selection}
-          onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
-        />
-      </section>
+      {selection ? (
+        <p className="hint list-hint">Tap the recipes to shop for, and set the portions for each.</p>
+      ) : (
+        recipes.length > 1 && (
+          <button className="link list-hint" onClick={() => setSelection({})}>
+            🛒 Shop for several recipes
+          </button>
+        )
+      )}
+
+      <RecipeList
+        recipes={recipes}
+        onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
+        selection={selection}
+        onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
+      />
 
       <p className="hint sync">
         {syncState?.error
@@ -787,7 +807,7 @@ export default function App() {
         </button>
       </p>
 
-      {selection && (
+      {selection ? (
         <div className="bottom-bar">
           <button className="secondary" onClick={() => setSelection(null)}>
             Cancel
@@ -796,6 +816,8 @@ export default function App() {
             Make list from {picked} recipe{picked === 1 ? '' : 's'}
           </button>
         </div>
+      ) : (
+        tabbar
       )}
     </main>
   )

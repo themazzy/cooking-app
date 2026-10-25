@@ -11,11 +11,19 @@ export default function ShoppingList({ list, pantry = [], onChange, onNew, onToP
   const { match, canonical } = useCatalog()
   if (!list) {
     return (
-      <section className="card">
-        <h2>Shopping list</h2>
-        <p className="hint">No list yet. Pick recipes on the saved recipes page and make one.</p>
-        <button onClick={onNew}>Pick recipes</button>
-      </section>
+      <>
+        <header className="main-header">
+          <h1>Shopping list</h1>
+        </header>
+        <div className="empty">
+          <div className="empty-icon" aria-hidden="true">
+            🛒
+          </div>
+          <p>No list yet.</p>
+          <p className="hint">Open a recipe and tap Add to list, or pick several recipes at once.</p>
+          <button onClick={onNew}>Pick recipes</button>
+        </div>
+      </>
     )
   }
   const atHome = new Set(pantry.map((p) => canonical(p.name)))
@@ -31,7 +39,10 @@ export default function ShoppingList({ list, pantry = [], onChange, onNew, onToP
     const entry = match(text)
     onChange({
       ...list,
-      items: [...list.items, { key: `extra-${Date.now()}`, name: text, aisle: entry?.aisle ?? 'Other', qty: '', unit: '', extra: [], from: [], checked: false }],
+      items: [
+        ...list.items,
+        { key: `extra-${Date.now()}`, name: text, aisle: entry?.aisle ?? 'Other', qty: '', unit: '', extra: [], from: [], checked: false },
+      ],
     })
     setExtra('')
   }
@@ -48,71 +59,82 @@ export default function ShoppingList({ list, pantry = [], onChange, onNew, onToP
   }
 
   return (
-    <section className="card">
-      <h2>Shopping list</h2>
-      <p className="note">
-        For: {list.recipes.map((r) => `${r.title} (${r.servings ? `${r.portions} portions` : `×${r.portions}`})`).join(', ')}
-      </p>
-      <ul className="shopping">
-        {items.map((i, n) => {
-          const prev = items[n - 1]
-          const heading = i.checked
-            ? prev?.checked
-              ? null
-              : 'In the basket'
-            : isAtHome(i)
-              ? prev && isAtHome(prev) && !prev.checked
-                ? null
-                : 'Probably at home'
-              : !prev || aisleOf(i) !== aisleOf(prev)
-                ? aisleOf(i)
-                : null
-          return (
-            <Fragment key={i.key}>
-              {heading && <li className="aisle">{heading}</li>}
-              <li className={i.checked ? 'checked' : ''}>
-                <label>
-                  <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
-                  <IngredientIcon entry={match(i.name)} />
-                  <span>
-                    {amountText(i) && <strong>{amountText(i)} </strong>}
-                    {i.name}
-                    {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
-                    {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
-                    {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
-                  </span>
-                </label>
-              </li>
-            </Fragment>
-          )
-        })}
-      </ul>
-      <div className="row">
-        <input className="search grow" placeholder="Add something else" value={extra} onChange={(e) => setExtra(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && add()} />
-        <button className="secondary" onClick={add} disabled={!extra.trim()}>
-          Add
-        </button>
-      </div>
-      <div className="row">
-        <button onClick={copy}>{copied ? 'Copied' : 'Copy list'}</button>
-        <button className="secondary" onClick={() => onChange({ ...list, items: list.items.filter((i) => !i.checked) })}>
-          Remove ticked
-        </button>
-        {onToPantry && list.items.some((i) => i.checked) && (
-          <button
-            className="secondary"
-            onClick={async () => {
-              await onToPantry(list.items.filter((i) => i.checked))
-              onChange({ ...list, items: list.items.filter((i) => !i.checked) })
-            }}
-          >
-            Put ticked at home
-          </button>
+    <>
+      <header className="main-header">
+        <h1>Shopping list</h1>
+        <span className="note">{list.items.filter((i) => !i.checked).length} to buy</span>
+      </header>
+      <section className="card">
+        {list.recipes.length > 0 && (
+          <p className="note top">For {list.recipes.map((r) => `${r.title} (${r.servings ? `${r.portions} portions` : `×${r.portions}`})`).join(', ')}</p>
         )}
-        <button className="secondary" onClick={onNew}>
-          New list
-        </button>
-      </div>
-    </section>
+        <ul className="shopping">
+          {items.map((i, n) => {
+            const prev = items[n - 1]
+            const heading = i.checked
+              ? prev?.checked
+                ? null
+                : 'In the basket'
+              : isAtHome(i)
+                ? prev && isAtHome(prev) && !prev.checked
+                  ? null
+                  : 'Probably at home'
+                : !prev || aisleOf(i) !== aisleOf(prev)
+                  ? aisleOf(i)
+                  : null
+            return (
+              <Fragment key={i.key}>
+                {heading && <li className="aisle">{heading}</li>}
+                <li className={i.checked ? 'checked' : ''}>
+                  <label>
+                    <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
+                    <IngredientIcon entry={match(i.name)} />
+                    <span>
+                      {amountText(i) && <strong>{amountText(i)} </strong>}
+                      {i.name}
+                      {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
+                      {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
+                      {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
+                    </span>
+                  </label>
+                </li>
+              </Fragment>
+            )
+          })}
+        </ul>
+        <div className="row">
+          <input
+            className="search grow"
+            placeholder="Add something else"
+            value={extra}
+            onChange={(e) => setExtra(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && add()}
+          />
+          <button className="secondary" onClick={add} disabled={!extra.trim()}>
+            Add
+          </button>
+        </div>
+        <div className="row">
+          <button onClick={copy}>{copied ? 'Copied' : 'Copy list'}</button>
+          <button className="secondary" onClick={() => onChange({ ...list, items: list.items.filter((i) => !i.checked) })}>
+            Remove ticked
+          </button>
+          {onToPantry && list.items.some((i) => i.checked) && (
+            <button
+              className="secondary"
+              onClick={async () => {
+                await onToPantry(list.items.filter((i) => i.checked))
+                onChange({ ...list, items: list.items.filter((i) => !i.checked) })
+              }}
+            >
+              Put ticked at home
+            </button>
+          )}
+          <button className="secondary" onClick={onNew}>
+            New list
+          </button>
+        </div>
+      </section>
+    </>
   )
 }

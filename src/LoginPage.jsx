@@ -35,6 +35,7 @@ export default function LoginPage() {
 
   return (
     <main className="login">
+      <div className="login-logo" aria-hidden="true">🍳</div>
       <h1>Cooking App</h1>
       <p className="sub">Recipes from reels and websites, shared with your household.</p>
       <form className="card account" onSubmit={submit}>
