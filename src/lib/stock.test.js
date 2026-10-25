@@ -15,6 +15,8 @@ describe('stock amounts', () => {
     expect(takeFrom('1 l', '3', 'dl')).toBe('700 ml')
     expect(takeFrom('6', '2', '')).toBe('4')
     expect(takeFrom('200 g', '500', 'g')).toBe('0 g')
+    expect(takeFrom('750 ml', '2', 'tbsp')).toBe('720 ml')
+    expect(takeFrom('1 l', '1', 'cup')).toBe('760 ml')
     expect(takeFrom('1 bottle', '2', 'tbsp')).toBe(null)
     expect(takeFrom('', '2', 'tbsp')).toBe(null)
   })
