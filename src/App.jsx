@@ -8,12 +8,15 @@ import { deleteRecipe, getRecipe, getVideo, listRecipes, newId, persistStorage, 
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
 import RecipeList from './RecipeList.jsx'
+import ShoppingList from './ShoppingList.jsx'
+import { buildShoppingList } from './lib/scale.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
+const SHOPPING_KEY = 'cooking-app:shopping'
 
 function readStore(key, fallback) {
   try {
@@ -40,7 +43,7 @@ function sharedTextFromUrl(url) {
   }
 }
 
-/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import) */
+/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import), #/shopping */
 function parseRoute() {
   const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
   return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
@@ -65,6 +68,8 @@ export default function App() {
   // The recipe on screen: { recipe, videoBlob, dirty }
   const [editing, setEditing] = useState(null)
   const [shrink, setShrink] = useState(null)
+  const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
+  const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
   const savedIds = useRef({}) // draft key → saved id, for a shrink that finishes after saving
   const [link, setLink] = useState('')
   const [pasted, setPasted] = useState('')
@@ -79,7 +84,9 @@ export default function App() {
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
   // HD copies need an HD download; otherwise the smallest one is enough
-  useEffect(() => setVideoMinShortSide(settings.saveVideos && settings.videoQuality === 'hd' ? 720 : 0), [settings.saveVideos, settings.videoQuality])
+  useEffect(() => {
+    setVideoMinShortSide(settings.saveVideos && settings.videoQuality === 'hd' ? 720 : 0)
+  }, [settings.saveVideos, settings.videoQuality])
 
   const refreshRecipes = useCallback(() => listRecipes().then(setRecipes).catch(() => setRecipes([])), [])
   useEffect(() => {
@@ -204,6 +211,26 @@ export default function App() {
     setEditing(null)
     refreshRecipes()
     go('#/recipes', { replace: true })
+  }
+
+  const updateShopping = (list) => {
+    setShopping(list)
+    writeStore(SHOPPING_KEY, list)
+  }
+
+  const makeShoppingList = () => {
+    const picked = recipes.filter((r) => selection?.[r.id] != null)
+    const parts = picked.map((recipe) => {
+      const portions = selection[recipe.id]
+      return { recipe, factor: recipe.servings ? portions / recipe.servings : portions, portions }
+    })
+    updateShopping({
+      createdAt: Date.now(),
+      recipes: parts.map((p) => ({ id: p.recipe.id, title: p.recipe.title, servings: p.recipe.servings, portions: p.portions })),
+      items: buildShoppingList(parts).map((i) => ({ ...i, checked: false })),
+    })
+    setSelection(null)
+    go('#/shopping')
   }
 
   const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
@@ -367,6 +394,51 @@ export default function App() {
   }
 
   if (route.page === 'recipes') {
+    const count = selection ? Object.values(selection).filter((v) => v != null).length : 0
+    return (
+      <main>
+        <div className="topbar">
+          <button className="link" onClick={back}>
+            ← Back
+          </button>
+          <button className="link" onClick={() => go('#/shopping')}>
+            Shopping list →
+          </button>
+        </div>
+        <section className="card">
+          <h2>Saved recipes ({recipes.length})</h2>
+          {recipes.length > 0 &&
+            (selection ? (
+              <p className="hint">Tick the recipes to shop for and set how many portions of each.</p>
+            ) : (
+              <div className="row">
+                <button className="secondary" onClick={() => setSelection({})}>
+                  Make a shopping list
+                </button>
+              </div>
+            ))}
+          <RecipeList
+            recipes={recipes}
+            onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
+            selection={selection}
+            onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
+          />
+        </section>
+        {selection && (
+          <div className="bottom-bar">
+            <button className="secondary" onClick={() => setSelection(null)}>
+              Cancel
+            </button>
+            <button disabled={!count} onClick={makeShoppingList}>
+              Make list from {count} recipe{count === 1 ? '' : 's'}
+            </button>
+          </div>
+        )}
+      </main>
+    )
+  }
+
+  if (route.page === 'shopping') {
     return (
       <main>
         <div className="topbar">
@@ -374,10 +446,14 @@ export default function App() {
             ← Back
           </button>
         </div>
-        <section className="card">
-          <h2>Saved recipes ({recipes.length})</h2>
-          <RecipeList recipes={recipes} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
-        </section>
+        <ShoppingList
+          list={shopping}
+          onChange={updateShopping}
+          onNew={() => {
+            setSelection({})
+            go('#/recipes')
+          }}
+        />
       </main>
     )
   }
@@ -540,6 +616,15 @@ export default function App() {
           )}
         </section>
       )}
+
+      <nav className="row nav">
+        <button className="secondary" onClick={() => go('#/recipes')}>
+          Saved recipes ({recipes.length})
+        </button>
+        <button className="secondary" onClick={() => go('#/shopping')}>
+          Shopping list{shopping ? ` (${shopping.items.filter((i) => !i.checked).length})` : ''}
+        </button>
+      </nav>
 
       <section className="card">
         <h3>Saved recipes</h3>
