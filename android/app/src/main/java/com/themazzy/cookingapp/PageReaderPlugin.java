@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -84,8 +85,17 @@ public class PageReaderPlugin extends Plugin {
 
             webView.setWebViewClient(new WebViewClient() {
                 @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    // Sites try to hand off to their app (instagram://, intent://);
+                    // stay on the web page instead
+                    String scheme = request.getUrl().getScheme();
+                    return !("http".equals(scheme) || "https".equals(scheme));
+                }
+
+                @Override
                 public void onPageFinished(WebView view, String loadedUrl) {
                     if (injected[0] || finished[0]) return;
+                    if (loadedUrl == null || !loadedUrl.startsWith("http")) return;
                     injected[0] = true;
                     view.evaluateJavascript(script, null);
                     handler.postDelayed(poll[0], 300);
