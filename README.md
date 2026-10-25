@@ -15,8 +15,10 @@ One screen that takes a reel link and shows:
 | Platform | Description from | Video from |
 | --- | --- | --- |
 | TikTok | page JSON, then the public oEmbed endpoint | `playAddr` in the page JSON |
-| Instagram | public embed page (`/p/<code>/embed/captioned/`), then `og:description` | `video_url` in the embed page |
+| Instagram | requests run inside a hidden WebView on instagram.com (`PageReaderPlugin`): signed-in media info, then the logged-out GraphQL query; plain HTTP fallbacks after that | `video_versions` from the same responses |
 | Facebook | `message.text` or `og:description` | `playable_url` / `browser_native_*_url` |
+
+Instagram answers plain HTTP clients with an empty app shell, which is why its requests run inside a real browser engine. Some reels are shown only to logged-in users; **Settings → Sign in to Instagram** logs in inside the app.
 
 These are unofficial page formats and will break from time to time. The parsers live in `src/lib/reel/` with tests in `reel.test.js`; when a platform changes, save the page HTML from the phone and update the fixture.
 

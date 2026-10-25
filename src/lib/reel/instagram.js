@@ -1,4 +1,5 @@
 import { DESKTOP_UA, getCookie, getText, postForm } from '../http.js'
+import { runInPage } from '../pageReader.js'
 import { findJsonString, findJsonStringAfter, htmlToText, metaContent, scriptJson } from './html.js'
 
 // Instagram is tried four ways, best first, and the results are merged:
@@ -188,6 +189,87 @@ export function parseRuling(text) {
   }
 }
 
+/**
+ * Runs inside the Instagram page in the hidden WebView (see pageReader.js).
+ * Self-contained: it is sent to the page as source text.
+ */
+export async function instagramInPage(a) {
+  const out = { lsd: false }
+  const grab = async (res) => ({ status: res.status, body: (await res.text()).slice(0, 3000000) })
+  try {
+    const html = document.documentElement.innerHTML
+    let lsd = null
+    const m = html.match(/"LSD",\[\],\{"token":"([^"]+)"/)
+    if (m) lsd = m[1]
+    if (!lsd) {
+      try {
+        lsd = JSON.parse(document.getElementById('__eqmc').textContent).l
+      } catch (e) {
+        lsd = null
+      }
+    }
+    out.lsd = !!lsd
+    const headers = () => {
+      const h = { 'X-IG-App-ID': a.appId, 'X-ASBD-ID': a.asbdId, 'X-IG-WWW-Claim': '0', 'X-Requested-With': 'XMLHttpRequest' }
+      const c = document.cookie.match(/csrftoken=([^;]+)/)
+      if (c) h['X-CSRFToken'] = c[1]
+      return h
+    }
+    out.ruling = await grab(
+      await fetch('/api/v1/web/get_ruling_for_content/?content_type=MEDIA&target_id=' + a.mediaId, { headers: headers(), credentials: 'include' }),
+    )
+    out.info = await grab(await fetch('/api/v1/media/' + a.mediaId + '/info/', { headers: headers(), credentials: 'include' }))
+    if (lsd) {
+      const body = new URLSearchParams({
+        lsd: lsd,
+        fb_api_caller_class: 'RelayModern',
+        fb_api_req_friendly_name: a.queryName,
+        server_timestamps: 'true',
+        variables: JSON.stringify({ media_id: a.mediaId }),
+        doc_id: a.docId,
+      })
+      const h = Object.assign(headers(), { 'X-FB-Friendly-Name': a.queryName, 'X-FB-LSD': lsd })
+      out.graphql = await grab(await fetch('/api/graphql', { method: 'POST', body: body, headers: h, credentials: 'include' }))
+    }
+    const h1 = document.querySelector('h1')
+    out.h1 = h1 && h1.innerText.length > 40 ? h1.innerText : null
+  } catch (e) {
+    out.error = String((e && e.message) || e)
+  }
+  window.__cookingResult = out
+}
+
+/** Instagram data fetched from inside a real browser page (the hidden WebView). */
+export function parseInPageResult(r) {
+  if (!r) return null
+  let media = null
+  try {
+    media = fromMedia(JSON.parse(r.info?.body ?? 'null')?.items?.[0])
+  } catch {
+    media = null
+  }
+  const fromGraphql = r.graphql ? parseGraphqlResponse(r.graphql.body) : null
+  return {
+    description: media?.description || fromGraphql?.description || r.h1 || null,
+    author: media?.author || fromGraphql?.author || null,
+    videoUrl: media?.videoUrl || fromGraphql?.videoUrl || null,
+    gate: r.ruling ? parseRuling(r.ruling.body) : null,
+  }
+}
+
+async function viaBrowser(code, url, gate) {
+  const r = await runInPage(`${IG}/p/${code}/`, instagramInPage, {
+    mediaId: shortcodeToMediaId(code),
+    appId: API_HEADERS['X-IG-App-ID'],
+    asbdId: API_HEADERS['X-ASBD-ID'],
+    queryName: POST_QUERY.name,
+    docId: POST_QUERY.docId,
+  })
+  const parsed = parseInPageResult(r)
+  if (parsed?.gate) gate.title = parsed.gate
+  return parsed
+}
+
 async function viaPostPage(code) {
   const page = await getText(`${IG}/p/${code}/`, { ua: DESKTOP_UA, allowError: true })
   return parsePostPageWithFallbacks(page.text)
@@ -210,7 +292,9 @@ export async function fetchInstagram(url) {
   const gate = { title: null }
   const result = { description: null, author: null, videoUrl: null }
   const errors = []
-  const attempts = signedIn ? [viaSignedIn, viaGraphql, viaPostPage, viaEmbed] : [viaGraphql, viaPostPage, viaEmbed]
+  const attempts = signedIn
+    ? [viaBrowser, viaSignedIn, viaGraphql, viaPostPage, viaEmbed]
+    : [viaBrowser, viaGraphql, viaPostPage, viaEmbed]
   for (const attempt of attempts) {
     try {
       const r = await attempt(code, url, gate)
