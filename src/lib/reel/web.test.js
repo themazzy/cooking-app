@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseRecipeText } from '../ingredients.js'
-import { parseRecipePage } from './web.js'
+import { jsonLdImage, parseRecipePage } from './web.js'
 
 describe('recipe websites', () => {
   const page = `<html><head><meta property="og:site_name" content="Recepty.cz">
@@ -27,5 +27,15 @@ describe('recipe websites', () => {
     const r = parseRecipePage('<body><nav>Menu</nav><article><h2>Suroviny</h2><ul><li>3 vejce</li><li>100 g mouky</li></ul></article></body>')
     expect(r.structured).toBe(false)
     expect(parseRecipeText(r.description).ingredients).toHaveLength(2)
+  })
+
+  it('finds the recipe picture', () => {
+    expect(jsonLdImage('https://a.cz/1.jpg')).toBe('https://a.cz/1.jpg')
+    expect(jsonLdImage([{ '@type': 'ImageObject', url: 'https://a.cz/2.jpg' }, 'https://a.cz/3.jpg'])).toBe('https://a.cz/2.jpg')
+    expect(jsonLdImage(null)).toBe(null)
+    expect(parseRecipePage(page).image).toBe(null)
+    const withImage = page.replace('"name":"Svíčková na smetaně"', '"name":"Svíčková na smetaně","image":["/img/svickova.jpg"]')
+    expect(parseRecipePage(withImage).image).toBe('/img/svickova.jpg')
+    expect(parseRecipePage('<head><meta property="og:image" content="https://b.cz/x.jpg"></head><article>3 vejce</article>').image).toBe('https://b.cz/x.jpg')
   })
 })

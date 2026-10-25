@@ -6,10 +6,12 @@ const matches = (r, q) =>
 
 const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website', photo: 'Photo' }
 
-/** The video's picture, or the first ingredients' pictures when there is no video. */
+/** The cook's photo, the video's picture or the website's, else the first ingredients' pictures. */
 function Thumb({ recipe }) {
   const { match } = useCatalog()
-  if (recipe.thumb) return <img className="thumb" src={recipe.thumb} alt="" loading="lazy" />
+  const [broken, setBroken] = useState(false)
+  const src = recipe.photo ?? recipe.thumb ?? (broken ? null : recipe.image)
+  if (src) return <img className="thumb" src={src} alt="" loading="lazy" onError={() => src === recipe.image && setBroken(true)} />
   const icons = (recipe.ingredients ?? [])
     .map((i) => match(i.name))
     .filter(Boolean)

@@ -623,3 +623,6 @@ button.link.more { margin-top: 10px; }
 .receipt-list ul.shopping li { display: flex; align-items: center; gap: 8px; }
 .receipt-list ul.shopping li.checked span { text-decoration: none; }
 .unknown ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }
+.photo-actions { margin: 0 0 14px; }
+.photo-empty { border: 1.5px dashed var(--border); box-shadow: none; background: transparent; }
+.photo-empty .photo-actions { margin: 0; justify-content: center; }

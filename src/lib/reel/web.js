@@ -60,6 +60,15 @@ export function recipeJsonLdToText(recipe) {
   return lines.join('\n').trim()
 }
 
+/** First picture URL of a schema.org image: a string, an ImageObject or a list of either. */
+export function jsonLdImage(image) {
+  for (const i of [].concat(image ?? [])) {
+    const url = typeof i === 'string' ? i : (i?.url ?? i?.contentUrl)
+    if (typeof url === 'string' && url.trim()) return url.trim()
+  }
+  return null
+}
+
 export function parseRecipePage(html) {
   const recipe = findRecipeJsonLd(html)
   if (recipe) {
@@ -67,6 +76,7 @@ export function parseRecipePage(html) {
     return {
       description: recipeJsonLdToText(recipe),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
+      image: jsonLdImage(recipe.image) ?? metaContent(html, 'og:image'),
       structured: true,
     }
   }
@@ -76,6 +86,7 @@ export function parseRecipePage(html) {
   return {
     description: text ? text.slice(0, 20000) : metaContent(html, 'og:description'),
     author: metaContent(html, 'og:site_name'),
+    image: metaContent(html, 'og:image'),
     structured: false,
   }
 }
@@ -84,5 +95,12 @@ export async function fetchWebRecipe(url) {
   const page = await getText(url, { ua: DESKTOP_UA })
   const parsed = parseRecipePage(page.text)
   if (!parsed.description) throw new Error('Could not find a recipe on this page.')
-  return { platform: 'web', url: page.url, ...parsed, author: parsed.author || new URL(page.url).hostname, videoUrl: null, comments: [] }
+  let image = null
+  try {
+    // Pages often give the picture relative to themselves; plain http would be blocked in the app
+    if (parsed.image) image = new URL(parsed.image, page.url).href.replace(/^http:/, 'https:')
+  } catch {
+    image = null
+  }
+  return { platform: 'web', url: page.url, ...parsed, image, author: parsed.author || new URL(page.url).hostname, videoUrl: null, comments: [] }
 }

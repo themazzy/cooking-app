@@ -10,6 +10,7 @@ import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients } from './lib/scale.js'
 import { seekableBlob } from './lib/webmFix.js'
+import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
 import { isOut, planCooking } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
@@ -29,7 +30,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -37,6 +38,9 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   const [cooking, setCooking] = useState(false)
   const [shopping, setShopping] = useState(false)
   const [added, setAdded] = useState(false)
+  const [photoNote, setPhotoNote] = useState(null)
+  const [imageBroken, setImageBroken] = useState(false)
+  useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
   const [cookFor, setCookFor] = useState(recipe.servings ?? 1)
   useEffect(() => {
@@ -88,9 +92,43 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
     }
   }
 
+  // A photo the cook added wins; then the video (with the photo as its cover); then the website's picture
+  const setPhoto = (photo) => (edit || !recipe.id ? set({ photo }) : onSavePatch({ photo }))
+  const pickPhoto = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setPhotoNote('Preparing the photo…')
+    try {
+      setPhoto(await recipePhoto(file))
+      setPhotoNote(null)
+    } catch {
+      setPhotoNote('This picture could not be opened. Try a JPEG or PNG.')
+    }
+  }
+  const photoButtons = (
+    <div className="row photo-actions">
+      <label className="button secondary small">
+        📷 Take photo
+        <input type="file" accept="image/*" capture="environment" hidden onChange={pickPhoto} />
+      </label>
+      <label className="button secondary small">
+        🖼 Choose photo
+        <input type="file" accept="image/*" hidden onChange={pickPhoto} />
+      </label>
+      {recipe.photo && (
+        <button className="link" onClick={() => setPhoto(null)}>
+          Remove photo
+        </button>
+      )}
+      {photoNote && <span className="note">{photoNote}</span>}
+    </div>
+  )
+  const picture = recipe.photo ?? (imageBroken ? null : recipe.image) ?? recipe.thumb ?? null
+
   const video = videoSrc ? (
     <div className="video">
-      <VideoPlayer src={videoSrc} poster={recipe.thumb ?? undefined} />
+      <VideoPlayer src={videoSrc} poster={recipe.photo ?? recipe.thumb ?? undefined} />
       {(shrink || edit) && (
         <div className="note">
           {shrink?.state === 'running'
@@ -102,8 +140,8 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         </div>
       )}
     </div>
-  ) : recipe.thumb ? (
-    <img className="hero" src={recipe.thumb} alt="" />
+  ) : picture ? (
+    <img className="hero" src={picture} alt="" onError={() => picture === recipe.image && setImageBroken(true)} />
   ) : null
 
   const sources = (raw.description || raw.transcript || comments.length > 0) && (
@@ -192,6 +230,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
             </label>
           </div>
           {video}
+          {photoButtons}
           <RecipeEditor
             recipe={{ ingredients: recipe.ingredients, steps: recipe.steps }}
             source={recipe.source}
@@ -257,7 +296,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         </button>
       </div>
 
-      {video}
+      {video ?? <section className="card photo-empty">{photoButtons}</section>}
 
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>

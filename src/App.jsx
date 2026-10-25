@@ -288,9 +288,11 @@ export default function App() {
     go('#/new')
   }
 
-  const saveEditing = async () => {
+  // `patch` saves a single change straight from the reading view (a new photo)
+  const saveEditing = async (patch) => {
     if (!editing) return
-    const { recipe, videoBlob } = editing
+    const { videoBlob } = editing
+    const recipe = { ...editing.recipe, ...patch }
     const id = recipe.id ?? newId()
     const now = Date.now()
     const keepVideo = !!videoBlob && settings.saveVideos
@@ -602,7 +604,8 @@ export default function App() {
           report={editing.recipe.id ? null : report}
           onChange={(recipe) => setEditing((e) => ({ ...e, recipe, dirty: true }))}
           pantry={pantry}
-          onSave={saveEditing}
+          onSave={() => saveEditing()}
+          onSavePatch={saveEditing}
           onDelete={deleteEditing}
           onDiscard={discardEditing}
           onBack={back}
