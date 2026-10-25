@@ -8,6 +8,7 @@ import {
   parseGraphqlResponse,
   parseInstagramEmbed,
   parsePostPage,
+  parsePostPageWithFallbacks,
   shortcodeToMediaId,
 } from './instagram.js'
 import { parseFacebookPage } from './facebook.js'
@@ -99,6 +100,16 @@ describe('Instagram', () => {
     const sjs = { require: [['x', 'y', null, [{ __bbox: { result: { data: { xig_polaris_media: { if_not_gated_logged_out: media } } } } }]]] }
     const html = `<script type="application/json" data-sjs>{"other":1}</script><script type="application/json" data-sjs>${JSON.stringify(sjs)}</script>`
     expect(parsePostPage(html)).toMatchObject({ author: 'chef', videoUrl: 'https://cdn/480.mp4' })
+  })
+
+  it('fills post page gaps per field from og:description and video_url', () => {
+    const noCaption = { ...media, caption: null }
+    const sjs = { x: { xig_polaris_media: { if_not_gated_logged_out: noCaption } } }
+    const html =
+      '<meta property="og:description" content="5 likes - chef on May 1, 2026: &quot;2 vejce&quot;">' +
+      `<script type="application/json" data-sjs>${JSON.stringify(sjs)}</script>`
+    expect(parsePostPageWithFallbacks(html)).toMatchObject({ description: '2 vejce', videoUrl: 'https://cdn/480.mp4' })
+    expect(parsePostPageWithFallbacks('<script>{"video_url":"https:\\/\\/cdn\\/old.mp4"}</script>').videoUrl).toBe('https://cdn/old.mp4')
   })
 
   it('reads double-encoded contextJSON from the embed page', () => {
