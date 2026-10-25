@@ -1,15 +1,21 @@
+import { seekableBlob } from './webmFix.js'
+
 // Re-encodes a downloaded video to a small copy for keeping with a recipe.
 // It plays the video once in a hidden element and records it, so it takes
 // as long as the video itself.
 
-/** With VP9: small 480p about 2.5 MB a minute, HD 720p about 4 MB a minute (mono, 24 fps). */
+// The phone encodes in real time, which needs far more bits than an offline
+// encoder for the same detail; below about 1 Mbit/s at 480p hands, knife
+// work and text in the video turn to mush.
+/** With VP9: 480p about 8 MB a minute, 720p about 15 MB, 1080p about 28 MB. */
 export const VIDEO_QUALITY = {
-  small: { shortSide: 480, videoBps: 300_000, audioBps: 32_000, fps: 24, mono: true },
-  hd: { shortSide: 720, videoBps: 500_000, audioBps: 32_000, fps: 24, mono: true },
+  small: { shortSide: 480, videoBps: 1_000_000, audioBps: 64_000, fps: 30 },
+  hd: { shortSide: 720, videoBps: 1_900_000, audioBps: 96_000, fps: 30 },
+  full: { shortSide: 1080, videoBps: 3_600_000, audioBps: 96_000, fps: 30 },
 }
 
 // WebM with VP9 and Opus gives the same picture as H.264/AAC in roughly a
-// third less space; Opus stays clear for speech at 32 kbit/s. MP4 is the
+// third less space; Opus at 64 kbit/s and up keeps voices and sizzling clear. MP4 is the
 // fallback for WebViews that cannot record WebM.
 const TYPES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4']
 const isVp9 = (t) => t.includes('vp9')
@@ -37,7 +43,10 @@ export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, a
     const canvas = document.createElement('canvas')
     canvas.width = even(video.videoWidth * scale)
     canvas.height = even(video.videoHeight * scale)
+    // A source smaller than the target needs fewer bits for the same quality
+    videoBps = Math.round(videoBps * Math.min(1, (canvas.width * canvas.height) / (shortSide * shortSide * (16 / 9))))
     const ctx = canvas.getContext('2d')
+    ctx.imageSmoothingQuality = 'high'
 
     // The sound goes into the recording only, not out of the speaker
     audioCtx = new AudioContext()
@@ -50,7 +59,9 @@ export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, a
     await audioCtx.resume()
 
     const stream = new MediaStream([...canvas.captureStream(fps).getVideoTracks(), ...dest.stream.getAudioTracks()])
-    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: videoBps, audioBitsPerSecond: audioBps })
+    // A keyframe every second lets the player jump anywhere without decoding
+    // from the start; WebViews that do not know the option ignore it
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: videoBps, audioBitsPerSecond: audioBps, videoKeyFrameIntervalDuration: 1000 })
     const chunks = []
     recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
     const stopped = new Promise((resolve) => (recorder.onstop = resolve))
@@ -74,7 +85,8 @@ export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, a
     done = true
     recorder.stop()
     await stopped
-    const small = new Blob(chunks, { type: mimeType.split(';')[0] })
+    // Recorded WebM has no length or seek index until it is rewritten
+    const small = await seekableBlob(new Blob(chunks, { type: mimeType.split(';')[0] }))
     // Keep the original if re-encoding did not help (very short or already tiny videos)
     return small.size > 0 && small.size < blob.size ? small : blob
   } finally {

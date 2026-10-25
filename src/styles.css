@@ -313,7 +313,48 @@ progress { width: 100%; accent-color: var(--accent); }
 
 /* Recipe page, reading */
 .video { margin: 0 0 14px; }
-.video video { width: 100%; max-height: 56vh; border-radius: var(--radius); background: #000; display: block; }
+.player { position: relative; border-radius: var(--radius); overflow: hidden; background: #000; outline: none; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.player video { width: 100%; max-height: 56vh; display: block; background: #000; }
+.player.full { position: fixed; inset: 0; z-index: 100; border-radius: 0; display: flex; align-items: center; }
+.player.full .player-bar { padding-bottom: calc(4px + env(safe-area-inset-bottom)); }
+.player.full video { max-height: 100vh; height: 100%; object-fit: contain; }
+.player-big {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; min-height: 64px; border-radius: 50%; padding: 0 0 0 4px;
+  background: rgb(0 0 0 / 55%); color: #fff; font-size: 1.6rem;
+}
+.player-big:active:not(:disabled) { transform: translate(-50%, -50%) scale(0.95); }
+.player-flash {
+  position: absolute; left: 50%; top: 18%; transform: translateX(-50%); pointer-events: none;
+  background: rgb(0 0 0 / 60%); color: #fff; padding: 6px 14px; border-radius: 999px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.player-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 4px; color: #fff;
+  background: linear-gradient(transparent, rgb(0 0 0 / 70%)); transition: opacity 0.25s ease;
+}
+.player.idle .player-bar { opacity: 0; pointer-events: none; }
+.player.idle { cursor: none; }
+.player-seek { display: flex; align-items: center; gap: 8px; }
+.player-time { font-size: 0.8rem; font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: center; opacity: 0.9; }
+.player-track { position: relative; flex: 1 1 auto; height: 28px; display: flex; align-items: center; cursor: pointer; touch-action: none; }
+.player-rail { position: relative; width: 100%; height: 4px; border-radius: 2px; background: rgb(255 255 255 / 25%); overflow: hidden; transition: height 0.1s ease; }
+.player-track.active .player-rail { height: 6px; }
+.player-buffered, .player-done { position: absolute; left: 0; top: 0; bottom: 0; }
+.player-buffered { background: rgb(255 255 255 / 30%); }
+.player-done { background: var(--accent); }
+.player-knob {
+  position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgb(0 0 0 / 40%); transition: transform 0.1s ease; pointer-events: none;
+}
+.player-track.active .player-knob { transform: scale(1.35); }
+.player-buttons { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; }
+.player-gap { flex: 1 1 auto; }
+button.player-btn {
+  background: transparent; color: #fff; min-height: 36px; min-width: 36px; padding: 4px 6px;
+  border-radius: 10px; font-size: 0.95rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+button.player-btn.on { background: rgb(255 255 255 / 20%); }
+.player-speeds button.player-btn { flex: 1 1 0; min-width: 0; padding: 4px 2px; font-size: 0.88rem; }
 .video .note { margin-top: 4px; }
 img.hero { width: 100%; max-height: 40vh; object-fit: cover; border-radius: var(--radius); margin-bottom: 14px; display: block; }
 .recipe-head { margin-bottom: 16px; }

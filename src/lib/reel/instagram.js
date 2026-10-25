@@ -40,7 +40,7 @@ export function lsdToken(html) {
 
 /** Smallest video rendition: we only need the audio. */
 // Short side the downloaded video should have at least: 0 takes the smallest
-// rendition (enough for the audio and a 480p copy), 720 for HD copies
+// rendition (enough for the audio), otherwise the saved copy's size
 let minShortSide = 0
 export const setVideoMinShortSide = (px) => (minShortSide = px)
 

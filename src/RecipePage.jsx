@@ -1,13 +1,15 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import RecipeEditor from './RecipeEditor.jsx'
 import CookMode from './CookMode.jsx'
 import ShopSheet from './ShopSheet.jsx'
+import VideoPlayer from './VideoPlayer.jsx'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { parseRecipeText } from './lib/ingredients.js'
 import { pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients } from './lib/scale.js'
+import { seekableBlob } from './lib/webmFix.js'
 import { splitSteps } from './lib/cook.js'
 import { isOut, planCooking } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
@@ -49,8 +51,22 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   const shown = convertIngredients(scaled, units)
   const stepsText = convertTemperatures(recipe.steps, units)
   const convertible = hasUnits(recipe.ingredients, 'metric') || hasUnits(recipe.ingredients, 'imperial') || /\d\s*°/.test(recipe.steps)
-  const videoSrc = useMemo(() => (videoBlob ? URL.createObjectURL(videoBlob) : null), [videoBlob])
-  useEffect(() => () => videoSrc && URL.revokeObjectURL(videoSrc), [videoSrc])
+  // Copies saved before the seek fix get their length and seek index added on the fly
+  const [videoSrc, setVideoSrc] = useState(null)
+  useEffect(() => {
+    if (!videoBlob) return setVideoSrc(null)
+    let url = null
+    let live = true
+    seekableBlob(videoBlob).then((blob) => {
+      if (!live) return
+      url = URL.createObjectURL(blob)
+      setVideoSrc(url)
+    })
+    return () => {
+      live = false
+      if (url) URL.revokeObjectURL(url)
+    }
+  }, [videoBlob])
 
   const set = (patch) => onChange({ ...recipe, ...patch })
   const raw = recipe.raw ?? {}
@@ -74,7 +90,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
   const video = videoSrc ? (
     <div className="video">
-      <video src={videoSrc} controls playsInline preload="metadata" poster={recipe.thumb ?? undefined} />
+      <VideoPlayer src={videoSrc} poster={recipe.thumb ?? undefined} />
       {(shrink || edit) && (
         <div className="note">
           {shrink?.state === 'running'

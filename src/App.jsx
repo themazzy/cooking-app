@@ -106,9 +106,9 @@ export default function App() {
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
-  // HD copies need an HD download; otherwise the smallest one is enough
+  // A saved copy needs a download at least as sharp; without one the smallest is enough
   useEffect(() => {
-    setVideoMinShortSide(settings.saveVideos && settings.videoQuality === 'hd' ? 720 : 0)
+    setVideoMinShortSide(settings.saveVideos ? (VIDEO_QUALITY[settings.videoQuality] ?? VIDEO_QUALITY.small).shortSide : 0)
   }, [settings.saveVideos, settings.videoQuality])
 
   const refreshRecipes = useCallback(() => listRecipes().then(setRecipes).catch(() => setRecipes([])), [])
@@ -678,8 +678,9 @@ export default function App() {
               <label>
                 Video quality{' '}
                 <select value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
-                  <option value="small">Small, 480p (about 2.5 MB a minute)</option>
-                  <option value="hd">HD, 720p (about 4 MB a minute, bigger download)</option>
+                  <option value="small">Standard, 480p (about 8 MB a minute)</option>
+                  <option value="hd">HD, 720p (about 15 MB a minute)</option>
+                  <option value="full">Full HD, 1080p (about 28 MB a minute, slow phones may stutter)</option>
                 </select>
               </label>
             )}
