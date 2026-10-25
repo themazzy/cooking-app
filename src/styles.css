@@ -124,3 +124,4 @@ pre {
 .ing-row .name { flex: 1 1 auto; }
 .editor input.group { width: 100%; margin-top: 8px; font-weight: 600; background: transparent; }
 button.icon { background: transparent; color: var(--muted); padding: 6px 8px; font-size: 1.2rem; line-height: 1; }
+.comments { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 10px; }
