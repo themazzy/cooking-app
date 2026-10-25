@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/copy-tesseract.mjs && vite",
+    "build": "node scripts/copy-tesseract.mjs && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "sync:android": "npm run build && npx cap sync android",
@@ -23,6 +23,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",
+    "@tesseract.js-data/bul": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^29.1.1",
     "vite": "^8.3.5",

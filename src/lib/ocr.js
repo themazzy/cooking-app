@@ -5,7 +5,7 @@ import { canFetchCrossSite } from './http.js'
 // Recipes use Google ML Kit in the Android app (TextReaderPlugin.java; its
 // model comes from Play services), which
 // reads Latin script only; Bulgarian receipts and the website use Tesseract,
-// whose reader and language data download once on first use.
+// which comes with the app with English and Bulgarian (scripts/copy-tesseract.mjs).
 
 const TextReader = registerPlugin('TextReader')
 
@@ -43,9 +43,9 @@ async function prepare(file, max = 2200, enhance = true) {
   return canvas
 }
 
-/** The text of recipe photos, in order: ML Kit in the app, Tesseract (English and Czech) on the website. */
+/** The text of recipe photos, in order: ML Kit in the app, Tesseract (English) on the website. */
 export async function readRecipePhotos(files, onProgress) {
-  if (!canFetchCrossSite()) return readPhotos(files, 'eng+ces', onProgress)
+  if (!canFetchCrossSite()) return readPhotos(files, 'eng', onProgress)
   const texts = []
   for (let n = 0; n < files.length; n++) {
     onProgress?.({ status: 'recognizing text', progress: 0, page: n + 1, pages: files.length })
@@ -66,7 +66,13 @@ export const readReceiptPhotos = (files, onProgress) => readPhotos(files, 'bul+e
 export async function readPhotos(files, langs = 'eng', onProgress) {
   const { createWorker } = await import('tesseract.js')
   let page = 0
+  const base = new URL('tesseract/', document.baseURI).href
   const worker = await createWorker(langs, 1, {
+    workerPath: `${base}worker.min.js`,
+    corePath: `${base}tesseract-core-simd-lstm.wasm.js`,
+    langPath: `${base}lang`,
+    workerBlobURL: false,
+    cacheMethod: 'none', // the data is in the app already
     logger: (m) => onProgress?.({ status: m.status, progress: m.progress, page: page + 1, pages: files.length }),
   })
   try {
