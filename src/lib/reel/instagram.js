@@ -283,7 +283,8 @@ export async function instagramInPage(a) {
           const m = link && link.getAttribute('href').match(/^\/([A-Za-z0-9._]+)\/$/)
           if (m) author = m[1]
         }
-        found.push({ author: author, text: text })
+        // Without a profile link it is page chrome (login wall, cookie banner)
+        if (author) found.push({ author: author, text: text })
       }
       return found
     }
