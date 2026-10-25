@@ -1,15 +1,26 @@
-// Re-encodes a downloaded video to a small copy for keeping with a recipe:
-// the short side scaled to 480 px, ~450 kbit/s video and 64 kbit/s audio,
-// about 4 MB per minute. It plays the video once in a hidden element and
-// records it, so it takes as long as the video itself.
+// Re-encodes a downloaded video to a small copy for keeping with a recipe.
+// It plays the video once in a hidden element and records it, so it takes
+// as long as the video itself.
 
-const TYPES = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']
+/** With VP9: small 480p about 2.5 MB a minute, HD 720p about 4 MB a minute (mono, 24 fps). */
+export const VIDEO_QUALITY = {
+  small: { shortSide: 480, videoBps: 300_000, audioBps: 32_000, fps: 24, mono: true },
+  hd: { shortSide: 720, videoBps: 500_000, audioBps: 32_000, fps: 24, mono: true },
+}
+
+// WebM with VP9 and Opus gives the same picture as H.264/AAC in roughly a
+// third less space; Opus stays clear for speech at 32 kbit/s. MP4 is the
+// fallback for WebViews that cannot record WebM.
+const TYPES = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4']
+const isVp9 = (t) => t.includes('vp9')
 
 export const canShrinkVideo = () =>
   typeof MediaRecorder !== 'undefined' && !!HTMLCanvasElement.prototype.captureStream && TYPES.some((t) => MediaRecorder.isTypeSupported(t))
 
-export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, audioBps = 64_000, onProgress } = {}) {
+export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, audioBps = 64_000, fps = 30, mono = false, onProgress } = {}) {
   const mimeType = TYPES.find((t) => MediaRecorder.isTypeSupported(t))
+  // VP8 and H.264 need about half again as much for the same picture
+  if (!isVp9(mimeType)) videoBps = Math.round(videoBps * 1.5)
   const url = URL.createObjectURL(blob)
   const video = document.createElement('video')
   video.playsInline = true
@@ -31,10 +42,14 @@ export async function shrinkVideo(blob, { shortSide = 480, videoBps = 450_000, a
     // The sound goes into the recording only, not out of the speaker
     audioCtx = new AudioContext()
     const dest = audioCtx.createMediaStreamDestination()
+    if (mono) {
+      dest.channelCount = 1
+      dest.channelCountMode = 'explicit'
+    }
     audioCtx.createMediaElementSource(video).connect(dest)
     await audioCtx.resume()
 
-    const stream = new MediaStream([...canvas.captureStream(30).getVideoTracks(), ...dest.stream.getAudioTracks()])
+    const stream = new MediaStream([...canvas.captureStream(fps).getVideoTracks(), ...dest.stream.getAudioTracks()])
     const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: videoBps, audioBitsPerSecond: audioBps })
     const chunks = []
     recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
