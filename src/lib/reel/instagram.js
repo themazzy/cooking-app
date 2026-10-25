@@ -90,6 +90,16 @@ export function parsePostPage(html) {
   return null
 }
 
+/** parsePostPage, with the older page fields filled in per field where it has gaps. */
+export function parsePostPageWithFallbacks(html) {
+  const parsed = parsePostPage(html) ?? { description: null, author: null, videoUrl: null }
+  return {
+    ...parsed,
+    description: parsed.description || captionFromOgDescription(metaContent(html, 'og:description')),
+    videoUrl: parsed.videoUrl || findJsonString(html, 'video_url') || metaContent(html, 'og:video'),
+  }
+}
+
 /** Caption, author and video address from the public embed page. */
 export function parseInstagramEmbed(html) {
   let description = findJsonStringAfter(html, '"edge_media_to_caption"', 'text')
@@ -150,12 +160,7 @@ async function viaGraphql(code, url) {
 
 async function viaPostPage(code) {
   const page = await getText(`${IG}/p/${code}/`, { ua: DESKTOP_UA, allowError: true })
-  return (
-    parsePostPage(page.text) ?? {
-      description: captionFromOgDescription(metaContent(page.text, 'og:description')),
-      videoUrl: metaContent(page.text, 'og:video'),
-    }
-  )
+  return parsePostPageWithFallbacks(page.text)
 }
 
 async function viaEmbed(code) {
