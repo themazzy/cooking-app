@@ -15,7 +15,8 @@ import { supabase } from './lib/supabase.js'
 import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
 import PantryPage from './PantryPage.jsx'
-import { addToPantry, cachedPantry, loadPantry } from './lib/pantry.js'
+import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
+import { addTo, parseStock, shortfall } from './lib/stock.js'
 import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
 import { addToList, makeList } from './lib/shopping.js'
@@ -363,6 +364,49 @@ export default function App() {
   const runSyncRef = useRef(null)
   runSyncRef.current = runSync
 
+  // Staples below their minimum are kept on the shopping list; once restocked they leave it
+  useEffect(() => {
+    if (!user) return
+    const items = shopping?.items ?? []
+    const wanted = new Map(
+      pantry.flatMap((p) => {
+        const s = shortfall(p)
+        return s ? [[`stock-${p.name.toLowerCase()}`, { p, need: s.need }]] : []
+      }),
+    )
+    const split = (need) => {
+      const [, qty = need, unit = ''] = need.match(/^(\S+)\s*(.*)$/) ?? []
+      return { qty, unit }
+    }
+    let changed = false
+    const next = []
+    for (const i of items) {
+      if (!String(i.key).startsWith('stock-') || i.checked) next.push(i)
+      else if (!wanted.has(i.key)) changed = true
+      else {
+        const { qty, unit } = split(wanted.get(i.key).need)
+        if (qty !== i.qty || unit !== i.unit) changed = true
+        next.push({ ...i, qty, unit })
+      }
+    }
+    for (const [key, { p, need }] of wanted) {
+      if (items.some((i) => i.key === key)) continue
+      changed = true
+      next.push({ key, name: p.name, aisle: catalog.match(p.name)?.aisle ?? 'Other', ...split(need), extra: [], from: ['Staple'], checked: false })
+    }
+    if (changed) updateShopping({ ...(shopping ?? { createdAt: Date.now(), recipes: [] }), items: next })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pantry, shopping, user])
+
+  /** Takes what a cooked recipe used out of the stock; used-up items go, except staples. */
+  const useStock = async (plan) => {
+    for (const { item, next } of plan) {
+      if ((parseStock(next)?.value ?? 1) <= 0 && !item.min_amount?.trim()) await removeFromPantry(item.id)
+      else await updatePantryItem(item.id, { amount: next })
+    }
+    setPantry(await loadPantry())
+  }
+
   const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
 
   const runTranscription = useCallback(
@@ -533,6 +577,7 @@ export default function App() {
           onDiscard={discardEditing}
           onBack={back}
           onAddToList={(entry) => updateShopping(addToList(shopping, entry, recipes, catalog.match))}
+          onUseStock={useStock}
         />
       </main>
     )
@@ -567,7 +612,12 @@ export default function App() {
           pantry={pantry}
           ebag={settings.ebagLinks ? settings.ebagSearch || EBAG_SEARCH : null}
           onToPantry={async (items) => {
-            for (const i of items) await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
+            // Bought amounts add to what is at home when the units compare
+            for (const i of items) {
+              const have = pantry.find((p) => catalog.canonical(p.name) === catalog.canonical(i.name))
+              if (have) await updatePantryItem(have.id, { amount: addTo(have.amount, i.qty, i.unit) })
+              else await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
+            }
             setPantry(await loadPantry())
           }}
           onChange={updateShopping}

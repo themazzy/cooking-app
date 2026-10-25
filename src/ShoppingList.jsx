@@ -3,6 +3,7 @@ import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
+import { isOut } from './lib/stock.js'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 
@@ -29,8 +30,9 @@ export default function ShoppingList({ list, pantry = [], ebag = null, onChange,
       </>
     )
   }
-  const atHome = new Set(pantry.map((p) => canonical(p.name)))
-  const isAtHome = (i) => atHome.has(canonical(i.name))
+  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  // Staples on the list are there because the stock is low
+  const isAtHome = (i) => !String(i.key).startsWith('stock-') && atHome.has(canonical(i.name))
   const aisleOf = (i) => i.aisle ?? match(i.name)?.aisle ?? 'Other'
   // To buy by aisle, then what is probably at home, then the basket
   const rank = (i) => (i.checked ? 2000 : isAtHome(i) ? 1000 : 0) + Math.max(0, AISLES.indexOf(aisleOf(i)))
@@ -96,6 +98,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, onChange,
                       {amountText(i) && <strong>{amountText(i)} </strong>}
                       {i.name}
                       {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
+                    {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
                       {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
                       {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
                     </span>

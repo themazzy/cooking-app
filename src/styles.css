@@ -521,3 +521,20 @@ button.ebag {
 .settings select { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
 .settings input:not([type='checkbox']) { font-size: 14px; }
 .settings label:has(> input[type='checkbox']) { flex-wrap: nowrap; }
+
+/* Home stock */
+ul.catalog.stock li.aisle.alert { color: var(--warn); }
+ul.catalog.stock .warn { color: var(--warn); font-weight: 600; }
+ul.catalog.stock li.out .grow, ul.catalog.stock li.out .stock-amount { color: var(--muted); }
+ul.catalog.stock li.out .ing-icon { opacity: 0.45; }
+.stock-amount { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--text); }
+.stock-search { margin: 12px 0 0; }
+label.field { display: grid; gap: 4px; font-weight: 500; font-size: 0.9rem; color: var(--muted); margin: 0; }
+label.field input { color: var(--text); }
+.row.tight { margin: 0; flex-wrap: nowrap; }
+.add-row { margin-top: 0; }
+.cook-done { padding-top: 12vh; }
+.stock-plan { text-align: left; margin: 0 0 20px; }
+.stock-plan ul { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 6px; }
+.stock-plan li { display: flex; justify-content: space-between; gap: 10px; margin: 0; flex-wrap: wrap; }
+.badge.muted { color: var(--muted); background: var(--sunken); }

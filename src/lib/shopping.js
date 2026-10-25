@@ -24,7 +24,7 @@ export function partsFor(entries, recipes) {
 export function makeList(entries, recipes, match, previous = null) {
   const parts = partsFor(entries, recipes)
   const ticked = new Set((previous?.items ?? []).filter((i) => i.checked).map((i) => i.key))
-  const extras = (previous?.items ?? []).filter((i) => String(i.key).startsWith('extra-'))
+  const extras = (previous?.items ?? []).filter((i) => /^(extra|stock)-/.test(String(i.key)))
   return {
     createdAt: previous?.createdAt ?? Date.now(),
     recipes: parts.map((p) => p.entry),
