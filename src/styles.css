@@ -504,3 +504,20 @@ ul.cook-ingredients.all { margin: 0 0 20px; }
 .login h1 { font-size: 2rem; }
 .login form h2 { margin-bottom: 4px; }
 .login form button.link { justify-content: center; }
+ul.shopping li:not(.aisle) { display: flex; align-items: center; gap: 8px; }
+ul.shopping li label { flex: 1 1 auto; min-width: 0; }
+button.ebag {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  background: #e0f1e4;
+  color: #0e6b35;
+}
+@media (prefers-color-scheme: dark) { button.ebag { background: #1d3327; color: #7fd6a2; } }
+.settings select, .settings input:not([type='checkbox']) { max-width: 100%; flex: 1 1 100%; }
+.settings { grid-template-columns: minmax(0, 1fr); }
+.settings select { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
+.settings input:not([type='checkbox']) { font-size: 14px; }
+.settings label:has(> input[type='checkbox']) { flex-wrap: nowrap; }

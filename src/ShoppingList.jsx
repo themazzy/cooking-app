@@ -1,11 +1,14 @@
 import { Fragment, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
+import { ebagQuery, ebagUrl } from './lib/ebag.js'
+import { openExternal } from './lib/pageReader.js'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 
 /** The current shopping list by aisle: tick items off while shopping, add extras, copy it as text. */
-export default function ShoppingList({ list, pantry = [], onChange, onNew, onToPantry }) {
+/** `ebag` is the eBag.bg search link template, or null when the links are off. */
+export default function ShoppingList({ list, pantry = [], ebag = null, onChange, onNew, onToPantry }) {
   const [extra, setExtra] = useState('')
   const [copied, setCopied] = useState(false)
   const { match, canonical } = useCatalog()
@@ -97,6 +100,11 @@ export default function ShoppingList({ list, pantry = [], onChange, onNew, onToP
                       {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
                     </span>
                   </label>
+                  {ebag && !i.checked && ebagQuery(i.name, match(i.name)) && (
+                    <button className="ebag" aria-label={`Search ${i.name} on eBag`} onClick={() => openExternal(ebagUrl(ebagQuery(i.name, match(i.name)), ebag))}>
+                      eBag ↗
+                    </button>
+                  )}
                 </li>
               </Fragment>
             )
