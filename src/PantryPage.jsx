@@ -153,7 +153,7 @@ export default function PantryPage({ items, onChanged }) {
               {!form.id && <input list="catalog-names" placeholder="Ingredient" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />}
               <label className="field">
                 How much is at home
-                <input placeholder="e.g. 1 kg, 6, 1 bottle (empty: some)" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+                <input placeholder="e.g. 1 kg, 750 ml, 6 (empty: some)" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
               </label>
               <label className="field">
                 Always keep at least

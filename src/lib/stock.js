@@ -14,11 +14,14 @@ export function parseStock(text) {
   return toBase(a.max ?? a.min, m[2])
 }
 
+// Spoons and cups come out of liquids kept in ml (750 ml oil − 2 tbsp)
+const SPOONS = { tbsp: ['ml', 14.79], tsp: ['ml', 4.93] }
+
 function toBase(n, unitText) {
   const raw = String(unitText ?? '').trim().toLowerCase()
   const unit = canonicalUnit(raw) ?? raw
   const u = unit === '' ? 'pcs' : unit
-  const [base, mult] = BASE[u] ?? [u, 1]
+  const [base, mult] = BASE[u] ?? SPOONS[u] ?? [u, 1]
   return { value: n * mult, base }
 }
 
