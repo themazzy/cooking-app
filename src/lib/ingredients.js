@@ -37,6 +37,8 @@ const QTY_FIRST = new RegExp(`^${QTY}\\s*(?:${UNIT})?\\s*(?:of\\s+)?(.+)$`, 'iu'
 // "Garlic: 2 heads (for roasting)", "Spices — 1 teaspoon each": name, separator, amount, note
 const LABELLED = new RegExp(`^(.+?)\\s*[:–—-]\\s+${QTY}\\s*(?:${UNIT})?\\s*(.*)$`, 'iu')
 // "mouka 200 g", "Flour - 200g", "cukr: 2 lžíce"
+// "Salt and pepper: to taste", "Sůl: podle chuti"
+const TO_TASTE = /^(.+?)\s*[:–—-]\s+(to taste|as needed|optional|podle chuti|dle chuti|podle potřeby|dle potřeby|volitelně)\.?$/iu
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
 const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need)\b/i
@@ -97,6 +99,8 @@ export function parseIngredientLine(line) {
         ...(note ? { note } : {}),
       }
   }
+  m = text.match(TO_TASTE)
+  if (m && cleanName(m[1])) return { raw: text, quantity: null, quantityMax: null, unit: null, name: cleanName(m[1]), note: m[2] }
   m = text.match(NAME_FIRST)
   if (m) {
     const name = cleanName(m[1])

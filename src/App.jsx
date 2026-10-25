@@ -4,6 +4,8 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { pickRecipe } from './lib/recipeSource.js'
+import { toEditable } from './lib/recipeEdit.js'
+import RecipeEditor from './RecipeEditor.jsx'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -34,12 +36,6 @@ function sharedTextFromUrl(url) {
   } catch {
     return null
   }
-}
-
-const fmtQty = (i) => {
-  if (i.quantity == null) return ''
-  const n = (x) => String(Math.round(x * 100) / 100).replace('.', ',')
-  return i.quantityMax != null ? `${n(i.quantity)}–${n(i.quantityMax)}` : n(i.quantity)
 }
 
 export default function App() {
@@ -210,6 +206,18 @@ export default function App() {
     if (!result) return null
     return pickRecipe(result)
   }, [result])
+  // What the user edited wins over what the parser found
+  const recipe = useMemo(() => result?.recipe ?? toEditable(parsed), [result, parsed])
+
+  // Edits go back into the same history entry
+  const updateResult = (r) => {
+    setResult(r)
+    setHistory((h) => {
+      const next = h.map((x) => (x.at === r.at ? r : x))
+      writeStore(HISTORY_KEY, next)
+      return next
+    })
+  }
 
   return (
     <main>
@@ -349,36 +357,16 @@ export default function App() {
             {result.platform} {result.author ? `· ${result.author}` : ''}
           </h2>
 
-          {parsed && parsed.ingredients.length > 0 && (
-            <>
-              <h3>Ingredients (from the {parsed.source})</h3>
-              <table>
-                <tbody>
-                  {parsed.ingredients.map((i, n) => (
-                    <tr key={n}>
-                      <td className="qty">{fmtQty(i)}</td>
-                      <td className="unit">{i.unit ?? ''}</td>
-                      <td>
-                        {i.name}
-                        {i.note ? <span className="note"> · {i.note}</span> : null}
-                        {i.group ? <span className="note"> ({i.group})</span> : null}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </>
-          )}
-          {parsed && parsed.steps.length > 0 && (
-            <>
-              <h3>Steps</h3>
-              <ol>
-                {parsed.steps.map((s, n) => (
-                  <li key={n}>{s}</li>
-                ))}
-              </ol>
-            </>
-          )}
+          <RecipeEditor
+            recipe={recipe}
+            title={result.description?.split('\n')[0]}
+            source={result.recipe ? null : parsed?.source}
+            onChange={(next) => updateResult({ ...result, recipe: next })}
+            onReset={() => {
+              const { recipe: _edited, ...rest } = result
+              updateResult(rest)
+            }}
+          />
 
           {parsed?.source?.includes('comment') && (
             <>
