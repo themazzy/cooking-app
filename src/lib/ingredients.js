@@ -70,7 +70,16 @@ function cleanLine(line) {
     .trim()
 }
 
-const cleanName = (s) => s.replace(/^[-–:,\s]+|[\s.,;:]+$/g, '').trim()
+// Measurements left in a name ("ground beef (680g)", "/450 g butter") belong in the amount
+const MEASURE_UNITS = 'g|gr|grams?|kg|ml|l|dl|oz|ounces?|lbs?|pounds?|cups?|tbsp|tsp|fl\\.?\\s?oz'
+const IN_PARENS = new RegExp(`\\(\\s*(?:about|approx\\.?|ca\\.?|~)?\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?(?:\\s*(?:/|or)\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?)?\\s*\\)`, 'giu')
+const LOOSE = new RegExp(`(?:^|\\s|/)${NUM}\\s*(?:${MEASURE_UNITS})\\.?(?=\\s|$|[,/)])`, 'giu')
+const stripMeasures = (s) => s.replace(IN_PARENS, ' ').replace(LOOSE, ' ').replace(/\(\s*\)/g, ' ').replace(/\s{2,}/g, ' ')
+
+const cleanName = (s) =>
+  stripMeasures(s)
+    .replace(/^[-–:,/\s]+|[\s.,;:/]+$/g, '')
+    .trim()
 
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
@@ -121,6 +130,44 @@ export function parseIngredientLine(line) {
 
 const wordCount = (s) => s.split(/\s+/).filter(Boolean).length
 
+// Words that say how an ingredient is prepared, so "onion, finely chopped, divided" stays one ingredient
+const PREP = /^(?:finely|roughly|thinly|freshly|lightly|chopped|minced|diced|sliced|grated|crushed|peeled|melted|softened|divided|optional|to taste|for\b|at room|room temperature|cut|torn|drained|rinsed|beaten|plus|or\b|about|halved|cubed|shredded|ground$|cooked|uncooked|large|small|medium|whole|fresh$|\w+ed\b)/i
+
+/**
+ * One line holding several ingredients, as separate lines: "1 tsp cumin, 1 tsp paprika and ½ tsp turmeric",
+ * or in an ingredient list "Spices: cumin, paprika, turmeric, chilli". Null when it is one ingredient.
+ */
+export function splitCombined(line, inList = false) {
+  const text = cleanLine(line)
+  const parts = text
+    .split(/\s*;\s*|,\s+|\s+\+\s+|\s+(?:and|a|&)\s+(?=\d|[½⅓⅔¼¾⅛])/u)
+    .map((s) => s.replace(/^(?:and|a|&)\s+/i, '').trim())
+    .filter(Boolean)
+  if (parts.length < 2) return null
+  // "1 tsp each of cumin, paprika and turmeric" / "cumin, paprika and turmeric, 1 tsp each"
+  const each = text.match(new RegExp(`^(${NUM}\\s*(?:${UNIT_RE})?\\.?)\\s+each\\s+(?:of\\s+)?(.+)$`, 'iu')) ?? text.match(new RegExp(`^(.+?)\\s*[,—–:-]?\\s+(${NUM}\\s*(?:${UNIT_RE})?\\.?)\\s+each\\.?$`, 'iu'))
+  if (each) {
+    const [amount, list] = /^\d|^[½⅓⅔¼¾⅛]/.test(each[1]) ? [each[1], each[2]] : [each[2], each[1]]
+    const items = list
+      .replace(/^[^:]{1,30}:\s*/u, '')
+      .split(/,\s+|\s+(?:and|a|&)\s+/u).map((x) => x.trim()).filter(Boolean)
+    if (items.length >= 2) return items.map((x) => `${amount} ${x}`)
+  }
+  // Every part has its own amount
+  const parsed = parts.map((p) => parseIngredientLine(p))
+  if (parsed.every((p) => p && p.quantity != null)) return parts
+  if (!inList) return null
+  // A label and a list of names without amounts
+  const [, label, rest] = text.match(/^([^:]{1,30}):\s*(.+)$/u) ?? [null, null, text]
+  const names = rest
+    .split(/\s*;\s*|,\s+|\s+(?:and|a|&)\s+(?=[^,]*$)/u)
+    .map((s) => s.trim())
+    .filter(Boolean)
+  const short = names.every((n) => wordCount(n) <= 3 && !PREP.test(n) && !/\d/.test(n))
+  if (short && (names.length >= 3 || (label && names.length >= 2))) return names
+  return null
+}
+
 /**
  * Splits a caption or transcript into ingredients and steps.
  * Returns { ingredients: [{ raw, quantity, quantityMax, unit, name, note?, group? }], steps: [string] }.
@@ -154,6 +201,13 @@ export function parseRecipeText(text) {
 
     if (section === 'steps') {
       steps.push(line)
+      continue
+    }
+
+    const several = splitCombined(line, section === 'ingredients')
+    if (several) {
+      for (const part of several) add(parseIngredientLine(part) ?? { raw: part, quantity: null, quantityMax: null, unit: null, name: cleanName(part) })
+      section ??= 'ingredients'
       continue
     }
 

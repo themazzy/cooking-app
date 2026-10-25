@@ -116,18 +116,15 @@ Place the ground beef on a sheet of parchment paper, cover with another sheet, a
   const byName = Object.fromEntries(ingredients.map((i) => [i.name, i]))
 
   it('reads every ingredient line', () => {
-    expect(ingredients).toHaveLength(11)
+    expect(ingredients).toHaveLength(15)
     expect(byName['Ground beef']).toMatchObject({ quantity: 400, unit: 'g' })
     expect(byName['Flatbreads (lavash, pita, or tortillas)']).toMatchObject({ quantity: 2, unit: 'pcs' })
     expect(byName['Red onion (to taste)']).toMatchObject({ quantity: null })
   })
 
   it('keeps notes after the amount', () => {
-    expect(byName['Spices for the meat: paprika, chili powder, black pepper, dried garlic, salt']).toMatchObject({
-      quantity: 1,
-      unit: 'tsp',
-      note: 'each',
-    })
+    // "Spices for the meat: paprika, …, salt — 1 teaspoon each" is one line per spice
+    for (const spice of ['paprika', 'chili powder', 'black pepper', 'dried garlic', 'salt']) expect(byName[spice]).toMatchObject({ quantity: 1, unit: 'tsp' })
     expect(byName.Garlic).toMatchObject({ quantity: 2, unit: null, note: 'whole heads (for roasting)' })
   })
 
@@ -149,4 +146,59 @@ describe('amount-less labelled lines', () => {
     expect(parseIngredientLine('• Salt and pepper: to taste')).toMatchObject({ name: 'Salt and pepper', note: 'to taste', quantity: null })
     expect(parseIngredientLine('Sůl: podle chuti')).toMatchObject({ name: 'Sůl', note: 'podle chuti' })
   })
+})
+
+describe('several ingredients on one line', () => {
+  const names = (text) => parseRecipeText(text).ingredients.map((i) => [i.quantity, i.unit, i.name])
+  it('splits amounts listed together', () => {
+    expect(names('Ingredients:\n1 tsp cumin, 1 tsp paprika, ½ tsp turmeric and 1 tsp garam masala')).toEqual([
+      [1, 'tsp', 'cumin'],
+      [1, 'tsp', 'paprika'],
+      [0.5, 'tsp', 'turmeric'],
+      [1, 'tsp', 'garam masala'],
+    ])
+  })
+  it('splits a labelled list of spices', () => {
+    expect(names('Ingredients:\nSpices: cumin, paprika, turmeric and chilli powder')).toEqual([
+      [null, null, 'cumin'],
+      [null, null, 'paprika'],
+      [null, null, 'turmeric'],
+      [null, null, 'chilli powder'],
+    ])
+  })
+  it('keeps one ingredient with its preparation together', () => {
+    expect(names('Ingredients:\n1 onion, finely chopped, divided\n2 cloves garlic, minced\nsalt and pepper')).toEqual([
+      [1, null, 'onion, finely chopped, divided'],
+      [2, 'clove', 'garlic, minced'],
+      [null, null, 'salt and pepper'],
+    ])
+  })
+  it('keeps decimal commas', () => {
+    expect(names('Ingredients:\n1,5 kg potatoes')).toEqual([[1.5, 'kg', 'potatoes']])
+  })
+})
+
+describe('measurements in names', () => {
+  it('moves them out of the name', () => {
+    expect(parseIngredientLine('1.5 lb ground beef (680g)')).toMatchObject({ quantity: 1.5, unit: 'lb', name: 'ground beef' })
+    expect(parseIngredientLine('1 lb/450g ground beef')).toMatchObject({ quantity: 1, unit: 'lb', name: 'ground beef' })
+    expect(parseIngredientLine('2 cups (480 ml) milk')).toMatchObject({ quantity: 2, unit: 'cup', name: 'milk' })
+    expect(parseIngredientLine('1 can (400 g / 14 oz) chickpeas')).toMatchObject({ quantity: 1, unit: 'can', name: 'chickpeas' })
+    expect(parseIngredientLine('3 eggs')).toMatchObject({ name: 'eggs' })
+  })
+})
+
+it('gives "each" amounts to every ingredient', () => {
+  const names = (text) => parseRecipeText(text).ingredients.map((i) => [i.quantity, i.unit, i.name])
+  expect(names('Ingredients:\n1 tsp each of cumin, coriander, paprika and turmeric')).toEqual([
+    [1, 'tsp', 'cumin'],
+    [1, 'tsp', 'coriander'],
+    [1, 'tsp', 'paprika'],
+    [1, 'tsp', 'turmeric'],
+  ])
+  expect(names('Ingredients:\nsalt, pepper and oregano, 1 tsp each')).toEqual([
+    [1, 'tsp', 'salt'],
+    [1, 'tsp', 'pepper'],
+    [1, 'tsp', 'oregano'],
+  ])
 })
