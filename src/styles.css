@@ -198,3 +198,4 @@ ul.shopping li.checked span { color: var(--muted); text-decoration: line-through
 ul.shopping .from { display: block; color: var(--muted); font-size: 0.8rem; }
 input.grow { flex: 1 1 160px; width: auto; margin: 0; }
 .servings { flex-wrap: wrap; } .servings > span, .servings label { white-space: nowrap; }
+.account { display: grid; gap: 8px; margin-top: 8px; } .account input { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; } .code { letter-spacing: 0.1em; } .sync { margin: 0 0 12px; }

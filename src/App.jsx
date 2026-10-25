@@ -4,10 +4,13 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { draftFromImport } from './lib/recipeDraft.js'
-import { deleteRecipe, getRecipe, getVideo, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
+import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
 import RecipeList from './RecipeList.jsx'
+import Account from './Account.jsx'
+import { supabase } from './lib/supabase.js'
+import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
 import { buildShoppingList } from './lib/scale.js'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
@@ -70,7 +73,10 @@ export default function App() {
   const [shrink, setShrink] = useState(null)
   const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
   const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
-  const savedIds = useRef({}) // draft key → saved id, for a shrink that finishes after saving
+  const [user, setUser] = useState(null)
+  const [syncState, setSyncState] = useState(null) // { at } or { error }
+  const savedIds = useRef({})
+  const shoppingRef = useRef(null) // draft key → saved id, for a shrink that finishes after saving
   const [link, setLink] = useState('')
   const [pasted, setPasted] = useState('')
   const [busy, setBusy] = useState(false)
@@ -97,6 +103,49 @@ export default function App() {
     return () => window.removeEventListener('hashchange', onHash)
   }, [refreshRecipes])
 
+  shoppingRef.current = shopping
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null))
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null))
+    return () => data.subscription.unsubscribe()
+  }, [])
+
+  const syncing = useRef(false)
+  const runSync = useCallback(async () => {
+    if (!user || syncing.current) return
+    syncing.current = true
+    try {
+      await syncRecipes()
+      await refreshRecipes()
+      const list = await syncShopping(shoppingRef.current)
+      if (list !== shoppingRef.current) {
+        setShopping(list)
+        writeStore(SHOPPING_KEY, list)
+      }
+      setSyncState({ at: Date.now() })
+    } catch (err) {
+      setSyncState({ error: err?.message ?? String(err) })
+    } finally {
+      syncing.current = false
+    }
+  }, [user, refreshRecipes])
+
+  // Sync when signed in, when the app comes back, and when the other phone changes something
+  useEffect(() => {
+    if (!user) return
+    runSync()
+    let unsubscribe = null
+    subscribeHousehold(() => runSync())
+      .then((u) => (unsubscribe = u))
+      .catch(() => {})
+    const sub = CapApp.addListener('resume', runSync)
+    return () => {
+      unsubscribe?.()
+      sub.then((h) => h.remove())
+    }
+  }, [user, runSync])
+
   // Opening a saved recipe loads it (and its video) from the device
   useEffect(() => {
     if (route.page !== 'recipe' || !route.id || editing?.recipe.id === route.id) return
@@ -105,7 +154,12 @@ export default function App() {
       const recipe = await getRecipe(route.id)
       if (cancelled) return
       if (!recipe) return go('#/recipes', { replace: true })
-      const videoBlob = recipe.video ? await getVideo(route.id) : null
+      let videoBlob = null
+      try {
+        videoBlob = recipe.video || recipe.videoPath ? await loadVideo(recipe) : null
+      } catch {
+        videoBlob = null // offline, or the video is not uploaded yet
+      }
       if (!cancelled) setEditing({ recipe, videoBlob, dirty: false })
     })()
     return () => {
@@ -167,8 +221,9 @@ export default function App() {
         if (id) {
           await putVideo(id, small)
           const stored = await getRecipe(id)
-          if (stored) await putRecipe({ ...stored, video })
+          if (stored) await putRecipe({ ...stored, video, videoUploaded: false })
           refreshRecipes()
+          runSyncRef.current?.()
         }
       })
       .catch((err) => setShrink((s) => (s?.key === key ? { key, state: 'failed', error: err?.message ?? String(err) } : s)))
@@ -196,26 +251,43 @@ export default function App() {
     const id = recipe.id ?? newId()
     const now = Date.now()
     const keepVideo = !!videoBlob && settings.saveVideos
-    const stored = { ...recipe, id, video: keepVideo ? recipe.video : null, createdAt: recipe.createdAt ?? now, updatedAt: now }
+    const newVideo = keepVideo && !recipe.id
+    const stored = {
+      ...recipe,
+      id,
+      video: keepVideo ? recipe.video : null,
+      ...(newVideo ? { videoUploaded: false } : {}),
+      createdAt: recipe.createdAt ?? now,
+      updatedAt: now,
+    }
     await putRecipe(stored)
     if (keepVideo && !recipe.id) await putVideo(id, videoBlob)
     if (recipe.key) savedIds.current[recipe.key] = id
     setEditing({ recipe: stored, videoBlob: keepVideo ? videoBlob : null, dirty: false })
     refreshRecipes()
+    runSync()
     go(`#/recipe/${encodeURIComponent(id)}`, { replace: route.page === 'new' })
   }
 
   const deleteEditing = async () => {
     if (!editing?.recipe.id) return
     await deleteRecipe(editing.recipe.id)
+    markDeleted(editing.recipe.id)
     setEditing(null)
     refreshRecipes()
+    runSync()
     go('#/recipes', { replace: true })
   }
 
+  const shoppingTimer = useRef(null)
   const updateShopping = (list) => {
-    setShopping(list)
-    writeStore(SHOPPING_KEY, list)
+    const stamped = list ? { ...list, updatedAt: Date.now() } : list
+    setShopping(stamped)
+    shoppingRef.current = stamped
+    writeStore(SHOPPING_KEY, stamped)
+    // Ticking items quickly sends one update, not one per tap
+    clearTimeout(shoppingTimer.current)
+    shoppingTimer.current = setTimeout(() => runSyncRef.current?.(), 1500)
   }
 
   const makeShoppingList = () => {
@@ -232,6 +304,9 @@ export default function App() {
     setSelection(null)
     go('#/shopping')
   }
+
+  const runSyncRef = useRef(null)
+  runSyncRef.current = runSync
 
   const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
 
@@ -545,6 +620,7 @@ export default function App() {
               </select>
             </label>
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
+            <Account user={user} onChanged={() => setSyncState(null)} />
             {native && (
               <div>
                 <strong>Instagram account:</strong> {igSignedIn ? 'signed in' : 'not signed in'}
@@ -625,6 +701,19 @@ export default function App() {
           Shopping list{shopping ? ` (${shopping.items.filter((i) => !i.checked).length})` : ''}
         </button>
       </nav>
+
+      {user && (
+        <p className="hint sync">
+          {syncState?.error
+            ? `Sync failed: ${syncState.error}`
+            : syncState?.at
+              ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              : 'Syncing…'}{' '}
+          <button className="link" onClick={runSync}>
+            Sync now
+          </button>
+        </p>
+      )}
 
       <section className="card">
         <h3>Saved recipes</h3>
