@@ -134,11 +134,19 @@ Place the ground beef on a sheet of parchment paper, cover with another sheet, a
   it('groups the sauce ingredients', () => {
     expect(byName['Greek yogurt']).toMatchObject({ quantity: 200, unit: 'g', group: 'Tzatziki sauce' })
     expect(byName['Ground beef'].group).toBeUndefined()
-    expect(byName['Salt and pepper: to taste']).toMatchObject({ quantity: null, group: 'Tzatziki sauce' })
+    expect(byName['Salt and pepper']).toMatchObject({ quantity: null, note: 'to taste', group: 'Tzatziki sauce' })
   })
 
   it('reads the instructions', () => {
     expect(steps).toHaveLength(2)
     expect(steps[0]).toBe('Preheat the oven to 200°C (392°F).')
+  })
+})
+
+describe('amount-less labelled lines', () => {
+  it('keeps "to taste" as a note', async () => {
+    const { parseIngredientLine } = await import('./ingredients.js')
+    expect(parseIngredientLine('• Salt and pepper: to taste')).toMatchObject({ name: 'Salt and pepper', note: 'to taste', quantity: null })
+    expect(parseIngredientLine('Sůl: podle chuti')).toMatchObject({ name: 'Sůl', note: 'podle chuti' })
   })
 })

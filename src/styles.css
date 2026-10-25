@@ -108,3 +108,19 @@ pre {
 }
 .history { list-style: none; padding: 0; margin: 0; }
 .note { color: var(--muted); font-size: 0.9em; }
+.ingredients { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.ing-row { display: flex; gap: 6px; align-items: center; }
+.editor input {
+  font: inherit;
+  color: inherit;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 0;
+}
+.ing-row .qty { flex: 0 0 3.6em; text-align: right; }
+.ing-row .unit { flex: 0 0 3.6em; }
+.ing-row .name { flex: 1 1 auto; }
+.editor input.group { width: 100%; margin-top: 8px; font-weight: 600; background: transparent; }
+button.icon { background: transparent; color: var(--muted); padding: 6px 8px; font-size: 1.2rem; line-height: 1; }
