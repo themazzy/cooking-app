@@ -264,7 +264,7 @@ async function viaBrowser(code, url, gate) {
     asbdId: API_HEADERS['X-ASBD-ID'],
     queryName: POST_QUERY.name,
     docId: POST_QUERY.docId,
-  })
+  }, { userAgent: DESKTOP_UA }) // the mobile site tries to open the Instagram app instead
   const parsed = parseInPageResult(r)
   if (parsed?.gate) gate.title = parsed.gate
   return parsed
