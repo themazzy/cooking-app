@@ -8,6 +8,9 @@
 // supabase/seed-ingredients.sql is generated from this file
 // (npm run seed:ingredients), and the app uses it until the shared catalog loads.
 
+import { BULGARIAN } from './bulgarian.js'
+import { CZECH_ALIASES, WORLD_LINES } from './worldIngredients.js'
+
 const LINES = `
 Beef | Meat | Beef | beef meat, stewing beef, beef chunks
 Ground beef | Meat | Minced Beef | minced beef, beef mince, lean minced beef, lean ground beef, mince, ground meat, minced meat
@@ -16,7 +19,7 @@ Beef fillet | Meat | Beef Fillet | beef tenderloin, fillet steak
 Steak | Meat | Beef Fillet | sirloin, ribeye, rib eye, flank steak, rump steak
 Beef shin | Meat | Beef Shin | shin of beef
 Veal | Meat | Veal | veal cutlet
-Pork | Meat | Pork | pork loin, pork shoulder, pork chops, pork belly, pork neck
+Pork | Meat | Pork | pork loin, pork chops
 Ground pork | Meat | Minced Pork | minced pork, pork mince
 Bacon | Meat | Bacon | streaky bacon, bacon strips, pancetta, lardons
 Ham | Meat | Ham | cooked ham
@@ -28,7 +31,7 @@ Chicken breast | Meat | Chicken Breast | chicken breasts, chicken fillet, chicke
 Chicken thighs | Meat | Chicken Thighs | chicken thigh, boneless chicken thighs, chicken legs, chicken drumsticks, drumsticks, chicken wings
 Ground chicken | Meat | Turkey Mince | minced chicken, chicken mince
 Turkey | Meat | Turkey Mince | turkey breast, ground turkey, turkey mince, minced turkey
-Duck | Meat | Duck | duck breast, duck legs
+Duck | Meat | Duck | duck legs
 Lamb | Meat | Lamb | lamb leg, lamb shoulder, lamb chops, lamb mince, ground lamb, mutton
 Oxtail | Meat | Oxtail | ox tail
 Beef kidney | Meat | Beef Kidney |
@@ -84,7 +87,7 @@ Greek yogurt | Dairy & eggs | Greek Yogurt | greek yoghurt
 Yogurt | Dairy & eggs | Yogurt | yoghurt, plain yogurt, natural yogurt
 Cream cheese | Dairy & eggs | Cream Cheese | philadelphia, soft cheese
 Mascarpone | Dairy & eggs | Mascarpone |
-Ricotta | Dairy & eggs | Ricotta | quark, curd cheese
+Ricotta | Dairy & eggs | Ricotta |
 Cheese | Dairy & eggs | Cheese | grated cheese, shredded cheese
 Cheddar | Dairy & eggs | Cheddar Cheese | cheddar cheese
 Mozzarella | Dairy & eggs | Mozzarella | mozzarella balls, fresh mozzarella
@@ -100,7 +103,7 @@ Double cream | Dairy & eggs | Double Cream | heavy cream, whipping cream, heavy 
 Single cream | Dairy & eggs | Single Cream | light cream | Cream
 Crème fraîche | Dairy & eggs | Creme Fraiche | creme fraiche | Sour cream
 Clotted cream | Dairy & eggs | Clotted Cream |  | Cream
-Fromage frais | Dairy & eggs | Fromage Frais | tvaroh
+Fromage frais | Dairy & eggs | Fromage Frais |
 Cottage cheese | Dairy & eggs |  |
 Buttermilk | Dairy & eggs |  |
 Kefir | Dairy & eggs |  |
@@ -111,7 +114,7 @@ Vegan butter | Dairy & eggs | Vegan Butter | margarine
 Kashkaval | Dairy & eggs |  | kaskaval
 Halloumi | Dairy & eggs |  |
 Pecorino | Dairy & eggs | Pecorino | pecorino romano | Parmesan
-Stilton | Dairy & eggs | Stilton Cheese | blue cheese, gorgonzola, roquefort
+Stilton | Dairy & eggs | Stilton Cheese |  | Blue cheese
 Emmental | Dairy & eggs |  | emmentaler, swiss cheese
 Edam | Dairy & eggs |  |
 Camembert | Dairy & eggs |  |
@@ -120,7 +123,7 @@ Processed cheese | Dairy & eggs |  | cheese slices, american cheese, cheese spre
 Burrata | Dairy & eggs |  |
 Custard | Dairy & eggs | Custard |
 Whipped cream | Dairy & eggs |  | squirty cream | Cream
-Tofu | Dairy & eggs |  | firm tofu, silken tofu
+Tofu | Dairy & eggs |  | firm tofu
 Tempeh | Dairy & eggs |  |
 Seitan | Dairy & eggs |  |
 Hummus | Dairy & eggs |  | houmous
@@ -147,7 +150,7 @@ Mushrooms | Vegetables | Mushrooms | mushroom, button mushrooms, champignons
 Shiitake mushrooms | Vegetables | Shiitake Mushrooms | shiitake
 Broccoli | Vegetables | Broccoli | broccoli florets
 Cauliflower | Vegetables |  | cauliflower florets
-Cabbage | Vegetables | Cabbage | white cabbage, savoy cabbage
+Cabbage | Vegetables | Cabbage | white cabbage
 Brussels sprouts | Vegetables | Brussels Sprouts |
 Kale | Vegetables | Kale |
 Spinach | Vegetables | Spinach | baby spinach, fresh spinach
@@ -156,7 +159,7 @@ Rocket | Vegetables | Rocket | arugula
 Asparagus | Vegetables | Asparagus |
 Green beans | Vegetables | Green Beans | string beans, french beans
 Peas | Vegetables | Peas | green peas
-Sugar snap peas | Vegetables | Sugar Snap Peas | snow peas, mangetout
+Sugar snap peas | Vegetables | Sugar Snap Peas |
 Sweetcorn | Vegetables | Sweetcorn | corn, sweet corn, corn kernels
 Pumpkin | Vegetables | Pumpkin | hokkaido
 Beetroot | Vegetables |  | beetroots, beets, beet
@@ -184,7 +187,7 @@ Red cabbage | Vegetables |  |  | Cabbage
 Sauerkraut | Vegetables |  | pickled cabbage
 Iceberg lettuce | Vegetables | Little Gem Lettuce | little gem lettuce, romaine, cos lettuce | Lettuce
 Chestnut mushrooms | Vegetables | Chestnut Mushroom | cremini, baby bella | Mushrooms
-Wild mushrooms | Vegetables | Wild Mushrooms | porcini, chanterelles, mixed mushrooms | Mushrooms
+Wild mushrooms | Vegetables | Wild Mushrooms | chanterelles, mixed mushrooms | Mushrooms
 Oyster mushrooms | Vegetables |  |  | Mushrooms
 Corn on the cob | Vegetables |  | corn cob
 Creamed corn | Vegetables | Creamed Corn |
@@ -408,11 +411,11 @@ Baguette | Bakery | Baguette | french bread
 Breadcrumbs | Bakery | Breadcrumbs | panko, bread crumbs
 Tortillas | Bakery | Tortillas | flour tortillas, wraps, tortilla wraps
 Flatbread | Bakery | Naan Bread | flatbreads, lavash
-Burger buns | Bakery | Bread | buns, bread rolls, rolls, brioche buns
+Burger buns | Bakery | Bread | buns, brioche buns
 Digestive biscuits | Bakery | Digestive Biscuits | graham crackers, biscuits
 Ladyfingers | Bakery |  | savoiardi, sponge fingers
 Crusty bread | Bakery | Crusty Bread | sourdough, sourdough bread | Bread
-Wholegrain bread | Bakery | Wholegrain Bread | wholemeal bread, brown bread, rye bread | Bread
+Wholegrain bread | Bakery | Wholegrain Bread | wholemeal bread, brown bread | Bread
 Toast bread | Bakery |  | sandwich bread, sliced bread, toast | Bread
 Naan | Bakery | Naan Bread | naan bread | Flatbread
 Pita | Bakery |  | pitta, pita bread | Flatbread
@@ -429,7 +432,7 @@ Vegetable oil | Oils & sauces | Vegetable Oil | oil, frying oil
 Sesame oil | Oils & sauces | Sesame Seed Oil | toasted sesame oil
 Vinegar | Oils & sauces | Vinegar | white wine vinegar
 Balsamic vinegar | Oils & sauces | Balsamic Vinegar | balsamic
-Soy sauce | Oils & sauces | Soy Sauce | light soy sauce, tamari
+Soy sauce | Oils & sauces | Soy Sauce | tamari
 Fish sauce | Oils & sauces | Fish Sauce | thai fish sauce
 Oyster sauce | Oils & sauces | Oyster Sauce |
 Worcestershire sauce | Oils & sauces | Worcestershire Sauce |
@@ -482,7 +485,7 @@ Tamarind paste | Oils & sauces | Tamarind Paste |
 Thai green curry paste | Oils & sauces | Thai Green Curry Paste | green curry paste | Curry paste
 Massaman curry paste | Oils & sauces | Massaman Curry Paste |  | Curry paste
 Madras paste | Oils & sauces | Madras Paste |  | Curry paste
-Miso | Oils & sauces |  | miso paste, white miso
+Miso | Oils & sauces |  | miso paste, white miso, shiro miso
 Gochujang | Oils & sauces |  |
 Coconut cream | Oils & sauces | Coconut Cream |
 Gravy | Oils & sauces | Beef Gravy | beef gravy
@@ -572,18 +575,34 @@ export const AISLES = [
   'Other',
 ]
 
-export const SEED_INGREDIENTS = LINES.trim()
+const words = (list) =>
+  list
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+
+/** Extra names by catalog name, from "Name | word, word" lines. */
+const aliasLines = (text) =>
+  new Map(
+    text
+      .trim()
+      .split('\n')
+      .map((line) => line.split('|').map((s) => s.trim()))
+      .map(([name, list = '']) => [name.toLowerCase(), words(list)]),
+  )
+export const EXTRA_ALIASES = aliasLines(CZECH_ALIASES)
+for (const [name, bg] of BULGARIAN) if (bg) EXTRA_ALIASES.set(name, [...(EXTRA_ALIASES.get(name) ?? []), bg.toLowerCase()])
+
+export const SEED_INGREDIENTS = `${LINES.trim()}\n${WORLD_LINES.trim()}`
   .split('\n')
   .map((line) => {
     const [name, aisle, image, other = '', base = ''] = line.split('|').map((s) => s.trim())
+    const aliases = [...words(other), ...(EXTRA_ALIASES.get(name.toLowerCase()) ?? [])]
     return {
       name,
       aisle,
       image: image || null,
       base: base || null,
-      aliases: other
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean),
+      aliases: [...new Set(aliases)].filter((a) => a !== name.toLowerCase()),
     }
   })

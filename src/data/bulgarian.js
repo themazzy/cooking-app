@@ -545,6 +545,175 @@ Ice cubes | лед
 Frozen pastry | замразено тесто
 Spring rolls | пролетни рулца
 Tamarind | тамаринд
+Quark | извара
+Blue cheese | синьо сирене
+Hermelín | камембер
+Olomoucké tvarůžky | меко зряло сирене
+Smoked cheese | пушено сирене
+Bryndza | овче сирене
+Žervé | крема сирене
+Pomazánkové máslo | масло за мазане
+Sirene | бяло саламурено сирене
+Bulgarian yogurt | българско кисело мляко
+Katak | катък
+Salted duck eggs | осолени яйца
+Century eggs | столетни яйца
+Silken tofu | тофу копринено
+Fried tofu | пържено тофу
+Tofu skin | юба тофу
+Fermented tofu | ферментирало тофу
+Smoked meat | пушено месо
+Špekáčky | кренвирши за печене
+Párky | кренвирши
+Klobása | наденица пушена
+Jitrnice | дробен колбас
+Head cheese | пача
+Smoked bacon | пушен бекон
+Pork neck | свински врат
+Pork shoulder | свинска плешка
+Beef sirloin | телешко филе
+Beef chuck | телешка плешка
+Sujuk | суджук
+Pastarma | пастърма
+Elenski but | еленски бут
+Chinese sausage | китайска наденица
+Char siu | свинско чар сиу
+Pork belly | свинско бекон гърди
+Duck breast | патешки гърди
+Fish cake | рибни кюфтенца
+Dried shrimp | сушени скариди
+Dried scallops | сушени миди сен жак
+Bonito flakes | бонито флейкс
+Eel | змиорка
+Salmon roe | хайвер сьомга
+Fish roe | хайвер
+Sashimi-grade fish | риба за суши
+Pike perch | бяла риба сулка
+Daikon | дайкон
+Lotus root | корен лотос
+Bamboo shoots | бамбукови издънки
+Water chestnuts | водни кестени
+Wood ear mushrooms | гъби черни дървесни
+Enoki mushrooms | гъби еноки
+King oyster mushrooms | гъби ерингии
+Shimeji mushrooms | гъби шимеджи
+Maitake mushrooms | гъби майтаке
+Porcini | манатарки
+Gai lan | китайски броколи
+Choy sum | чой сум
+Garlic chives | китайски лук
+Chinese celery | китайска целина
+Snow peas | грах захарен шушулки
+Bitter melon | горчив пъпеш
+Winter melon | восъчна тиква
+Taro | таро
+Burdock root | корен репей
+Kabocha | тиква хокайдо
+Shiso | шисо
+Mitsuba | японски магданоз
+Thai basil | тайландски босилек
+Japanese cucumber | краставица
+Negi | праз
+Sweet potato leaves | воден спанак
+Konjac | конджак
+Bulgarian peppers | чушки
+Green tomatoes | зелени домати
+Kohlrabi | алабаш
+Savoy cabbage | савойско зеле
+Root parsley | магданоз корен
+Potato dumplings | картофени кнедли
+Bread dumplings | кнедли
+Bread rolls | питки
+Rye bread | ръжен хляб
+Wafers | вафли
+Gingerbread spice | подправка за меденки
+Ground poppy seeds | мак млян
+Plum butter | сливов мармалад
+Rose jam | сладко от рози
+Halva | тахан халва
+Kori za banitsa | кори за баница
+Medium-coarse flour | брашно тип 500
+Coarse flour | брашно грис
+Fine flour | брашно бяло
+Rum flavouring | есенция ром
+Lard cracklings | пръжки
+Glutinous rice | ориз лепкав
+Glutinous rice flour | брашно от лепкав ориз
+Rice flour | оризово брашно
+Tapioca starch | нишесте тапиока
+Tempura flour | брашно темпура
+Kinako | соево брашно
+Matcha | матча
+Agar | агар агар
+Red bean paste | паста от червен боб
+Mochi | мочи
+Glass noodles | стъклени нудли
+Soba noodles | нудли соба
+Ramen | нудли рамен
+Somen noodles | нудли сомен
+Shirataki noodles | нудли ширатаки
+Wheat noodles | пшенични нудли
+Wonton wrappers | кори за уонтон
+Dumpling wrappers | кори за гьоза
+Rice paper | оризова хартия
+Mung beans | мунг боб
+Adzuki beans | адзуки боб
+Black soybeans | черна соя
+Goji berries | годжи бери
+Red dates | хинап
+Lotus seeds | семена лотос
+Yuzu | юзу
+Umeboshi | умебоши
+Black sesame seeds | черен сусам
+Shaoxing wine | вино шаосин
+Chinese black vinegar | черен оцет
+Doubanjiang | лют бобов сос
+Fermented black beans | ферментирал черен боб
+Black bean sauce | сос черен боб
+Sweet bean sauce | сладък бобов сос
+Chilli oil | лют олио чили
+Sichuan peppercorns | сечуански пипер
+Dried chillies | сушени люти чушки
+Cassia bark | касия канела
+MSG | глутамат
+Chicken powder | пилешки бульон на прах
+Rock sugar | захар кристална
+XO sauce | XO сос
+Plum sauce | сливов сос
+Char siu sauce | сос чар сиу
+Hot pot base | основа за хот пот
+Chinese sesame paste | сусамов тахан
+Light soy sauce | светъл соев сос
+Japanese soy sauce | соев сос кикоман
+Ponzu | понзу
+Tonkatsu sauce | сос тонкацу
+Okonomiyaki sauce | сос окономияки
+Japanese mayonnaise | майонеза кюпи
+Sushi vinegar | оцет за суши
+Mentsuyu | менцую
+Yuzu kosho | юзу кошо
+Japanese curry roux | японско къри
+Red miso | червено мисо
+Sesame dressing | сусамов дресинг
+Wasabi | уасаби
+Pickled ginger | маринован джинджифил
+Takuan | маринован дайкон
+Natto | нато
+Dashi | даши
+Kombu | комбу
+Nori | нори
+Wakame | уакаме
+Hijiki | хиджики
+Furikake | фурикаке
+Shichimi togarashi | шичими тогараши
+Japanese rice | ориз за суши
+Sake lees | саке касу
+Rice wine | оризово вино
+Boza | боза
+Becherovka | бехеровка
+Slivovice | сливова ракия
+Mead | медовина
+Kvass | квас
 `
 
 export const BULGARIAN = new Map(
