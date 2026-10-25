@@ -10,6 +10,8 @@ import RecipePage from './RecipePage.jsx'
 import RecipeList from './RecipeList.jsx'
 import Account from './Account.jsx'
 import { supabase } from './lib/supabase.js'
+import { useCatalog } from './catalog.jsx'
+import IngredientsPage from './IngredientsPage.jsx'
 import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
 import { buildShoppingList } from './lib/scale.js'
@@ -46,7 +48,7 @@ function sharedTextFromUrl(url) {
   }
 }
 
-/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import), #/shopping */
+/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import), #/shopping, #/ingredients */
 function parseRoute() {
   const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
   return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
@@ -58,6 +60,9 @@ const go = (hash, { replace = false } = {}) => {
 
 export default function App() {
   const native = canFetchCrossSite()
+  const catalog = useCatalog()
+  const catalogRefresh = useRef(null)
+  catalogRefresh.current = catalog.refresh
   const [settings, setSettings] = useState(() => ({
     model: 'base',
     language: 'auto',
@@ -118,6 +123,7 @@ export default function App() {
     try {
       await syncRecipes()
       await refreshRecipes()
+      catalogRefresh.current?.()
       const list = await syncShopping(shoppingRef.current)
       if (list !== shoppingRef.current) {
         setShopping(list)
@@ -299,7 +305,7 @@ export default function App() {
     updateShopping({
       createdAt: Date.now(),
       recipes: parts.map((p) => ({ id: p.recipe.id, title: p.recipe.title, servings: p.recipe.servings, portions: p.portions })),
-      items: buildShoppingList(parts).map((i) => ({ ...i, checked: false })),
+      items: buildShoppingList(parts, catalog.match).map((i) => ({ ...i, checked: false })),
     })
     setSelection(null)
     go('#/shopping')
@@ -513,6 +519,19 @@ export default function App() {
     )
   }
 
+  if (route.page === 'ingredients') {
+    return (
+      <main>
+        <div className="topbar">
+          <button className="link" onClick={back}>
+            ← Back
+          </button>
+        </div>
+        <IngredientsPage signedIn={!!user} />
+      </main>
+    )
+  }
+
   if (route.page === 'shopping') {
     return (
       <main>
@@ -699,6 +718,9 @@ export default function App() {
         </button>
         <button className="secondary" onClick={() => go('#/shopping')}>
           Shopping list{shopping ? ` (${shopping.items.filter((i) => !i.checked).length})` : ''}
+        </button>
+        <button className="secondary" onClick={() => go('#/ingredients')}>
+          Ingredients
         </button>
       </nav>
 

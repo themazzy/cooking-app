@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { emptyIngredient, recipeToText } from './lib/recipeEdit.js'
+import { IngredientIcon, useCatalog } from './catalog.jsx'
 
 /** Ingredients as editable rows and the steps as one text box, one step per line. */
 export default function RecipeEditor({ recipe, title, source, scaled, onChange, onReset }) {
   const [copied, setCopied] = useState(false)
+  const { match } = useCatalog()
   const { ingredients, steps } = recipe
 
   const setIngredients = (next) => {
@@ -35,10 +37,15 @@ export default function RecipeEditor({ recipe, title, source, scaled, onChange, 
         // Scaled amounts are for reading; editing works on the original portions
         <ul className="scaled">
           {scaled.map((i, n) => (
-            <li key={n}>
-              {i.group && i.group !== scaled[n - 1]?.group && <div className="group-title">{i.group}</div>}
-              <span className="qty">{[i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')}</span> {i.name}
-            </li>
+            <Fragment key={n}>
+              {i.group && i.group !== scaled[n - 1]?.group && <li className="group-title">{i.group}</li>}
+              <li className="scaled-item">
+                <IngredientIcon entry={match(i.name)} />
+                <span>
+                  <span className="qty">{[i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')}</span> {i.name}
+                </span>
+              </li>
+            </Fragment>
           ))}
         </ul>
       ) : (
@@ -55,6 +62,7 @@ export default function RecipeEditor({ recipe, title, source, scaled, onChange, 
                   />
                 )}
                 <div className="ing-row">
+                  <IngredientIcon entry={match(i.name)} />
                   <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
                   <input className="unit" aria-label="Unit" value={i.unit} onChange={(e) => update(n, 'unit', e.target.value)} />
                   <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />

@@ -199,3 +199,24 @@ ul.shopping .from { display: block; color: var(--muted); font-size: 0.8rem; }
 input.grow { flex: 1 1 160px; width: auto; margin: 0; }
 .servings { flex-wrap: wrap; } .servings > span, .servings label { white-space: nowrap; }
 .account { display: grid; gap: 8px; margin-top: 8px; } .account input { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; } .code { letter-spacing: 0.1em; } .sync { margin: 0 0 12px; }
+.ing-icon { flex: 0 0 auto; border-radius: 6px; object-fit: contain; }
+.ing-icon.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+ul.scaled li.scaled-item { display: flex; align-items: center; gap: 10px; }
+ul.scaled li.group-title { border: 0; padding-top: 10px; }
+.ing-row .qty { flex-basis: 3.2em; }
+.ing-row .unit { flex-basis: 3.2em; }
+ul.shopping li.aisle { border: 0; padding: 14px 0 2px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+ul.shopping label { align-items: center; }
+ul.shopping input { margin-top: 0; }
+ul.catalog { list-style: none; padding: 0; margin: 8px 0 0; }
+ul.catalog li { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); margin: 0; }
+ul.catalog li.aisle { border: 0; padding: 14px 0 2px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+ul.catalog .from { display: block; color: var(--muted); font-size: 0.8rem; }
