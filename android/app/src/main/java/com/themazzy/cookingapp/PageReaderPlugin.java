@@ -1,6 +1,8 @@
 package com.themazzy.cookingapp;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.ViewGroup;
@@ -30,6 +32,24 @@ public class PageReaderPlugin extends Plugin {
 
     private static final String POLL =
         "(function(){return window.__cookingResult === undefined ? null : JSON.stringify(window.__cookingResult);})()";
+
+    /** Opens a link in the app it belongs to (Instagram, YouTube…) or the browser. */
+    @PluginMethod
+    public void openExternal(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || !(url.startsWith("http://") || url.startsWith("https://"))) {
+            call.reject("http(s) url required");
+            return;
+        }
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("No app can open this link", e);
+        }
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     @PluginMethod

@@ -3,10 +3,11 @@ import { App as CapApp } from '@capacitor/app'
 import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
-import { pickRecipe } from './lib/recipeSource.js'
-import { parseRecipeText } from './lib/ingredients.js'
-import { toEditable } from './lib/recipeEdit.js'
-import RecipeEditor from './RecipeEditor.jsx'
+import { draftFromImport } from './lib/recipeDraft.js'
+import { deleteRecipe, getRecipe, getVideo, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
+import { canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
+import RecipePage from './RecipePage.jsx'
+import RecipeList from './RecipeList.jsx'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -39,15 +40,36 @@ function sharedTextFromUrl(url) {
   }
 }
 
+/** #/ (import), #/recipes, #/recipe/<id>, #/new (unsaved import) */
+function parseRoute() {
+  const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
+  return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
+}
+const go = (hash, { replace = false } = {}) => {
+  if (replace) window.location.replace(hash)
+  else window.location.hash = hash
+}
+
 export default function App() {
   const native = canFetchCrossSite()
-  const [settings, setSettings] = useState(() => readStore(SETTINGS_KEY, { model: 'base', language: 'auto', transcribe: true }))
+  const [settings, setSettings] = useState(() => ({
+    model: 'base',
+    language: 'auto',
+    transcribe: true,
+    saveVideos: true,
+    ...readStore(SETTINGS_KEY, {}),
+  }))
+  const [route, setRoute] = useState(parseRoute)
+  const [recipes, setRecipes] = useState([])
+  // The recipe on screen: { recipe, videoBlob, dirty }
+  const [editing, setEditing] = useState(null)
+  const [shrink, setShrink] = useState(null)
+  const savedIds = useRef({}) // draft key → saved id, for a shrink that finishes after saving
   const [link, setLink] = useState('')
   const [pasted, setPasted] = useState('')
   const [busy, setBusy] = useState(false)
   const [log, setLog] = useState([])
   const [download, setDownload] = useState(null)
-  const [result, setResult] = useState(null)
   const [history, setHistory] = useState(() => readStore(HISTORY_KEY, []))
   const [report, setReport] = useState(null)
   const [copied, setCopied] = useState(false)
@@ -55,6 +77,35 @@ export default function App() {
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
+
+  const refreshRecipes = useCallback(() => listRecipes().then(setRecipes).catch(() => setRecipes([])), [])
+  useEffect(() => {
+    refreshRecipes()
+    persistStorage()
+    const onHash = () => setRoute(parseRoute())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [refreshRecipes])
+
+  // Opening a saved recipe loads it (and its video) from the device
+  useEffect(() => {
+    if (route.page !== 'recipe' || !route.id || editing?.recipe.id === route.id) return
+    let cancelled = false
+    ;(async () => {
+      const recipe = await getRecipe(route.id)
+      if (cancelled) return
+      if (!recipe) return go('#/recipes', { replace: true })
+      const videoBlob = recipe.video ? await getVideo(route.id) : null
+      if (!cancelled) setEditing({ recipe, videoBlob, dirty: false })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [route, editing?.recipe.id])
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [route.page, route.id])
 
   // Re-checked whenever the app comes back to the front: signing in happens
   // on Instagram's own page, and Back may restore this page from cache
@@ -84,14 +135,75 @@ export default function App() {
 
   const step = (text, kind = 'info') => setLog((l) => [...l, { text, kind, at: Date.now() }])
 
-  const saveResult = useCallback((r) => {
-    setResult(r)
+  const remember = useCallback((r) => {
     setHistory((h) => {
+      // History keeps the text only; videos live with saved recipes
       const next = [r, ...h.filter((x) => x.url !== r.url || !r.url)].slice(0, 20)
       writeStore(HISTORY_KEY, next)
       return next
     })
   }, [])
+
+  const startShrink = useCallback((key, blob) => {
+    if (!canShrinkVideo()) return
+    setShrink({ key, state: 'running', pct: 0 })
+    shrinkVideo(blob, { onProgress: (pct) => setShrink((s) => (s?.key === key ? { ...s, pct } : s)) })
+      .then(async (small) => {
+        const video = { size: small.size, originalSize: blob.size, type: small.type, shrunk: small !== blob }
+        setShrink((s) => (s?.key === key ? { key, state: 'done' } : s))
+        setEditing((e) => (e?.recipe.key === key ? { ...e, videoBlob: small, recipe: { ...e.recipe, video } } : e))
+        // Already saved with the big original: replace it
+        const id = savedIds.current[key]
+        if (id) {
+          await putVideo(id, small)
+          const stored = await getRecipe(id)
+          if (stored) await putRecipe({ ...stored, video })
+          refreshRecipes()
+        }
+      })
+      .catch((err) => setShrink((s) => (s?.key === key ? { key, state: 'failed', error: err?.message ?? String(err) } : s)))
+  }, [refreshRecipes])
+
+  /** Shows an import (or paste) as a new, unsaved recipe page. */
+  const openDraft = useCallback(
+    (r, videoBlob = null) => {
+      const key = newId()
+      const recipe = {
+        ...draftFromImport(r),
+        key,
+        video: videoBlob ? { size: videoBlob.size, originalSize: videoBlob.size, type: videoBlob.type, shrunk: false } : null,
+      }
+      setEditing({ recipe, videoBlob, dirty: true })
+      go('#/new')
+      if (videoBlob && settings.saveVideos) startShrink(key, videoBlob)
+    },
+    [settings.saveVideos, startShrink],
+  )
+
+  const saveEditing = async () => {
+    if (!editing) return
+    const { recipe, videoBlob } = editing
+    const id = recipe.id ?? newId()
+    const now = Date.now()
+    const keepVideo = !!videoBlob && settings.saveVideos
+    const stored = { ...recipe, id, video: keepVideo ? recipe.video : null, createdAt: recipe.createdAt ?? now, updatedAt: now }
+    await putRecipe(stored)
+    if (keepVideo && !recipe.id) await putVideo(id, videoBlob)
+    if (recipe.key) savedIds.current[recipe.key] = id
+    setEditing({ recipe: stored, videoBlob: keepVideo ? videoBlob : null, dirty: false })
+    refreshRecipes()
+    go(`#/recipe/${encodeURIComponent(id)}`, { replace: route.page === 'new' })
+  }
+
+  const deleteEditing = async () => {
+    if (!editing?.recipe.id) return
+    await deleteRecipe(editing.recipe.id)
+    setEditing(null)
+    refreshRecipes()
+    go('#/recipes', { replace: true })
+  }
+
+  const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
 
   const runTranscription = useCallback(
     async (buffer) => {
@@ -120,12 +232,12 @@ export default function App() {
       if (!url) return
       setBusy(true)
       setLog([])
-      setResult(null)
       setReport(null)
       setCopied(false)
       let r = { url, at: Date.now() }
       let reel = null
       let failure = null
+      let videoBlob = null
       try {
         step('Loading the reel page…')
         reel = await loadReel(url)
@@ -144,26 +256,30 @@ export default function App() {
             r.comments.length ? 'ok' : 'warn',
           )
         }
-        setResult(r)
-
         if (reel.transcript) {
           r = { ...r, transcript: reel.transcript }
           step('Used the video\'s captions as the transcript.', 'ok')
-        } else if (settings.transcribe && reel.platform !== 'web') {
+        }
+        const wantTranscript = settings.transcribe && !reel.transcript
+        if (reel.platform !== 'web' && (wantTranscript || settings.saveVideos)) {
           if (!reel.videoUrl) {
-            step('Could not find the video file, so no transcript.', 'warn')
+            step(wantTranscript ? 'Could not find the video file, so no transcript.' : 'Could not find the video file.', 'warn')
           } else {
             step('Downloading the video…')
             const bytes = await getBytes(reel.videoUrl, { headers: reel.downloadHeaders })
             step(`Downloaded ${(bytes.byteLength / 1e6).toFixed(1)} MB.`)
-            r = { ...r, transcript: await runTranscription(bytes) }
+            videoBlob = new Blob([bytes], { type: 'video/mp4' })
+            if (wantTranscript) r = { ...r, transcript: await runTranscription(bytes) }
           }
         }
       } catch (err) {
         failure = err.message || String(err)
         step(failure, 'error')
       } finally {
-        if (r.description || r.transcript) saveResult(r)
+        if (r.description || r.transcript || r.comments?.length) {
+          remember(r)
+          openDraft(r, videoBlob)
+        }
         // Always available, so a wrong result can be reported too
         setReport(
           debugReport({
@@ -178,7 +294,7 @@ export default function App() {
         setBusy(false)
       }
     },
-    [settings.transcribe, runTranscription, saveResult],
+    [settings.transcribe, settings.saveVideos, runTranscription, remember, openDraft],
   )
   runRef.current = importLink
 
@@ -208,7 +324,9 @@ export default function App() {
     setLog([])
     try {
       const transcript = await runTranscription(await file.arrayBuffer())
-      saveResult({ url: null, platform: 'file', author: file.name, description: pasted || null, transcript, at: Date.now() })
+      const r = { url: null, platform: 'file', author: null, description: pasted || null, transcript, at: Date.now() }
+      remember(r)
+      openDraft(r, file.type.startsWith('video/') ? file : null)
     } catch (err) {
       step(err.message || String(err), 'error')
     } finally {
@@ -219,32 +337,64 @@ export default function App() {
 
   const onPasteParse = () => {
     if (!pasted.trim()) return
-    saveResult({ url: null, platform: 'pasted', description: pasted, at: Date.now() })
+    const r = { url: null, platform: 'pasted', description: pasted, at: Date.now() }
+    remember(r)
+    openDraft(r)
   }
 
-  const parsed = useMemo(() => {
-    if (!result) return null
-    return pickRecipe(result)
-  }, [result])
-  // What the user edited wins over what the parser found
-  const recipe = useMemo(() => result?.recipe ?? toEditable(parsed), [result, parsed])
-
-  // Edits go back into the same history entry
-  const updateResult = (r) => {
-    setResult(r)
-    setHistory((h) => {
-      const next = h.map((x) => (x.at === r.at ? r : x))
-      writeStore(HISTORY_KEY, next)
-      return next
-    })
+  const showing =
+    editing && ((route.page === 'recipe' && editing.recipe.id === route.id) || (route.page === 'new' && !editing.recipe.id))
+  if (route.page === 'recipe' && !showing) return <main className="hint">Loading…</main>
+  if (showing) {
+    return (
+      <main>
+        <RecipePage
+          recipe={editing.recipe}
+          videoBlob={editing.videoBlob}
+          shrink={shrink?.key && shrink.key === editing.recipe.key ? shrink : null}
+          dirty={editing.dirty}
+          report={editing.recipe.id ? null : report}
+          onChange={(recipe) => setEditing((e) => ({ ...e, recipe, dirty: true }))}
+          onSave={saveEditing}
+          onDelete={deleteEditing}
+          onBack={back}
+        />
+      </main>
+    )
   }
+
+  if (route.page === 'recipes') {
+    return (
+      <main>
+        <div className="topbar">
+          <button className="link" onClick={back}>
+            ← Back
+          </button>
+        </div>
+        <section className="card">
+          <h2>Saved recipes ({recipes.length})</h2>
+          <RecipeList recipes={recipes} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
+        </section>
+      </main>
+    )
+  }
+
+  const unsaved = editing && !editing.recipe.id && editing.dirty
 
   return (
     <main>
       <header>
         <h1>Cooking App</h1>
-        <p className="sub">Reel import test · {native ? 'Android app' : 'website'}</p>
+        <p className="sub">{native ? 'Android app' : 'website'}</p>
       </header>
+
+      {unsaved && (
+        <section className="card">
+          <button className="link" onClick={() => go('#/new')}>
+            Continue with the unsaved recipe: {editing.recipe.title}
+          </button>
+        </section>
+      )}
 
       <section className="card">
         <label htmlFor="link">Link to a reel, Short or recipe page</label>
@@ -279,6 +429,14 @@ export default function App() {
                 onChange={(e) => setSettings({ ...settings, transcribe: e.target.checked })}
               />{' '}
               Transcribe the audio
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={settings.saveVideos}
+                onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })}
+              />{' '}
+              Save a small copy of the video with each recipe (about 4 MB per minute)
             </label>
             <label>
               Speech model{' '}
@@ -371,66 +529,23 @@ export default function App() {
         </section>
       )}
 
-      {result && (
-        <section className="card">
-          <h2>
-            {result.platform} {result.author ? `· ${result.author}` : ''}
-          </h2>
-
-          <RecipeEditor
-            recipe={recipe}
-            title={result.description?.split('\n')[0]}
-            source={result.recipe ? null : parsed?.source}
-            onChange={(next) => updateResult({ ...result, recipe: next })}
-            onReset={() => {
-              const { recipe: _edited, ...rest } = result
-              updateResult(rest)
-            }}
-          />
-
-          {result.comments?.length > 0 && (
-            <details open={!!parsed?.source?.includes('comment')}>
-              <summary>
-                Comments ({result.comments.length}){parsed?.source?.includes('comment') ? ` · recipe from the ${parsed.source}` : ''}
-              </summary>
-              <ul className="comments">
-                {result.comments.map((c, n) => (
-                  <li key={n}>
-                    <div className="note">
-                      {c.author ?? 'someone'}
-                      {c.author && c.author === result.author ? ' · author' : ''}
-                      {c.pinned ? ' · pinned' : ''}
-                    </div>
-                    <pre>{c.text}</pre>
-                    <button
-                      className="link"
-                      onClick={() => updateResult({ ...result, recipe: toEditable(parseRecipeText(c.text)) })}
-                    >
-                      Use as recipe
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-          <h3>Description</h3>
-          <pre>{result.description || '—'}</pre>
-          {result.transcript != null && (
-            <>
-              <h3>Transcript</h3>
-              <pre>{result.transcript || '(no speech found)'}</pre>
-            </>
-          )}
-        </section>
-      )}
+      <section className="card">
+        <h3>Saved recipes</h3>
+        <RecipeList recipes={recipes} limit={5} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
+        {recipes.length > 5 && (
+          <button className="link" onClick={() => go('#/recipes')}>
+            All {recipes.length} saved recipes →
+          </button>
+        )}
+      </section>
 
       {history.length > 0 && (
         <section className="card">
-          <h3>Recent</h3>
+          <h3>Recent imports</h3>
           <ul className="history">
             {history.map((h) => (
               <li key={h.at}>
-                <button className="link" onClick={() => setResult(h)}>
+                <button className="link" onClick={() => openDraft(h)}>
                   {h.platform} · {(h.description || h.transcript || '').slice(0, 60) || h.url}
                 </button>
               </li>
