@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { findJsonString, metaContent } from './html.js'
 import { detectPlatform, extractUrl } from './index.js'
-import { captionFromOgDescription, instagramShortcode, parseInstagramEmbed } from './instagram.js'
+import {
+  captionFromOgDescription,
+  instagramShortcode,
+  lsdToken,
+  parseGraphqlResponse,
+  parseInstagramEmbed,
+  parsePostPage,
+  shortcodeToMediaId,
+} from './instagram.js'
 import { parseFacebookPage } from './facebook.js'
 import { parseTikTokPage } from './tiktok.js'
 
@@ -61,6 +69,37 @@ describe('Instagram', () => {
     ['https://www.instagram.com/p/C9xYz_AbCdE/', 'C9xYz_AbCdE'],
     ['https://www.instagram.com/chef/reel/C9xYz_AbCdE/', 'C9xYz_AbCdE'],
   ])('shortcode of %s', (url, code) => expect(instagramShortcode(url)).toBe(code))
+
+  it('turns shortcodes into media ids like yt-dlp', () => {
+    expect(shortcodeToMediaId('C9xYz_AbCdE')).toBe('3418622717613320004')
+    expect(shortcodeToMediaId('DAbc-12_xyz')).toBe('3466491801932602547')
+  })
+
+  it('finds the LSD token', () => {
+    expect(lsdToken('<script id="__eqmc" type="application/json">{"l":"AVq123"}</script>')).toBe('AVq123')
+    expect(lsdToken('x ["LSD",[],{"token":"AVq456"},123] y')).toBe('AVq456')
+  })
+
+  const media = {
+    caption: { text: '200 g mouky\n2 vejce' },
+    user: { username: 'chef' },
+    video_versions: [
+      { width: 720, height: 1280, url: 'https://cdn/720.mp4' },
+      { width: 480, height: 852, url: 'https://cdn/480.mp4' },
+    ],
+  }
+
+  it('reads the GraphQL response and picks the smallest video', () => {
+    const text = JSON.stringify({ data: { xig_polaris_media: { if_not_gated_logged_out: media } } })
+    expect(parseGraphqlResponse(text)).toEqual({ description: '200 g mouky\n2 vejce', author: 'chef', videoUrl: 'https://cdn/480.mp4' })
+    expect(parseGraphqlResponse('for (;;);{"data":{}}')).toBeNull()
+  })
+
+  it('reads media from the post page data-sjs scripts', () => {
+    const sjs = { require: [['x', 'y', null, [{ __bbox: { result: { data: { xig_polaris_media: { if_not_gated_logged_out: media } } } } }]]] }
+    const html = `<script type="application/json" data-sjs>{"other":1}</script><script type="application/json" data-sjs>${JSON.stringify(sjs)}</script>`
+    expect(parsePostPage(html)).toMatchObject({ author: 'chef', videoUrl: 'https://cdn/480.mp4' })
+  })
 
   it('reads double-encoded contextJSON from the embed page', () => {
     const media = {
