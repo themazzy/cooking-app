@@ -39,10 +39,16 @@ export function lsdToken(html) {
 }
 
 /** Smallest video rendition: we only need the audio. */
-function pickVideo(versions) {
+// Short side the downloaded video should have at least: 0 takes the smallest
+// rendition (enough for the audio and a 480p copy), 720 for HD copies
+let minShortSide = 0
+export const setVideoMinShortSide = (px) => (minShortSide = px)
+
+export function pickVideo(versions) {
   const usable = (versions ?? []).filter((v) => v?.url)
   usable.sort((a, b) => (a.width ?? 0) * (a.height ?? 0) - (b.width ?? 0) * (b.height ?? 0))
-  return usable[0]?.url ?? null
+  const short = (v) => Math.min(v.width ?? 0, v.height ?? 0)
+  return (usable.find((v) => short(v) >= minShortSide) ?? usable[usable.length - 1])?.url ?? null
 }
 
 /** Caption, author and video from a media object (`if_not_gated_logged_out`). */

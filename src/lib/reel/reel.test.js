@@ -292,3 +292,20 @@ describe('TikTok and Facebook comments', async () => {
     ])
   })
 })
+
+describe('Instagram video rendition', async () => {
+  const { pickVideo, setVideoMinShortSide } = await import('./instagram.js')
+  const versions = [
+    { url: 'hd', width: 720, height: 1280 },
+    { url: 'small', width: 360, height: 640 },
+    { url: 'mid', width: 480, height: 854 },
+  ]
+  it('takes the smallest by default and the first 720p one for HD', () => {
+    setVideoMinShortSide(0)
+    expect(pickVideo(versions)).toBe('small')
+    setVideoMinShortSide(720)
+    expect(pickVideo(versions)).toBe('hd')
+    expect(pickVideo(versions.slice(1))).toBe('mid')
+    setVideoMinShortSide(0)
+  })
+})

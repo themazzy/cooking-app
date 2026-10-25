@@ -5,11 +5,11 @@ import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { draftFromImport } from './lib/recipeDraft.js'
 import { deleteRecipe, getRecipe, getVideo, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
-import { canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
+import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
 import RecipeList from './RecipeList.jsx'
 import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
-import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn } from './lib/reel/instagram.js'
+import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
 
 const SETTINGS_KEY = 'cooking-app:settings'
@@ -57,6 +57,7 @@ export default function App() {
     language: 'auto',
     transcribe: true,
     saveVideos: true,
+    videoQuality: 'small',
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
@@ -77,6 +78,8 @@ export default function App() {
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
+  // HD copies need an HD download; otherwise the smallest one is enough
+  useEffect(() => setVideoMinShortSide(settings.saveVideos && settings.videoQuality === 'hd' ? 720 : 0), [settings.saveVideos, settings.videoQuality])
 
   const refreshRecipes = useCallback(() => listRecipes().then(setRecipes).catch(() => setRecipes([])), [])
   useEffect(() => {
@@ -144,10 +147,10 @@ export default function App() {
     })
   }, [])
 
-  const startShrink = useCallback((key, blob) => {
+  const startShrink = useCallback((key, blob, quality) => {
     if (!canShrinkVideo()) return
     setShrink({ key, state: 'running', pct: 0 })
-    shrinkVideo(blob, { onProgress: (pct) => setShrink((s) => (s?.key === key ? { ...s, pct } : s)) })
+    shrinkVideo(blob, { ...(VIDEO_QUALITY[quality] ?? VIDEO_QUALITY.small), onProgress: (pct) => setShrink((s) => (s?.key === key ? { ...s, pct } : s)) })
       .then(async (small) => {
         const video = { size: small.size, originalSize: blob.size, type: small.type, shrunk: small !== blob }
         setShrink((s) => (s?.key === key ? { key, state: 'done' } : s))
@@ -175,9 +178,9 @@ export default function App() {
       }
       setEditing({ recipe, videoBlob, dirty: true })
       go('#/new')
-      if (videoBlob && settings.saveVideos) startShrink(key, videoBlob)
+      if (videoBlob && settings.saveVideos) startShrink(key, videoBlob, settings.videoQuality)
     },
-    [settings.saveVideos, startShrink],
+    [settings.saveVideos, settings.videoQuality, startShrink],
   )
 
   const saveEditing = async () => {
@@ -436,8 +439,17 @@ export default function App() {
                 checked={settings.saveVideos}
                 onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })}
               />{' '}
-              Save a small copy of the video with each recipe (about 4 MB per minute)
+              Save a copy of the video with each recipe
             </label>
+            {settings.saveVideos && (
+              <label>
+                Video quality{' '}
+                <select value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
+                  <option value="small">Small, 480p (about 2.5 MB a minute)</option>
+                  <option value="hd">HD, 720p (about 4 MB a minute, bigger download)</option>
+                </select>
+              </label>
+            )}
             <label>
               Speech model{' '}
               <select value={settings.model} onChange={(e) => setSettings({ ...settings, model: e.target.value })}>
