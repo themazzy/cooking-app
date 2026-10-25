@@ -15,7 +15,9 @@ export function cachedPantry() {
 }
 
 export async function loadPantry() {
-  const { data, error } = await supabase.from('pantry_items').select('id, name, amount, updated_at').order('name')
+  let { data, error } = await supabase.from('pantry_items').select('id, name, amount, min_amount, expires_on, updated_at').order('name')
+  // Before the stock columns are added (supabase-home-stock.sql)
+  if (error?.code === '42703') ({ data, error } = await supabase.from('pantry_items').select('id, name, amount, updated_at').order('name'))
   if (error) throw error
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(data))
@@ -25,14 +27,14 @@ export async function loadPantry() {
   return data
 }
 
-/** Adds an ingredient, or updates the amount when it is already there. */
-export async function addToPantry(name, amount = '') {
+/** Adds an ingredient (with `extra` fields such as min_amount or expires_on), or updates it when it is already there. */
+export async function addToPantry(name, amount = '', extra = {}) {
   const household_id = (await getHousehold()).id
-  const { error } = await supabase.from('pantry_items').insert({ household_id, name: name.trim(), amount: amount.trim() })
+  const { error } = await supabase.from('pantry_items').insert({ household_id, name: name.trim(), amount: amount.trim(), ...extra })
   if (error?.code === '23505') {
     const { error: e } = await supabase
       .from('pantry_items')
-      .update({ amount: amount.trim(), updated_at: new Date().toISOString() })
+      .update({ amount: amount.trim(), ...extra, updated_at: new Date().toISOString() })
       .eq('household_id', household_id)
       .ilike('name', name.trim())
     if (e) throw e

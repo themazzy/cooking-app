@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { scaleIngredients } from './lib/scale.js'
+import { isOut } from './lib/stock.js'
 
 /**
  * Adding one recipe to the shopping list: every ingredient is ticked except
@@ -8,7 +9,7 @@ import { scaleIngredients } from './lib/scale.js'
  */
 export default function ShopSheet({ recipe, portions: startPortions, pantry, onAdd, onClose }) {
   const { match, canonical } = useCatalog()
-  const atHome = new Set(pantry.map((p) => canonical(p.name)))
+  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
   const [portions, setPortions] = useState(startPortions)
   const [skip, setSkip] = useState(() => new Set(recipe.ingredients.flatMap((i, n) => (atHome.has(canonical(i.name)) ? [n] : []))))
   const factor = recipe.servings ? portions / recipe.servings : portions

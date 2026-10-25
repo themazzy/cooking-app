@@ -24,13 +24,14 @@ function beep() {
 }
 
 /** One step at a time in big text, with the step's ingredients and timers. Keeps the screen on. */
-export default function CookMode({ title, ingredients, steps: stepsText, onClose }) {
+export default function CookMode({ title, ingredients, steps: stepsText, stockPlan = [], onUseStock, onClose }) {
   const { match } = useCatalog()
   const steps = splitSteps(stepsText)
   const [at, setAt] = useState(0) // steps.length means "done"
   const [showAll, setShowAll] = useState(at === 0)
   const [timers, setTimers] = useState([]) // { id, label, endsAt, done }
   const [now, setNow] = useState(Date.now())
+  const [stockDone, setStockDone] = useState(null) // null, 'saving', 'done', or an error
   const touch = useRef(null)
 
   // Screen stays on while cooking
@@ -116,7 +117,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, onClose
       )}
 
       <div className="cook-body">
-        {showAll && (
+        {showAll && step && (
           <ul className="cook-ingredients all">
             {ingredients.filter((i) => i.name?.trim()).map((i, n) => (
               <li key={n}>
@@ -164,6 +165,41 @@ export default function CookMode({ title, ingredients, steps: stepsText, onClose
         ) : (
           <div className="cook-done">
             <div className="cook-step">Enjoy your meal!</div>
+            {stockPlan.length > 0 && onUseStock && (
+              <div className="card stock-plan">
+                <h2>Take it out of the stock?</h2>
+                <ul>
+                  {stockPlan.map((p) => (
+                    <li key={p.item.id}>
+                      <span>{p.item.name}</span>
+                      <span className="note">
+                        {p.item.amount} − {p.used} → <strong>{p.next}</strong>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {stockDone === 'done' ? (
+                  <p className="hint">Stock updated.</p>
+                ) : (
+                  <button
+                    className="secondary"
+                    disabled={stockDone === 'saving'}
+                    onClick={async () => {
+                      setStockDone('saving')
+                      try {
+                        await onUseStock(stockPlan)
+                        setStockDone('done')
+                      } catch (e) {
+                        setStockDone(e?.message ?? String(e))
+                      }
+                    }}
+                  >
+                    {stockDone === 'saving' ? 'Updating…' : 'Update the stock'}
+                  </button>
+                )}
+                {stockDone && !['saving', 'done'].includes(stockDone) && <p className="hint error">{stockDone}</p>}
+              </div>
+            )}
             <button onClick={onClose}>Back to the recipe</button>
           </div>
         )}

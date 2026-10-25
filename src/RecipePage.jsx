@@ -9,6 +9,7 @@ import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients } from './lib/scale.js'
 import { splitSteps } from './lib/cook.js'
+import { isOut, planCooking } from './lib/stock.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -25,7 +26,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onDelete, onDiscard, onBack, onAddToList }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onDelete, onDiscard, onBack, onAddToList, onUseStock }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -50,7 +51,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   const raw = recipe.raw ?? {}
   const comments = raw.comments ?? []
   const steps = splitSteps(recipe.steps)
-  const atHome = new Set(pantry.map((p) => canonical(p.name)))
+  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
   const ingredientCount = recipe.ingredients.filter((i) => i.name?.trim()).length
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
     .filter(Boolean)
@@ -325,7 +326,16 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
       {sources}
 
-      {cooking && <CookMode title={recipe.title} ingredients={shown} steps={recipe.steps} onClose={() => setCooking(false)} />}
+      {cooking && (
+        <CookMode
+          title={recipe.title}
+          ingredients={shown}
+          steps={recipe.steps}
+          stockPlan={planCooking(shown, pantry, canonical)}
+          onUseStock={onUseStock}
+          onClose={() => setCooking(false)}
+        />
+      )}
       {shopping && (
         <ShopSheet
           recipe={recipe}
