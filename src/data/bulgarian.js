@@ -227,6 +227,324 @@ White wine | бяло вино
 Red wine | червено вино
 Beer | бира
 Ice cream | сладолед
+Oxtail | опашка говежда
+Beef kidney | говежди бъбреци
+Lamb kidney | агнешки бъбреци
+Chicken liver | пилешки дробчета
+Pork ribs | свински ребра
+Pork tenderloin | свинско филе
+Pork knuckle | свински джолан
+Salami | салам
+Black pudding | кървавица
+Doner meat | дюнер месо
+Italian sausage | италиански наденици
+Lukanka | луканка
+Kebapche | кебапчета
+Meatballs | кюфтета
+Rabbit | заешко
+Venison | еленско
+Goose | гъска
+Quail | пъдпъдък
+Cod | треска
+Salt cod | осолена треска
+Haddock | треска хадок
+Smoked haddock | пушена треска
+Monkfish | морски дявол
+Trout | пъстърва
+Sea bream | ципура
+Sardines | сардини
+Anchovies | аншоа
+Herring | херинга
+Carp | шаран
+Oysters | стриди
+Clams | миди венерки
+Scallops | миди сен жак
+Octopus | октопод
+Crab | рак
+Lobster | омар
+Surimi | раци сурими
+Fish stock | рибен бульон
+Double cream | сметана за разбиване
+Single cream | течна сметана
+Crème fraîche | крем фреш
+Clotted cream | сметана
+Fromage frais | извара
+Cottage cheese | извара
+Buttermilk | мътеница
+Kefir | кефир
+Ayran | айрян
+Plant milk | растително мляко
+Ghee | гхи масло
+Vegan butter | маргарин
+Kashkaval | кашкавал
+Halloumi | халуми
+Pecorino | пекорино
+Stilton | синьо сирене
+Emmental | ементал
+Edam | едам
+Camembert | камамбер
+Monterey Jack | чедър
+Processed cheese | топено сирене
+Burrata | бурата
+Custard | крем
+Whipped cream | сметана спрей
+Vine tomatoes | домати на клон
+Plum tomatoes | домати сливовидни
+Sun-dried tomatoes | сушени домати
+Yellow pepper | жълта чушка
+Green pepper | зелена чушка
+Red pepper | червена чушка
+Kapia pepper | капия
+Jalapeño | халапеньо
+Scotch bonnet | люти чушки
+Butternut squash | тиква мускатна
+Swede | ряпа
+Jerusalem artichokes | земна ябълка
+Artichokes | артишок
+Okra | бамя
+Bok choy | бок чой
+Chinese cabbage | китайско зеле
+Red cabbage | червено зеле
+Sauerkraut | кисело зеле
+Iceberg lettuce | айсберг
+Chestnut mushrooms | кафяви печурки
+Wild mushrooms | горски гъби
+Oyster mushrooms | гъби кладница
+Corn on the cob | царевица
+Creamed corn | царевица консерва
+Frozen peas | замразен грах
+Stir-fry vegetables | зеленчуци за wok
+Mixed vegetables | замразени зеленчуци
+Frozen berries | замразени горски плодове
+Chips | картофки замразени
+Watercress | кресон
+Bean sprouts | соеви кълнове
+Horseradish | хрян
+Baby potatoes | картофи бейби
+Garlic paste | чеснова паста
+Ginger paste | джинджифил паста
+Vine leaves | лозови листа
+Green olives | зелени маслини
+Pickles | кисели краставички
+Lyutenitsa | лютеница
+Ajvar | айвар
+Pesto | песто
+Passata | пасирани домати
+Tomato sauce | доматен сос
+Salsa | салса
+Enchilada sauce | сос енчилада
+Garlic sauce | чеснов сос
+Sweet chilli sauce | сладко-лют сос
+Sriracha | шрирача
+Teriyaki sauce | терияки сос
+Hoisin sauce | хойсин сос
+Dark soy sauce | тъмен соев сос
+Mirin | мирин
+Sake | саке
+Rice vinegar | оризов оцет
+Apple cider vinegar | ябълков оцет
+Red wine vinegar | винен оцет
+White vinegar | бял оцет
+Dijon mustard | дижонска горчица
+Wholegrain mustard | горчица на зърна
+Mustard powder | горчица на прах
+Horseradish sauce | хрян сос
+Tartar sauce | сос тартар
+Salad dressing | дресинг
+Tabasco | табаско
+Harissa | хариса
+Tamarind paste | тамаринд
+Thai green curry paste | зелена къри паста
+Massaman curry paste | къри паста
+Madras paste | къри паста
+Miso | мисо паста
+Gochujang | гочуджан
+Coconut cream | кокосова сметана
+Gravy | сос грейви
+Beef stock | говежди бульон
+Chicken stock | пилешки бульон
+Vegetable stock | зеленчуков бульон
+Stock cubes | бульон кубче
+Sunflower oil | слънчогледово олио
+Rapeseed oil | рапично олио
+Peanut oil | фъстъчено олио
+Coconut oil | кокосово масло
+Truffle oil | олио с трюфел
+Lard | свинска мас
+Duck fat | патешка мас
+Suet | лой
+Cooking spray | олио спрей
+Golden syrup | сироп
+Treacle | меласа
+Agave syrup | агаве сироп
+Caster sugar | фина захар
+Muscovado sugar | мусковадо
+Coconut sugar | кокосова захар
+Vanilla sugar | ванилова захар
+Sweetener | подсладител
+Plain flour | бяло брашно
+Bread flour | брашно тип 500
+Cornmeal | царевично брашно
+Rye flour | ръжено брашно
+Spelt flour | лимецово брашно
+Almond flour | бадемово брашно
+Potato starch | картофено нишесте
+Semolina | грис
+Custard powder | пудинг
+Chocolate chips | шоколадови капки
+Cocoa nibs | какаови зърна
+Sprinkles | захарни пръчици
+Food colouring | хранителен оцветител
+Marzipan | марципан
+Marshmallows | маршмелоу
+Caramel | карамел
+Meringue | целувки
+Digestive biscuits | бисквити
+Ladyfingers | бишкоти
+Filo pastry | кори за баница
+Pizza dough | тесто за пица
+Crusty bread | хляб с квас
+Wholegrain bread | пълнозърнест хляб
+Toast bread | хляб за тост
+Naan | наан
+Pita | пита
+Brioche | бриош
+Croissants | кроасан
+Taco shells | тако
+Corn tortillas | царевични тортили
+Crackers | крекери
+Pretzels | солети
+Croutons | крутони
+Rusks | сухари
+Penne | пене
+Farfalle | фарфале
+Fusilli | фузили
+Macaroni | макарони
+Rigatoni | ригатони
+Tagliatelle | талиатели
+Fettuccine | фетучини
+Linguine | лингуине
+Pappardelle | папарделе
+Paccheri | пакери
+Orzo | ориз паста
+Vermicelli | фиде
+Gnocchi | ньоки
+Tortellini | тортелини
+Udon noodles | удон
+Rice noodles | оризови нудли
+Egg noodles | яйчни нудли
+Risotto rice | ориз за ризото
+Paella rice | ориз за паеля
+Sushi rice | ориз за суши
+Wild rice | див ориз
+Bulgur | булгур
+Quinoa | киноа
+Pearl barley | ечемик
+Buckwheat | елда
+Millet | просо
+Polenta | полента
+Granola | мюсли
+Red lentils | червена леща
+Brown lentils | кафява леща
+Toor dal | дал
+Cannellini beans | бял боб
+Butter beans | боб бъбрек
+Black beans | черен боб
+Pinto beans | боб пинто
+Borlotti beans | боб борлоти
+Haricot beans | бял боб
+Refried beans | боб пюре
+Edamame | едамаме
+Tofu | тофу
+Tempeh | темпе
+Seitan | сейтан
+Hummus | хумус
+Cayenne pepper | кайенски пипер
+Chilli flakes | люти чушки на люспи
+Cumin seeds | кимион семена
+Fennel seeds | семена от резене
+Fenugreek | сминдух
+Saffron | шафран
+Allspice | бахар
+White pepper | бял пипер
+Pink peppercorns | розов пипер
+Celery salt | целина сол
+Onion salt | лук сол
+Sea salt | морска сол
+Cajun seasoning | каджун
+Fajita seasoning | подправка фахитас
+Biryani masala | подправка бирияни
+Chinese five spice | пет подправки
+Za'atar | заатар
+Sumac | смрадлика
+Jerk seasoning | ямайска подправка
+Bouquet garni | букет гарни
+Savory | чубрица
+Sharena sol | шарена сол
+Lemongrass | лимонена трева
+Kaffir lime leaves | листа от лайм
+Curry leaves | къри листа
+Lovage | девесил
+Cinnamon sticks | канела пръчка
+Vanilla pod | ванилия шушулка
+Apricot jam | конфитюр кайсия
+Raspberry jam | конфитюр малина
+Nutella | шоколадов крем
+Popcorn | пуканки
+Crisps | чипс
+Peanut brittle | фъстъчен крокан
+Cookies | бисквитки
+Christmas pudding | пудинг
+Mango | манго
+Pineapple | ананас
+Kiwi | киви
+Grapes | грозде
+Watermelon | диня
+Melon | пъпеш
+Plums | сливи
+Figs | смокини
+Pomegranate | нар
+Grapefruit | грейпфрут
+Mandarins | мандарини
+Passion fruit | маракуя
+Quince | дюля
+Rhubarb | ревен
+Cranberries | червени боровинки
+Redcurrants | френско грозде
+Sultanas | стафиди
+Dried fruit | сушени плодове
+Prunes | сини сливи сушени
+Glacé cherries | захаросани череши
+Sour cherries | вишни
+Orange zest | портокали
+Lime juice | лайм
+Orange juice | портокалов сок
+Apple juice | ябълков сок
+Ackee | аки
+Chestnuts | кестени
+Flaked almonds | бадемови люспи
+Pistachios | шам фъстък
+Macadamia nuts | макадамия
+Brazil nuts | бразилски орех
+Pumpkin seeds | тиквени семки
+Chia seeds | чиа
+Flax seeds | ленено семе
+Poppy seeds | маково семе
+Brandy | бренди
+Rum | ром
+Vodka | водка
+Rakia | ракия
+Port | порто
+Sparkling water | газирана вода
+Coffee | кафе
+Tea | чай
+Ginger cordial | сироп джинджифил
+Cola | кола
+Gelatine leaves | желатин листа
+Ice cubes | лед
+Frozen pastry | замразено тесто
+Spring rolls | пролетни рулца
+Tamarind | тамаринд
 `
 
 export const BULGARIAN = new Map(
