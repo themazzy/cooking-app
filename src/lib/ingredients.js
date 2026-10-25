@@ -24,7 +24,7 @@ const UNITS = {
   lb: ['lb', 'lbs', 'pound', 'pounds'],
 }
 
-const UNIT_LOOKUP = new Map(Object.entries(UNITS).flatMap(([canon, words]) => words.map((w) => [w, canon])))
+export const UNIT_LOOKUP = new Map(Object.entries(UNITS).flatMap(([canon, words]) => words.map((w) => [w, canon])))
 const UNIT_RE = [...UNIT_LOOKUP.keys()].sort((a, b) => b.length - a.length).join('|')
 
 const FRACTIONS = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅛': 0.125 }

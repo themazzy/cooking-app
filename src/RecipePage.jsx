@@ -4,6 +4,7 @@ import { parseRecipeText } from './lib/ingredients.js'
 import { pickRecipe } from './lib/recipeSource.js'
 import { toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
+import { scaleIngredients } from './lib/scale.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 
@@ -11,6 +12,13 @@ const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, onChange, onSave, onDelete, onBack }) {
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Portions to cook; without a known recipe size it is a multiplier (×2)
+  const [cookFor, setCookFor] = useState(recipe.servings ?? 1)
+  useEffect(() => {
+    setCookFor(recipe.servings ?? 1)
+  }, [recipe.id, recipe.servings])
+  const factor = recipe.servings ? cookFor / recipe.servings : cookFor
+  const scaled = factor !== 1 ? scaleIngredients(recipe.ingredients, factor) : null
   const videoSrc = useMemo(() => (videoBlob ? URL.createObjectURL(videoBlob) : null), [videoBlob])
   useEffect(() => () => videoSrc && URL.revokeObjectURL(videoSrc), [videoSrc])
 
@@ -36,18 +44,39 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, o
           </button>
         )}
 
-        <label className="servings">
-          Portions
-          <input
-            type="number"
-            inputMode="numeric"
-            min="1"
-            max="99"
-            value={recipe.servings ?? ''}
-            placeholder="?"
-            onChange={(e) => set({ servings: e.target.value ? Math.max(1, Number(e.target.value)) : null })}
-          />
-        </label>
+        <div className="servings">
+          <label>
+            Recipe makes
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1"
+              max="99"
+              value={recipe.servings ?? ''}
+              placeholder="?"
+              onChange={(e) => set({ servings: e.target.value ? Math.max(1, Number(e.target.value)) : null })}
+            />
+            portions
+          </label>
+        </div>
+        <div className="servings">
+          <span>Cook for</span>
+          <div className="stepper">
+            <button className="secondary" aria-label="Fewer portions" disabled={cookFor <= 1} onClick={() => setCookFor((n) => Math.max(1, n - 1))}>
+              −
+            </button>
+            <span className="count">{recipe.servings ? cookFor : `×${cookFor}`}</span>
+            <button className="secondary" aria-label="More portions" onClick={() => setCookFor((n) => Math.min(99, n + 1))}>
+              +
+            </button>
+          </div>
+          {factor !== 1 && (
+            <button className="link" onClick={() => setCookFor(recipe.servings ?? 1)}>
+              Reset
+            </button>
+          )}
+        </div>
+        {scaled && <p className="hint">Amounts scaled ×{String(Math.round(factor * 100) / 100).replace('.', ',')}. Go back to the recipe's own portions to edit ingredients.</p>}
 
         {videoSrc && (
           <div className="video">
@@ -67,6 +96,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, o
           recipe={{ ingredients: recipe.ingredients, steps: recipe.steps }}
           title={recipe.title}
           source={recipe.source}
+          scaled={scaled}
           onChange={(next) => set({ ...next, source: null })}
           onReset={() => {
             const picked = pickRecipe(raw)
