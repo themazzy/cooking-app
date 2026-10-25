@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseRecipeText } from '../ingredients.js'
-import { jsonLdImage, parseRecipePage } from './web.js'
+import { ingredientGroups, jsonLdImage, parseRecipePage } from './web.js'
 
 describe('recipe websites', () => {
   const page = `<html><head><meta property="og:site_name" content="Recepty.cz">
@@ -37,5 +37,29 @@ describe('recipe websites', () => {
     const withImage = page.replace('"name":"Svíčková na smetaně"', '"name":"Svíčková na smetaně","image":["/img/svickova.jpg"]')
     expect(parseRecipePage(withImage).image).toBe('/img/svickova.jpg')
     expect(parseRecipePage('<head><meta property="og:image" content="https://b.cz/x.jpg"></head><article>3 vejce</article>').image).toBe('https://b.cz/x.jpg')
+  })
+
+  it('keeps ingredient groups from the page', () => {
+    const wprm = `<script type="application/ld+json">{"@type":"Recipe","name":"Plum cake","recipeIngredient":["150 ml milk lukewarm","70 g unsalted butter","800 g Italian plums","100 g all-purpose flour"]}</script>
+<div class="wprm-recipe-ingredients-container"><h3 class="wprm-recipe-header">Ingredients</h3>
+<div class="wprm-recipe-ingredient-group"><h4 class="wprm-recipe-group-name">Yeast dough:</h4><ul><li>150 ml milk, lukewarm</li><li>70 g butter</li></ul></div>
+<div class="wprm-recipe-ingredient-group"><h4 class="wprm-recipe-group-name">For topping</h4><ul><li>800 g plums</li></ul></div>
+<div class="wprm-recipe-ingredient-group"><h4 class="wprm-recipe-group-name">Posypka streusel</h4><ul><li>100 g flour</li></ul></div></div>`
+    expect(ingredientGroups(wprm).map((g) => [g.name, g.items.length])).toEqual([
+      ['Yeast dough', 2],
+      ['For topping', 1],
+      ['Posypka streusel', 1],
+    ])
+    const parsed = parseRecipeText(parseRecipePage(wprm).description)
+    expect(parsed.ingredients.map((i) => [i.group, i.name])).toEqual([
+      ['Yeast dough', expect.stringContaining('milk')],
+      ['Yeast dough', expect.stringContaining('butter')],
+      ['For topping', expect.stringContaining('plums')],
+      ['Posypka streusel', expect.stringContaining('flour')],
+    ])
+  })
+
+  it('ignores a single unnamed list', () => {
+    expect(ingredientGroups('<div class="recipe-ingredients"><h3>Ingredients</h3><ul><li>3 eggs</li><li>1 cup flour</li></ul></div>')).toEqual([])
   })
 })
