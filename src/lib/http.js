@@ -89,6 +89,27 @@ export async function postForm(url, fields, { headers = {}, ua = DESKTOP_UA } = 
   return { text, status: res.status }
 }
 
+/** POST a JSON body. Returns the parsed JSON answer (or throws). */
+export async function postJson(url, body, { headers = {}, ua = DESKTOP_UA } = {}) {
+  assertNative()
+  let res
+  try {
+    res = await CapacitorHttp.post({
+      url,
+      headers: { 'User-Agent': ua, 'Content-Type': 'application/json', ...headers },
+      data: body,
+      responseType: 'text',
+    })
+  } catch (err) {
+    record('POST', url, null, String(err?.message ?? err))
+    throw err
+  }
+  const text = asText(res.data)
+  record('POST', url, res, text)
+  if (res.status >= 400) throw new FetchError(`${new URL(url).hostname} answered ${res.status}`, res.status)
+  return JSON.parse(text)
+}
+
 /** Value of a cookie the native cookie store holds for `url`. */
 export async function getCookie(url, name) {
   try {

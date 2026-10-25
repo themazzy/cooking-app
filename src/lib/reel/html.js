@@ -62,7 +62,7 @@ export function htmlToText(fragment) {
   return decodeEntities(
     fragment
       .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/(p|div|li)>/gi, '\n')
+      .replace(/<\/(p|div|li|h[1-6]|ul|ol|tr|section|article)>/gi, '\n')
       .replace(/<[^>]+>/g, ''),
   )
     .replace(/[ \t]+\n/g, '\n')

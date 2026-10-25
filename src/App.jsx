@@ -132,7 +132,9 @@ export default function App() {
         if (reel.signedIn != null) setIgSignedIn(reel.signedIn)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30) }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
-        if (reel.platform === 'instagram') {
+        if (reel.platform === 'web') {
+          step(reel.structured ? 'Found the recipe data on the page.' : 'No recipe data on the page, reading its text instead.', reel.structured ? 'ok' : 'warn')
+        } else if (reel.platform === 'instagram') {
           step(
             r.comments.length
               ? `Found ${r.comments.length} comment${r.comments.length > 1 ? 's' : ''}.`
@@ -144,7 +146,10 @@ export default function App() {
         }
         setResult(r)
 
-        if (settings.transcribe) {
+        if (reel.transcript) {
+          r = { ...r, transcript: reel.transcript }
+          step('Used the video\'s captions as the transcript.', 'ok')
+        } else if (settings.transcribe && reel.platform !== 'web') {
           if (!reel.videoUrl) {
             step('Could not find the video file, so no transcript.', 'warn')
           } else {
@@ -242,13 +247,13 @@ export default function App() {
       </header>
 
       <section className="card">
-        <label htmlFor="link">Reel link (Instagram, TikTok, Facebook)</label>
+        <label htmlFor="link">Link to a reel, Short or recipe page</label>
         <div className="row">
           <input
             id="link"
             type="url"
             inputMode="url"
-            placeholder="https://www.instagram.com/reel/…"
+            placeholder="Instagram, TikTok, Facebook, YouTube or a recipe site"
             value={link}
             onChange={(e) => setLink(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !busy && importLink(link)}
