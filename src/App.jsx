@@ -14,6 +14,8 @@ import { emptyIngredient } from './lib/recipeEdit.js'
 import { supabase } from './lib/supabase.js'
 import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
+import PantryPage from './PantryPage.jsx'
+import { addToPantry, cachedPantry, loadPantry } from './lib/pantry.js'
 import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
 import { buildShoppingList } from './lib/scale.js'
@@ -80,6 +82,7 @@ export default function App() {
   const [shrink, setShrink] = useState(null)
   const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
   const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
+  const [pantry, setPantry] = useState(cachedPantry)
   const [user, setUser] = useState(undefined) // undefined while the saved session loads
   const [syncState, setSyncState] = useState(null) // { at } or { error }
   const savedIds = useRef({})
@@ -126,6 +129,7 @@ export default function App() {
       await syncRecipes()
       await refreshRecipes()
       catalogRefresh.current?.()
+      setPantry(await loadPantry())
       const list = await syncShopping(shoppingRef.current)
       if (list !== shoppingRef.current) {
         setShopping(list)
@@ -144,7 +148,11 @@ export default function App() {
     if (!user) return
     runSync()
     let unsubscribe = null
-    subscribeHousehold(() => runSync())
+    subscribeHousehold((what) => {
+      if (what === 'pantry') loadPantry().then(setPantry).catch(() => {})
+      else if (what === 'ingredients') catalogRefresh.current?.()
+      else runSync()
+    })
       .then((u) => (unsubscribe = u))
       .catch(() => {})
     const sub = CapApp.addListener('resume', runSync)
@@ -466,6 +474,14 @@ export default function App() {
   if (user === undefined) return <main className="hint">Loading…</main>
   if (!user) return <LoginPage />
 
+  const topbar = (
+    <div className="topbar">
+      <button className="link" onClick={back}>
+        ← Back
+      </button>
+    </div>
+  )
+
   const showing =
     editing && ((route.page === 'recipe' && editing.recipe.id === route.id) || (route.page === 'new' && !editing.recipe.id))
   if (route.page === 'recipe' && !showing) return <main className="hint">Loading…</main>
@@ -487,6 +503,15 @@ export default function App() {
     )
   }
 
+  if (route.page === 'pantry') {
+    return (
+      <main>
+        {topbar}
+        <PantryPage items={pantry} onChanged={() => loadPantry().then(setPantry)} />
+      </main>
+    )
+  }
+
   if (route.page === 'ingredients') {
     return (
       <main>
@@ -495,7 +520,7 @@ export default function App() {
             ← Back
           </button>
         </div>
-        <IngredientsPage signedIn={!!user} />
+        <IngredientsPage />
       </main>
     )
   }
@@ -510,6 +535,11 @@ export default function App() {
         </div>
         <ShoppingList
           list={shopping}
+          pantry={pantry}
+          onToPantry={async (items) => {
+            for (const i of items) await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
+            setPantry(await loadPantry())
+          }}
           onChange={updateShopping}
           onNew={() => {
             setSelection({})
@@ -520,13 +550,6 @@ export default function App() {
     )
   }
 
-  const topbar = (
-    <div className="topbar">
-      <button className="link" onClick={back}>
-        ← Back
-      </button>
-    </div>
-  )
 
   if (route.page === 'settings') {
     return (
@@ -721,6 +744,9 @@ export default function App() {
       <nav className="chips">
         <button className="chip" onClick={() => go('#/shopping')}>
           Shopping list{toBuy ? ` · ${toBuy}` : ''}
+        </button>
+        <button className="chip" onClick={() => go('#/pantry')}>
+          At home{pantry.length ? ` · ${pantry.length}` : ''}
         </button>
         <button className="chip" onClick={() => go('#/ingredients')}>
           Ingredients
