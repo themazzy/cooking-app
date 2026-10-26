@@ -92,6 +92,15 @@ const CATEGORY_AISLES = [
   ['vegetables', 'Vegetables'],
 ]
 
+/** kcal per 100 g (or 100 ml) printed on the pack, or null. Cola Zero is 0, unlike Cola. */
+export function productKcal(product) {
+  const n = product?.nutriments ?? {}
+  const kcal = Number(n['energy-kcal_100g'])
+  if (n['energy-kcal_100g'] != null && n['energy-kcal_100g'] !== '' && Number.isFinite(kcal) && kcal >= 0) return Math.round(kcal * 10) / 10
+  const kj = Number(n.energy_100g)
+  return n.energy_100g != null && n.energy_100g !== '' && Number.isFinite(kj) && kj >= 0 ? Math.round((kj / 4.184) * 10) / 10 : null
+}
+
 /** The aisle of an Open Food Facts product from its categories, or 'Other'. */
 export function productAisle(product) {
   const tags = new Set((product?.categories_tags ?? []).filter((t) => t.startsWith('en:')).map((t) => t.slice(3)))
@@ -116,7 +125,7 @@ export function guessIngredient(product, match) {
   return null
 }
 
-const OFF_FIELDS = 'product_name,product_name_en,product_name_bg,product_name_cs,generic_name,generic_name_en,brands,quantity,product_quantity,product_quantity_unit,categories_tags,image_front_small_url,image_front_url,image_small_url'
+const OFF_FIELDS = 'product_name,product_name_en,product_name_bg,product_name_cs,generic_name,generic_name_en,brands,quantity,product_quantity,product_quantity_unit,categories_tags,image_front_small_url,image_front_url,image_small_url,nutriments'
 // Open Food Facts asks every app to name itself
 const OFF_UA = 'CookingApp/1.0 (github.com/themazzy/cooking-app)'
 
@@ -186,6 +195,7 @@ export async function lookupBarcode(code, match) {
     product: productLabel(product),
     name: productName(product),
     aisle: entry?.aisle ?? productAisle(product),
+    kcal: productKcal(product),
     picture: product.image_front_small_url || product.image_small_url || product.image_front_url || '',
     pack: packAmount(product),
     entry,
