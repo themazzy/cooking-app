@@ -6,6 +6,7 @@ import { MODELS, transcribe } from './lib/transcribe.js'
 import { draftFromImport } from './lib/recipeDraft.js'
 import { TARGETS, detectLanguage, languageName, translateRecipe } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
+import { allCollections, collectionName, inCollection, renameCollection } from './lib/collections.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
@@ -81,7 +82,7 @@ function parseRoute() {
 }
 /** What a single change saved from the reading view was, for the toast. */
 const savedWhat = (patch) =>
-  'ratings' in patch ? 'Rating saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
+  'ratings' in patch ? 'Rating saved' : 'collections' in patch ? 'Collections saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
 
 // Order of the tabs, so switching slides the right way
 const TAB_ORDER = ['home', 'plan', 'shopping', 'pantry', 'ingredients']
@@ -454,6 +455,25 @@ export default function App() {
     refreshRecipes()
     runSync()
     go(`#/recipe/${encodeURIComponent(id)}`, { replace: route.page === 'new' })
+  }
+
+  /** Renames a collection in every recipe in it; returns the new name. */
+  const renameCollectionEverywhere = async (from, to) => {
+    const name = collectionName(to)
+    if (!name) return null
+    try {
+      for (const r of recipes.filter((x) => inCollection(x, from))) {
+        const stored = await getRecipe(r.id)
+        if (stored) await putRecipe({ ...stored, collections: renameCollection(stored.collections, from, name), updatedAt: Date.now() })
+      }
+      await refreshRecipes()
+      runSync()
+      toast(`Renamed to ${name}`)
+      return name
+    } catch (err) {
+      toast(`Not renamed: ${err?.message ?? err}`, { kind: 'error' })
+      return null
+    }
   }
 
   const deleteEditing = async () => {
@@ -830,6 +850,7 @@ export default function App() {
           onUnits={(units) => setSettings((s) => ({ ...s, units }))}
           translateTo={settings.translateTo !== 'off' ? settings.translateTo : null}
           categories={allCategories(recipes)}
+          collections={allCollections(recipes).map((c) => c.name)}
           cuisines={allCuisines(recipes)}
         />
       </main>
@@ -1308,6 +1329,7 @@ export default function App() {
         onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
         selection={selection}
         onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
+        onRenameCollection={renameCollectionEverywhere}
       />
       )}
 

@@ -1052,3 +1052,23 @@ button.cook-timer-time:disabled { opacity: 1; }
 .cook-timer-step { margin-left: 6px; opacity: 0.8; }
 .cook-timer-step::before { content: '· '; }
 .cook-custom .cook-custom-name { width: auto; flex: 1 1 100%; font-size: 1rem; }
+
+/* Collections */
+button.meta-chip { gap: 4px; font: inherit; font-size: 0.85rem; font-weight: 500; padding: 4px 12px; min-height: 30px; border-radius: 999px; }
+button.meta-chip.add { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
+.collection-options button { justify-content: flex-start; gap: 10px; }
+.collection-options .grow { flex: 1 1 auto; }
+.collection-tiles { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 4px -16px 6px; padding: 4px 16px; }
+.collection-tiles::-webkit-scrollbar { display: none; }
+.collection-tile { flex: 0 0 auto; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; min-width: 120px; max-width: 180px; padding: 10px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--border); color: var(--text); text-align: left; justify-content: start; }
+.collection-tile .icon-svg { grid-row: span 2; color: var(--accent); }
+.collection-tile strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.collection-tile .note { font-weight: 400; }
+.collection-tile.on { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.collection-tile.on .icon-svg, .collection-tile.on .note { color: var(--accent-text); }
+.collection-head { display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; }
+.collection-head h2 { margin: 0; flex: 1 1 auto; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
+.collection-head input { flex: 1 1 auto; }
+button.cook-timer-time { overflow: hidden; }
+.cook-timer-time .cook-timer-label { min-width: 0; flex: 0 1 auto; }
+.cook-timer { min-width: 0; }

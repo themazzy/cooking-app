@@ -16,6 +16,7 @@ import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients, scaleSteps } from './lib/scale.js'
 import { swapIngredient, swapsFor } from './lib/swaps.js'
 import SwapSheet from './SwapSheet.jsx'
+import CollectionSheet from './CollectionSheet.jsx'
 import { toast } from './lib/toast.js'
 import { seekableBlob } from './lib/webmFix.js'
 import { recipePhoto } from './lib/thumb.js'
@@ -57,7 +58,7 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -67,6 +68,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [added, setAdded] = useState(false)
   const [photoNote, setPhotoNote] = useState(null)
   const [swapFor, setSwapFor] = useState(null) // index of the ingredient showing its swaps
+  const [filing, setFiling] = useState(false) // the collections sheet is open
   const [imageBroken, setImageBroken] = useState(false)
   useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
@@ -413,16 +415,24 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             <OtherRatings recipe={recipe} me={me} />
           </span>
         </div>
-        {(recipe.cuisine || recipe.categories?.length > 0) && (
-          <div className="tag-scroll">
-            {recipe.cuisine && <span className="meta-chip">{recipe.cuisine}</span>}
-            {(recipe.categories ?? []).map((c) => (
-              <span key={c} className="meta-chip plain">
-                {c}
-              </span>
-            ))}
-          </div>
-        )}
+        <div className="tag-scroll">
+          {(recipe.collections ?? []).map((c) => (
+            <button key={c} className="meta-chip folder" onClick={() => setFiling(true)}>
+              <Icon name="folder" size={14} /> {c}
+            </button>
+          ))}
+          {recipe.cuisine && <span className="meta-chip">{recipe.cuisine}</span>}
+          {(recipe.categories ?? []).map((c) => (
+            <span key={c} className="meta-chip plain">
+              {c}
+            </span>
+          ))}
+          {recipe.id && !recipe.collections?.length && (
+            <button className="meta-chip add" onClick={() => setFiling(true)}>
+              <Icon name="plus" size={14} /> Collection
+            </button>
+          )}
+        </div>
         <div className="stats">
           {totalMinutes(recipe) ? (
             <div className="stat">
@@ -608,6 +618,9 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note, me) }) : null}
           onClose={() => setCooking(false)}
         />
+      )}
+      {filing && (
+        <CollectionSheet picked={recipe.collections ?? []} all={collections} onChange={(next) => patchRecipe({ collections: next })} onClose={() => setFiling(false)} />
       )}
       {swapFor != null && shown[swapFor] && (
         <SwapSheet

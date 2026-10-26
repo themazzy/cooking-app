@@ -5,6 +5,7 @@ import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
 import { averageRating } from './lib/ratings.js'
+import { allCollections, inCollection } from './lib/collections.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
 
@@ -14,6 +15,7 @@ const matches = (r, q) =>
   r.cuisine?.toLowerCase().includes(q) ||
   r.note?.toLowerCase().includes(q) ||
   r.categories?.some((c) => c.toLowerCase().includes(q)) ||
+  r.collections?.some((c) => c.toLowerCase().includes(q)) ||
   r.ingredients?.some((i) => i.name?.toLowerCase().includes(q))
 
 const QUICK = 30
@@ -59,15 +61,51 @@ function CardFacts({ recipe: r, home }) {
   return facts.length ? <span className="card-facts">{facts}</span> : null
 }
 
+/** The collection being looked at, with renaming it for every recipe in it. */
+function CollectionHead({ collection, onRename, onClose }) {
+  const [name, setName] = useState(null) // the new name while renaming
+  const save = () => {
+    if (name?.trim() && name.trim() !== collection.name) onRename(collection.name, name)
+    setName(null)
+  }
+  return (
+    <div className="collection-head">
+      {name == null ? (
+        <>
+          <h2>
+            <Icon name="folder" size={18} /> {collection.name}
+          </h2>
+          {onRename && (
+            <button className="small secondary" onClick={() => setName(collection.name)}>
+              <Icon name="pencil" size={15} /> Rename
+            </button>
+          )}
+          <button className="icon" aria-label="Show all recipes" onClick={onClose}>
+            <Icon name="close" />
+          </button>
+        </>
+      ) : (
+        <>
+          <input autoFocus aria-label="Collection name" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => (e.key === 'Enter' ? save() : e.key === 'Escape' && setName(null))} />
+          <button className="small" onClick={save}>
+            Save
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 /**
  * Saved recipes, newest first, with a search over names and ingredients.
  * With `selection` ({ id: portions }) each recipe can be ticked for a
  * shopping list and given the number of portions to buy for.
  */
-export default function RecipeList({ recipes, pantry = [], onOpen, selection, onSelect }) {
+export default function RecipeList({ recipes, pantry = [], onOpen, selection, onSelect, onRenameCollection }) {
   const { canonical } = useCatalog()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
+  const [collection, setCollection] = useState(null) // its name
   const [cuisine, setCuisine] = useState(null)
   const [quick, setQuick] = useState(false)
   const [fromHome, setFromHome] = useState(false)
@@ -75,6 +113,8 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const q = query.trim().toLowerCase()
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
+  const collections = allCollections(recipes)
+  const open = collections.find((c) => c.name.toLowerCase() === collection?.toLowerCase()) ?? null
   const timed = recipes.some((r) => totalMinutes(r))
   const rated = recipes.some((r) => averageRating(r))
   const cooked = recipes.some((r) => r.cooked?.length)
@@ -86,6 +126,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
     .filter(
       (r) =>
         matches(r, q) &&
+        (!open || inCollection(r, open.name)) &&
         (!category || r.categories?.includes(category)) &&
         (!cuisine || r.cuisine === cuisine) &&
         (!quick || (totalMinutes(r) != null && totalMinutes(r) <= QUICK)) &&
@@ -107,6 +148,36 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed || home.size)
   return (
     <>
+      {collections.length > 0 && (
+        <div className="collection-tiles" role="group" aria-label="Collections">
+          {collections.map((c) => {
+            const on = open?.name === c.name
+            return (
+              <button key={c.name} className={`collection-tile${on ? ' on' : ''}`} aria-pressed={on} onClick={() => setCollection(on ? null : c.name)}>
+                <Icon name="folder" size={20} />
+                <strong>{c.name}</strong>
+                <span className="note">
+                  {c.count} recipe{c.count === 1 ? '' : 's'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {open && (
+        <CollectionHead
+          key={open.name}
+          collection={open}
+          onClose={() => setCollection(null)}
+          onRename={
+            onRenameCollection &&
+            (async (from, to) => {
+              const renamed = await onRenameCollection(from, to)
+              if (renamed) setCollection(renamed)
+            })
+          }
+        />
+      )}
       {recipes.length > 4 && (
         <input className="search" type="search" placeholder="Search recipes, ingredients, categories" value={query} onChange={(e) => setQuery(e.target.value)} />
       )}
