@@ -40,6 +40,7 @@ import { CapacitorCookies } from '@capacitor/core'
 import { ACCENTS, THEMES, applyTheme, resolveTheme } from './lib/theme.js'
 import { setWorking, toast } from './lib/toast.js'
 import { RecipeListSkeleton, RecipePageSkeleton, StartSkeleton } from './Skeleton.jsx'
+import Select from './Select.jsx'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
@@ -958,34 +959,34 @@ export default function App() {
             </label>
             <label>
               Speech model{' '}
-              <select value={settings.model} onChange={(e) => setSettings({ ...settings, model: e.target.value })}>
+              <Select aria-label="Speech model" value={settings.model} onChange={(e) => setSettings({ ...settings, model: e.target.value })}>
                 {Object.entries(MODELS).map(([k, m]) => (
                   <option key={k} value={k}>
                     {m.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               Language{' '}
-              <select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })}>
+              <Select aria-label="Language" value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })}>
                 <option value="auto">Detect</option>
                 <option value="czech">Czech</option>
                 <option value="bulgarian">Bulgarian</option>
                 <option value="english">English</option>
-              </select>
+              </Select>
             </label>
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
             <label>
               Translate recipes into{' '}
-              <select value={settings.translateTo} onChange={(e) => setSettings({ ...settings, translateTo: e.target.value })}>
+              <Select aria-label="Translate recipes into" value={settings.translateTo} onChange={(e) => setSettings({ ...settings, translateTo: e.target.value })}>
                 <option value="off">Don't translate</option>
                 {Object.entries(TARGETS).map(([k, name]) => (
                   <option key={k} value={k}>
                     {name}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             {settings.translateTo !== 'off' && (
               <label>
@@ -1004,11 +1005,11 @@ export default function App() {
             {settings.saveVideos && (
               <label>
                 Video quality{' '}
-                <select value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
+                <Select aria-label="Video quality" value={settings.videoQuality} onChange={(e) => setSettings({ ...settings, videoQuality: e.target.value })}>
                   <option value="small">Standard, 480p (about 8 MB a minute)</option>
                   <option value="hd">HD, 720p (about 15 MB a minute)</option>
                   <option value="full">Full HD, 1080p (about 28 MB a minute, slow phones may stutter)</option>
-                </select>
+                </Select>
               </label>
             )}
           </div>
@@ -1018,11 +1019,11 @@ export default function App() {
           <div className="settings">
             <label>
               Show amounts{' '}
-              <select value={settings.units} onChange={(e) => setSettings({ ...settings, units: e.target.value })}>
+              <Select aria-label="Show amounts" value={settings.units} onChange={(e) => setSettings({ ...settings, units: e.target.value })}>
                 <option value="original">As the recipe is written</option>
                 <option value="metric">Metric (g, ml, °C)</option>
                 <option value="imperial">US (oz, cups, °F)</option>
-              </select>
+              </Select>
             </label>
           </div>
           <p className="hint">Recipes keep their own units; this changes how amounts and oven temperatures are shown. You can also switch on any recipe.</p>
@@ -1032,7 +1033,8 @@ export default function App() {
           <div className="settings">
             <label>
               Alarm sound{' '}
-              <select
+              <Select
+                aria-label="Alarm sound"
                 value={settings.alarmSound}
                 onChange={(e) => {
                   setSettings({ ...settings, alarmSound: e.target.value })
@@ -1044,7 +1046,7 @@ export default function App() {
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               <input type="checkbox" checked={settings.alarmVibrate} onChange={(e) => setSettings({ ...settings, alarmVibrate: e.target.checked })} /> Vibrate when a timer is done

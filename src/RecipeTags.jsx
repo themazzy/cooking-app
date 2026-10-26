@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { totalMinutes } from './lib/recipeMeta.js'
+import Select from './Select.jsx'
 
 const minutesOrNull = (v) => (v === '' ? null : Math.max(0, Math.round(Number(v))) || null)
 
@@ -60,7 +61,7 @@ export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
           </button>
         </div>
       ) : (
-        <select
+        <Select
           aria-label="Cuisine"
           value={recipe.cuisine ?? ''}
           onChange={(e) => (e.target.value === '\u0000other' ? (setOtherCuisine(true), onChange({ cuisine: null })) : onChange({ cuisine: e.target.value || null }))}
@@ -72,7 +73,7 @@ export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
             </option>
           ))}
           <option value={'\u0000other'}>Other…</option>
-        </select>
+        </Select>
       )}
 
       <h3>Categories</h3>

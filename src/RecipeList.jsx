@@ -5,6 +5,7 @@ import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
 import { averageRating } from './lib/ratings.js'
+import Select from './Select.jsx'
 
 const matches = (r, q) =>
   !q ||
@@ -143,7 +144,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
             <span className="note">
               {shown.length} recipe{shown.length === 1 ? '' : 's'}
             </span>
-            <select className="sort-select" aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <Select className="sort-select" aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value)}>
               {[
                 ['new', 'Newest'],
                 ['az', 'A–Z'],
@@ -156,7 +157,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
       ) : null}

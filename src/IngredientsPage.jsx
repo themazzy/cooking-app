@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { toast } from './lib/toast.js'
+import Select from './Select.jsx'
 
 const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null }
 
@@ -120,11 +121,11 @@ export default function IngredientsPage() {
               </datalist>
               <label>
                 Aisle{' '}
-                <select value={form.aisle} onChange={(e) => setForm({ ...form, aisle: e.target.value })}>
+                <Select aria-label="Aisle" value={form.aisle} onChange={(e) => setForm({ ...form, aisle: e.target.value })}>
                   {AISLES.map((a) => (
                     <option key={a}>{a}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               <input
                 placeholder="Other names recipes use, comma separated"

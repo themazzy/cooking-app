@@ -9,6 +9,7 @@ import ReceiptSheet from './ReceiptSheet.jsx'
 import { RowsSkeleton } from './Skeleton.jsx'
 import { toast } from './lib/toast.js'
 import { STOCK_UNITS, defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
+import Select from './Select.jsx'
 
 const SOON = 3 // days
 const QUICK = { g: ['100', '250', '500', '1000'], kg: ['1', '2', '5'], ml: ['250', '500', '1000'], l: ['1', '2'], pcs: ['1', '2', '6', '10'] }
@@ -28,11 +29,11 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
     qtyRef.current?.focus()
   }, [])
   const unitSelect = (value, set, label) => (
-    <select aria-label={label} value={value} onChange={(e) => set(e.target.value)}>
+    <Select aria-label={label} value={value} onChange={(e) => set(e.target.value)}>
       {(STOCK_UNITS.includes(value) ? STOCK_UNITS : [value, ...STOCK_UNITS]).map((u) => (
         <option key={u}>{u}</option>
       ))}
-    </select>
+    </Select>
   )
   const save = () => onSave({ amount: joinAmount(qty, unit), min_amount: joinAmount(minQty, minUnit), expires_on: expires || null })
 
