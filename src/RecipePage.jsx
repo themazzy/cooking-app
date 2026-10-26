@@ -109,6 +109,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   // Saved recipes change at once; a recipe being edited or not saved yet changes in the form
   const patchRecipe = (patch) => (edit || !recipe.id ? set(patch) : onSavePatch(patch))
   const canSwap = (i) => !!i.swappedFrom || swapsFor(match(i.name)).length > 0
+  const anySwap = shown.some((i) => i.name?.trim() && canSwap(i))
   const useSwap = (n, swap) => {
     const was = recipe.ingredients[n]
     const next = { ...swapIngredient(was, swap), swappedFrom: was.swappedFrom ?? { qty: was.qty, unit: was.unit, name: was.name } }
@@ -569,10 +570,13 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
                       {i.swappedFrom && <span className="from">instead of {i.swappedFrom.name}</span>}
                     </span>
                     <span className="ing-qty">{amount(i)}</span>
-                    {canSwap(i) && (
+                    {canSwap(i) ? (
                       <button className="icon swap-btn" aria-label={`Swaps for ${i.name}`}>
                         <Icon name="swap" size={16} />
                       </button>
+                    ) : (
+                      // keeps the amounts in one column when other rows have a swap button
+                      anySwap && <span className="swap-gap" aria-hidden="true" />
                     )}
                   </li>
                 </Fragment>
