@@ -6,6 +6,8 @@ import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
 import { readReceiptPhotos } from './lib/ocr.js'
 import { readReceipt } from './lib/receipt.js'
 import ReceiptSheet from './ReceiptSheet.jsx'
+import { RowsSkeleton } from './Skeleton.jsx'
+import { toast } from './lib/toast.js'
 import { STOCK_UNITS, defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
 
 const SOON = 3 // days
@@ -175,7 +177,7 @@ function Picker({ items, onPick, onClose, added }) {
 }
 
 /** The household's stock: amounts, staples to keep (with a minimum) and use-by dates. */
-export default function PantryPage({ items, onChanged }) {
+export default function PantryPage({ items, loading = false, onChanged }) {
   const { entries, match } = useCatalog()
   const [receipt, setReceipt] = useState(null) // { reading: pct } or { found }
   const [message, setMessage] = useState(null)
@@ -208,6 +210,7 @@ export default function PantryPage({ items, onChanged }) {
     const ok = await run(() => (item.id ? updatePantryItem(item.id, patch) : addToPantry(item.name, patch.amount, { min_amount: patch.min_amount, expires_on: patch.expires_on })))
     if (!ok) return
     setEditing(null)
+    if (!picking) toast(`${item.name} saved`)
     if (picking) setAdded(`${item.name}${patch.amount ? `, ${patch.amount}` : ''}`)
   }
 
@@ -237,7 +240,7 @@ export default function PantryPage({ items, onChanged }) {
       const prev = merged.get(r.entry.name)
       merged.set(r.entry.name, prev == null ? r.amount : addTo(prev, ...(r.amount.match(/^(\S+)\s*(.*)$/)?.slice(1) ?? ['', ''])))
     }
-    await run(async () => {
+    const ok = await run(async () => {
       for (const [name, amount] of merged) {
         const key = name.toLowerCase()
         const have = items.find((i) => (match(i.name)?.name ?? i.name).toLowerCase() === key)
@@ -245,6 +248,7 @@ export default function PantryPage({ items, onChanged }) {
         else await addToPantry(name, amount)
       }
     })
+    if (ok) toast(`${merged.size} item${merged.size === 1 ? '' : 's'} from the receipt put at home`)
     setReceipt(null)
   }
 
@@ -283,7 +287,7 @@ export default function PantryPage({ items, onChanged }) {
         </div>
       </header>
       <p className="hint top">
-        {items.length} item{items.length === 1 ? '' : 's'}
+        {loading && !items.length ? 'Loading…' : `${items.length} item${items.length === 1 ? '' : 's'}`}
         {staples ? ` · ${staples} staple${staples === 1 ? '' : 's'}` : ''}
         {low ? ` · ${low} running low, on the shopping list` : ''}
       </p>
@@ -294,7 +298,9 @@ export default function PantryPage({ items, onChanged }) {
           <progress max="100" value={receipt.reading} />
         </div>
       )}
-      {items.length === 0 ? (
+      {loading && items.length === 0 ? (
+        <RowsSkeleton />
+      ) : items.length === 0 ? (
         <div className="empty">
           <div className="empty-icon" aria-hidden="true">
             🏠
@@ -357,7 +363,10 @@ export default function PantryPage({ items, onChanged }) {
           message={message}
           onSave={save}
           onRemove={async () => {
-            if (await run(() => removeFromPantry(editing.item.id))) setEditing(null)
+            if (await run(() => removeFromPantry(editing.item.id))) {
+              toast(`${editing.item.name} removed`)
+              setEditing(null)
+            }
           }}
           onClose={() => setEditing(null)}
         />

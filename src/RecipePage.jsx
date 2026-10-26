@@ -364,60 +364,66 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>
-        {languageBar}
-        <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
+        <div className="head-line">
+          <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
+          {languageBar}
+        </div>
+        {(recipe.cuisine || recipe.categories?.length > 0) && (
+          <div className="tag-scroll">
+            {recipe.cuisine && <span className="meta-chip">{recipe.cuisine}</span>}
+            {(recipe.categories ?? []).map((c) => (
+              <span key={c} className="meta-chip plain">
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="stats">
+          {totalMinutes(recipe) ? (
+            <div className="stat">
+              <strong>
+                {recipe.timesEstimated ? '~' : ''}
+                {formatMinutes(totalMinutes(recipe))}
+              </strong>
+              {/* Prep and cook time fit under it only while both are under an hour */}
+              <span>{recipe.prepMin && recipe.cookMin && recipe.prepMin < 60 && recipe.cookMin < 60 ? `${recipe.prepMin} + ${recipe.cookMin} min` : 'total'}</span>
+            </div>
+          ) : null}
+          {recipe.servings ? (
+            <div className="stat">
+              <strong>{recipe.servings}</strong>
+              <span>{recipe.servings === 1 ? 'portion' : 'portions'}</span>
+            </div>
+          ) : null}
+          <div className="stat">
+            <strong>{ingredientCount}</strong>
+            <span>ingredients</span>
+          </div>
+          <div className="stat">
+            <strong>{steps.length}</strong>
+            <span>{steps.length === 1 ? 'step' : 'steps'}</span>
+          </div>
+        </div>
+        <p className="source-line">
+          {recipe.sourceUrl ? (
+            <button className="link" onClick={() => openExternal(recipe.sourceUrl)}>
+              {sourceLabel || 'Source'} ↗
+            </button>
+          ) : (
+            PLATFORM[recipe.platform] && <span>{PLATFORM[recipe.platform]}</span>
+          )}
+          {lastCooked(recipe) && (
+            <span>
+              {recipe.sourceUrl || PLATFORM[recipe.platform] ? '· ' : ''}Cooked {cookedAgo(lastCooked(recipe))}
+            </span>
+          )}
+        </p>
         {recipe.note?.trim() && (
           <div className="recipe-note-view">
             <strong>📝 Note</strong>
             <p>{recipe.note.trim()}</p>
           </div>
         )}
-        <div className="meta">
-          {recipe.sourceUrl ? (
-            <button className="meta-chip" onClick={() => openExternal(recipe.sourceUrl)}>
-              {sourceLabel || 'Source'} ↗
-            </button>
-          ) : (
-            PLATFORM[recipe.platform] && <span className="meta-chip plain">{PLATFORM[recipe.platform]}</span>
-          )}
-          {recipe.cuisine && <span className="meta-chip">{recipe.cuisine}</span>}
-          {(recipe.categories ?? []).map((c) => (
-            <span key={c} className="meta-chip">
-              {c}
-            </span>
-          ))}
-        </div>
-        {totalMinutes(recipe) && (
-          <div className="times">
-            {recipe.prepMin ? (
-              <span>
-                <strong>{formatMinutes(recipe.prepMin)}</strong> prep
-              </span>
-            ) : null}
-            {recipe.cookMin ? (
-              <span>
-                <strong>
-                  {recipe.timesEstimated ? '~' : ''}
-                  {formatMinutes(recipe.cookMin)}
-                </strong>{' '}
-                cook
-              </span>
-            ) : null}
-            <span>
-              <strong>
-                {recipe.timesEstimated ? '~' : ''}
-                {formatMinutes(totalMinutes(recipe))}
-              </strong>{' '}
-              total
-            </span>
-          </div>
-        )}
-        <div className="meta">
-          {recipe.servings && <span className="meta-chip plain">{recipe.servings} portions</span>}
-          <span className="meta-chip plain">{ingredientCount} ingredients</span>
-          {steps.length > 0 && <span className="meta-chip plain">{steps.length} steps</span>}
-          {lastCooked(recipe) && <span className="meta-chip plain">Cooked {cookedAgo(lastCooked(recipe))}</span>}
-        </div>
         <div className="recipe-actions">
           <button className="big" disabled={!steps.length} onClick={() => setCooking(true)}>
             ▶ Start cooking

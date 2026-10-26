@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
+import { toast } from './lib/toast.js'
 
 const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null }
 
@@ -55,7 +56,8 @@ export default function IngredientsPage() {
     try {
       if (editingId) await update(editingId, entry)
       else await add(entry)
-      setMessage(`${editingId ? 'Saved' : 'Added'} ${entry.name}.`)
+      setMessage(null)
+      toast(`${editingId ? 'Saved' : 'Added'} ${entry.name}`)
       setForm(EMPTY)
       setEditingId(null)
       setFormOpen(false)
@@ -171,6 +173,7 @@ export default function IngredientsPage() {
                       className="danger"
                       onClick={async () => {
                         await remove(editingId)
+                        toast(`Deleted ${form.name.trim() || 'the ingredient'}`)
                         setEditingId(null)
                         setForm(EMPTY)
                         setFormOpen(false)
