@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { recipeToText, toEditable } from './recipeEdit.js'
+import { joinSteps, recipeToText, toEditable } from './recipeEdit.js'
+import { splitSteps } from './cook.js'
 
 describe('editable recipe', () => {
   const parsed = {
@@ -23,5 +24,11 @@ describe('editable recipe', () => {
     expect(recipeToText(toEditable(parsed), 'Shawarma')).toBe(
       'Shawarma\n\n• 400 g Ground beef\n\nTzatziki sauce:\n• 1,5–2 tbsp Dill\n• Salt and pepper, to taste\n\nSteps:\n1. Preheat the oven.\n2. Bake 20 min.',
     )
+  })
+  it('stores the step boxes as numbered text that splits back into the same steps', () => {
+    const boxes = ['Chop the onion,', 'then fry it.\nStir often.', '', 'For the sauce: mix it all.']
+    const text = joinSteps(boxes)
+    expect(text).toBe('1. Chop the onion,\n2. then fry it.\nStir often.\n3. For the sauce: mix it all.')
+    expect(splitSteps(text)).toEqual(['Chop the onion,', 'then fry it. Stir often.', 'For the sauce: mix it all.'])
   })
 })
