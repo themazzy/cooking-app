@@ -427,11 +427,18 @@ ol.steps p { margin: 3px 0 0; line-height: 1.55; }
 .recipe .source { display: block; margin: 2px 0 6px; font-size: 0.95rem; }
 .editor h3:first-child { margin-top: 8px; }
 .ingredients { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.ing-row { display: flex; gap: 6px; align-items: center; }
+/* Amount and unit stay narrow so the ingredient's name gets the room */
+.editor .ingredients { margin-left: -8px; margin-right: -8px; }
+.ing-row { display: flex; gap: 4px; align-items: center; }
 .editor input { padding: 8px 10px; }
-.ing-row .qty { flex: 0 0 3.2em; text-align: right; padding-left: 6px; padding-right: 6px; }
-.ing-row .unit { flex: 0 0 4.2em; padding-left: 6px; padding-right: 6px; }
-.ing-row .name { flex: 1 1 auto; }
+.ing-row .pic { flex: 0 0 22px; display: flex; }
+.ing-row .qty { flex: 0 0 2.7em; width: 2.7em; text-align: right; padding-left: 4px; padding-right: 4px; }
+.ing-row .unit { flex: 0 0 3.7em; width: 3.7em; padding-left: 4px; padding-right: 4px; }
+.ing-row .name { flex: 1 1 auto; padding-left: 8px; padding-right: 8px; }
+.ing-row textarea.name { width: auto; min-height: 40px; padding-top: 8px; padding-bottom: 8px; resize: none; line-height: 1.35; field-sizing: content; }
+.ing-row .del { flex: 0 0 30px; width: 30px; min-height: 40px; padding: 0; }
+.ing-head { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: -2px; }
+.ing-head .qty, .ing-head .unit { white-space: nowrap; overflow: visible; }
 .editor input.group { width: 100%; margin-top: 10px; font-weight: 700; background: transparent; }
 .save-bar {
   position: sticky;
