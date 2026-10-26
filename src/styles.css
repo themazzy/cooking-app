@@ -1072,3 +1072,10 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 button.cook-timer-time { overflow: hidden; }
 .cook-timer-time .cook-timer-label { min-width: 0; flex: 0 1 auto; }
 .cook-timer { min-width: 0; }
+
+/* Protein, carbs and fat under the calories */
+.macros { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.macro { display: flex; flex-direction: column; align-items: center; min-width: 70px; padding: 6px 10px; border-radius: 12px; background: var(--sunken); }
+.macro strong { font-variant-numeric: tabular-nums; }
+.macro span { font-size: 0.78rem; color: var(--muted); }
+.macros .note { margin-left: 2px; }

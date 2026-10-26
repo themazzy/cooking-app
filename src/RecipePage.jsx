@@ -24,7 +24,7 @@ import { splitSteps } from './lib/cook.js'
 import { isOut, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
-import { formatKcal, recipeCalories } from './lib/calories.js'
+import { formatGrams, formatKcal, recipeCalories, recipeMacros } from './lib/calories.js'
 import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
 import Icon from './Icon.jsx'
 
@@ -128,6 +128,9 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const cookingCalories = factor !== 1 ? recipeCalories(scaled, match) : calories
   const hasCalories = calories.rows.some((r) => r.kcal > 0)
   const perPortion = hasCalories && recipe.servings ? calories.total / recipe.servings : null
+  // Protein, carbs and fat of one portion (or of what is being cooked, without a recipe size)
+  const macros = recipeMacros(recipe.servings ? recipe.ingredients : scaled, match)
+  const macroShare = recipe.servings ? 1 / recipe.servings : 1
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
     .filter(Boolean)
     .join(' · ')
@@ -577,6 +580,24 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             )}
             <p className="note">An estimate from typical values for raw ingredients.</p>
           </details>
+        )}
+        {hasCalories && (
+          <div className="macros" aria-label={recipe.servings ? 'Per portion' : 'In total'}>
+            {[
+              ['protein', 'Protein'],
+              ['carbs', 'Carbs'],
+              ['fat', 'Fat'],
+            ].map(([k, label]) => (
+              <div key={k} className={`macro ${k}`}>
+                <strong>
+                  {macros.missing.length ? '~' : ''}
+                  {formatGrams(macros[k] * macroShare)} g
+                </strong>
+                <span>{label}</span>
+              </div>
+            ))}
+            <span className="note">{recipe.servings ? 'per portion' : 'in total'}</span>
+          </div>
         )}
       </section>
 
