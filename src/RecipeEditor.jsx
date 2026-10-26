@@ -3,6 +3,7 @@ import { emptyIngredient, joinSteps } from './lib/recipeEdit.js'
 import { splitSteps } from './lib/cook.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import Icon from './Icon.jsx'
+import { UnitSheet } from './UnitPicker.jsx'
 
 /** Ingredients as editable rows and each step in its own box, in order. */
 export default function RecipeEditor({ recipe, source, onChange, onReset }) {
@@ -18,6 +19,7 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
     setIngredients(next)
   }
   // The steps are kept as a list here and saved back as numbered text ("1. …\n2. …")
+  const [unitFor, setUnitFor] = useState(null) // the ingredient row whose unit is being picked
   const [list, setList] = useState(() => withBlank(splitSteps(steps)))
   const saved = useRef(steps)
   if (steps !== saved.current) {
@@ -64,7 +66,9 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
                   <IngredientIcon entry={match(i.name)} size={22} />
                 </span>
                 <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
-                <input className="unit" aria-label="Unit" value={i.unit} onChange={(e) => update(n, 'unit', e.target.value)} />
+                <button type="button" className={`unit unit-btn${i.unit ? '' : ' empty'}`} aria-label={`Unit: ${i.unit || 'none'}`} onClick={() => setUnitFor(n)}>
+                  {i.unit || (i.qty.trim() ? 'pcs' : '–')}
+                </button>
                 <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
                 <button className="icon del" aria-label="Remove ingredient" onClick={() => remove(n)}>
                   <Icon name="close" />
@@ -79,6 +83,19 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
           </button>
         </div>
       </>
+
+      {unitFor != null && ingredients[unitFor] && (
+        <UnitSheet
+          recipe
+          title={ingredients[unitFor].name.trim() ? `Unit for ${ingredients[unitFor].name.trim()}` : 'Unit'}
+          value={ingredients[unitFor].unit}
+          onPick={(u) => {
+            update(unitFor, 'unit', u)
+            setUnitFor(null)
+          }}
+          onClose={() => setUnitFor(null)}
+        />
+      )}
 
       <h3>Steps</h3>
       <ol className="step-edit">
