@@ -148,12 +148,12 @@ function Picker({ items, onPick, onClose, added }) {
             ))}
           </div>
         )}
-        {added && <p className="hint added">✓ {added}</p>}
+        {added && <p className="hint added"><Icon name="check" size={16} /> {added}</p>}
         <div className="grid">
           {q && !exact && (
             <button className="tile custom" onClick={() => onPick({ name: query.trim() }, null)}>
               <span className="tile-plus" aria-hidden="true">
-                +
+                <Icon name="plus" />
               </span>
               <span className="tile-name">Add “{query.trim()}”</span>
             </button>
@@ -166,7 +166,7 @@ function Picker({ items, onPick, onClose, added }) {
                 <span className="tile-name">{e.name}</span>
                 {have.has(key(e.name)) && (
                   <span className="tile-check" aria-label="at home">
-                    ✓
+                    <Icon name="check" />
                   </span>
                 )}
               </button>
@@ -284,7 +284,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
             <input type="file" accept="image/*" multiple hidden disabled={!!receipt} onChange={onReceipt} />
           </label>
           <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
-            + Add
+            <Icon name="plus" size={16} strokeWidth={2.5} /> Add
           </button>
         </div>
       </header>
@@ -346,7 +346,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
                           .flatMap((x, k) => (k ? [' · ', x] : [x]))}
                       </span>
                     </span>
-                    <span className="stock-amount">{out ? 'used up' : i.amount || '✓'}</span>
+                    <span className="stock-amount">{out ? 'used up' : i.amount || <Icon name="check" size={16} />}</span>
                   </li>
                 </Fragment>
               )

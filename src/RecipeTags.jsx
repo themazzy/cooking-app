@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { totalMinutes } from './lib/recipeMeta.js'
 import Select from './Select.jsx'
+import Icon from './Icon.jsx'
 
 const minutesOrNull = (v) => (v === '' ? null : Math.max(0, Math.round(Number(v))) || null)
 
@@ -96,7 +97,7 @@ export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
           />
         ) : (
           <button className="chip-btn add" onClick={() => setAdding(true)}>
-            + New
+            <Icon name="plus" size={16} strokeWidth={2.5} /> New
           </button>
         )}
       </div>

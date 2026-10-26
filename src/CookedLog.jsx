@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { dayKey } from './lib/plan.js'
 import { addCooked, cookedAgo, editCooked, removeCooked } from './lib/history.js'
 import { raterName } from './lib/ratings.js'
+import Icon from './Icon.jsx'
 
 /** When the recipe was cooked, with a note each time (editable), and a button to add today. */
 export default function CookedLog({ cooked = [], by = null, onChange }) {
@@ -30,7 +31,7 @@ export default function CookedLog({ cooked = [], by = null, onChange }) {
         <h2>Cooked {cooked.length ? `${cooked.length}×` : ''}</h2>
         {!adding && (
           <button className="small" onClick={() => setAdding(true)}>
-            ✓ Cooked it
+            <Icon name="check" /> Cooked it
           </button>
         )}
       </div>
@@ -72,10 +73,10 @@ export default function CookedLog({ cooked = [], by = null, onChange }) {
             {editing?.at !== c.at && (
               <span className="row-actions">
                 <button className="link" aria-label={c.note ? 'Edit the note' : 'Add a note'} onClick={() => setEditing({ at: c.at, note: c.note ?? '' })}>
-                  ✎
+                  <Icon name="pencil" />
                 </button>
                 <button className="link remove" aria-label="Remove this entry" onClick={() => onChange(removeCooked({ cooked }, c.at))}>
-                  ×
+                  <Icon name="close" />
                 </button>
               </span>
             )}

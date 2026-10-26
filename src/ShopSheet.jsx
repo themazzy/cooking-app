@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { scaleIngredients } from './lib/scale.js'
 import { isOut } from './lib/stock.js'
+import Icon from './Icon.jsx'
 
 /**
  * Adding one recipe to the shopping list: every ingredient is ticked except
@@ -32,11 +33,11 @@ export default function ShopSheet({ recipe, portions: startPortions, pantry, onA
           <span>Portions</span>
           <div className="stepper">
             <button className="secondary" aria-label="Fewer portions" disabled={portions <= 1} onClick={() => setPortions((n) => n - 1)}>
-              −
+              <Icon name="minus" />
             </button>
             <span className="count">{recipe.servings ? portions : `×${portions}`}</span>
             <button className="secondary" aria-label="More portions" onClick={() => setPortions((n) => Math.min(99, n + 1))}>
-              +
+              <Icon name="plus" />
             </button>
           </div>
         </div>

@@ -333,7 +333,7 @@ progress { width: 100%; accent-color: var(--accent); }
 .player.full video { max-height: 100vh; height: 100%; object-fit: contain; }
 .player-big {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  width: 64px; height: 64px; min-height: 64px; border-radius: 50%; padding: 0 0 0 4px;
+  width: 64px; height: 64px; min-height: 64px; border-radius: 50%; padding: 0;
   background: rgb(0 0 0 / 55%); color: #fff; font-size: 1.6rem;
 }
 .player-big:active:not(:disabled) { transform: translate(-50%, -50%) scale(0.95); }
@@ -900,7 +900,7 @@ button .toast-spin { flex-basis: 16px; height: 16px; border-color: color-mix(in 
 .settings-label { font-weight: 600; margin: 4px 0 8px; display: block; }
 
 /* Recipe cards: title, then one line of facts that may run the full width, then a quiet source line */
-.card-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--muted); margin-top: 2px; }
+.card-facts { display: flex; flex-wrap: wrap; row-gap: 2px; align-items: center; gap: 4px 12px; font-size: 0.84rem; color: var(--muted); margin-top: 2px; }
 .card-facts > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .card-facts .home-ok { color: var(--accent); font-weight: 600; }
 .card-sub { font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -946,7 +946,8 @@ button.select {
 button.select:active:not(:disabled) { transform: none; border-color: var(--accent); }
 button.select[aria-expanded='true'] { border-color: var(--accent); background: var(--card); }
 .select-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.select-caret { flex: 0 0 auto; width: 8px; height: 8px; margin: -4px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.select-caret { color: var(--muted); transition: transform 0.2s ease; }
+button.select[aria-expanded='true'] .select-caret { transform: rotate(180deg); }
 button.select.sort-select { min-height: 36px; padding: 4px 10px 4px 12px; font-size: 0.9rem; }
 .select-backdrop { z-index: 55; }
 .select-sheet { max-height: 70vh; }
@@ -978,10 +979,17 @@ body:has(.sheet-backdrop) .toasts { bottom: auto; top: calc(12px + env(safe-area
 .kcal-sum li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
 .kcal-sum .note { margin: 6px 0 2px; }
 
-/* Line icons (Icon.jsx) instead of emoji */
-.icon-svg { flex: 0 0 auto; display: inline-block; vertical-align: -0.2em; }
+/* Icons (Icon.jsx, Lucide): centred on the text line; in buttons the flex gap spaces them */
+.icon-svg { flex: 0 0 auto; display: inline-block; vertical-align: middle; position: relative; top: -0.08em; }
+button .icon-svg, .button .icon-svg, .card-facts .icon-svg, .toast-icon .icon-svg, .stars .icon-svg { top: 0; }
+button.round .icon-svg, button.icon .icon-svg, .icon-button .icon-svg { margin: 0; }
+.stepper button .icon-svg { width: 18px; height: 18px; }
+.stars { align-items: center; }
+.stars .icon-svg { color: inherit; }
+.other-ratings > span { display: inline-flex; align-items: center; gap: 2px; margin-right: 8px; }
+.source-line .link, .language-bar .link, .link { gap: 4px; }
+.tick .icon-svg { color: var(--accent-text); }
 .tab-icon { display: inline-flex; filter: none; opacity: 1; }
 .tabbar button .tab-icon { color: var(--muted); }
 .tabbar button.active .tab-icon { color: var(--accent); }
 .empty-icon, .login-logo { color: var(--accent); opacity: 0.85; }
-.card-facts .icon-svg { vertical-align: -2px; }

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { dismissToast, onToast } from './lib/toast.js'
+import Icon from './Icon.jsx'
 
-const ICON = { ok: '✓', error: '!', info: 'i' }
+const ICON = { ok: 'check', error: 'close', info: 'info' }
 
 /** The toasts from lib/toast.js, stacked above the tab bar, and the bar shown while syncing. */
 export default function Toaster() {
@@ -38,7 +39,7 @@ export default function Toaster() {
       <div className="toasts" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className={`toast ${t.kind}${t.leaving ? ' leaving' : ''}`} role={t.kind === 'error' ? 'alert' : 'status'} onClick={() => dismissToast(t.id)}>
-            {t.kind === 'loading' ? <span className="toast-spin" aria-hidden="true" /> : <span className="toast-icon" aria-hidden="true">{ICON[t.kind]}</span>}
+            {t.kind === 'loading' ? <span className="toast-spin" aria-hidden="true" /> : <span className="toast-icon" aria-hidden="true"><Icon name={ICON[t.kind]} size={14} strokeWidth={3} /></span>}
             <span>{t.text}</span>
           </div>
         ))}

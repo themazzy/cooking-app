@@ -1,5 +1,6 @@
 import { emptyIngredient } from './lib/recipeEdit.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
+import Icon from './Icon.jsx'
 
 /** Ingredients as editable rows and the steps as one text box, one step per line. */
 export default function RecipeEditor({ recipe, source, onChange, onReset }) {
@@ -43,7 +44,7 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
                 <input className="unit" aria-label="Unit" value={i.unit} onChange={(e) => update(n, 'unit', e.target.value)} />
                 <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
                 <button className="icon del" aria-label="Remove ingredient" onClick={() => remove(n)}>
-                  ×
+                  <Icon name="close" />
                 </button>
               </div>
             </div>

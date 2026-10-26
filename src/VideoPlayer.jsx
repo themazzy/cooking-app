@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Icon from './Icon.jsx'
 
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2]
 const SPEED_KEY = 'cooking.videoSpeed'
@@ -211,7 +212,7 @@ export default function VideoPlayer({ src, poster }) {
       />
       {!playing && scrub == null && (
         <button className="player-big" aria-label="Play" onClick={toggle}>
-          ▶
+          <Icon name="play" size={28} fill />
         </button>
       )}
       {flash && <div className="player-flash">{flash}</div>}
@@ -260,21 +261,21 @@ export default function VideoPlayer({ src, poster }) {
         ) : (
           <div className="player-buttons">
             <button className="player-btn" aria-label={playing ? 'Pause' : 'Play'} onClick={toggle}>
-              {playing ? '❚❚' : '▶'}
+              <Icon name={playing ? 'pause' : 'play'} fill />
             </button>
             <button className="player-btn" aria-label={`Back ${SKIP} seconds`} onClick={() => skip(-SKIP)}>
-              ↺{SKIP}
+              <Icon name="undo" size={16} />{SKIP}
             </button>
             <button className="player-btn" aria-label={`Ahead ${SKIP} seconds`} onClick={() => skip(SKIP)}>
-              {SKIP}↻
+              {SKIP}<Icon name="redo" size={16} />
             </button>
             {!playing && (
               <>
                 <button className="player-btn" aria-label="Previous frame" onClick={() => step(-1)}>
-                  ‹
+                  <Icon name="left" />
                 </button>
                 <button className="player-btn" aria-label="Next frame" onClick={() => step(1)}>
-                  ›
+                  <Icon name="right" />
                 </button>
               </>
             )}
@@ -283,10 +284,10 @@ export default function VideoPlayer({ src, poster }) {
               {speed}×
             </button>
             <button className={`player-btn${loop ? ' on' : ''}`} aria-label="Repeat" aria-pressed={loop} onClick={() => setLoop((l) => !l)}>
-              ⟲
+              <Icon name="repeat" />
             </button>
             <button className="player-btn" aria-label={full ? 'Close full screen' : 'Full screen'} onClick={() => setFull((f) => !f)}>
-              {full ? '✕' : '⛶'}
+              <Icon name={full ? 'minimize' : 'maximize'} />
             </button>
           </div>
         )}

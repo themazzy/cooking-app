@@ -47,7 +47,7 @@ function OtherRatings({ recipe, me }) {
     <span className="other-ratings note">
       {others.map((o) => (
         <span key={o.who}>
-          {o.name ?? (others.length > 1 ? 'Other' : 'Other person')} {'★'.repeat(o.stars)}
+          {o.name ?? (others.length > 1 ? 'Other' : 'Other person')} {o.stars}<Icon name="star" size={13} fill />
         </span>
       ))}
     </span>
@@ -279,7 +279,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
       <>
         <div className="topbar">
           <button className="link" onClick={onBack}>
-            ← Back
+            <Icon name="back" /> Back
           </button>
           <span className="note">{recipe.id ? (dirty ? 'Unsaved changes' : 'Saved') : 'Not saved yet'}</span>
         </div>
@@ -289,7 +289,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           {languageBar}
           {recipe.sourceUrl && (
             <button className="link source" onClick={() => openExternal(recipe.sourceUrl)}>
-              {sourceLabel || 'Source'} ↗
+              {sourceLabel || 'Source'} <Icon name="external" size={14} />
             </button>
           )}
           <div className="servings">
@@ -377,7 +377,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
     <>
       <div className="topbar">
         <button className="link" onClick={onBack}>
-          ← Recipes
+          <Icon name="back" /> Recipes
         </button>
         <button className="small secondary" onClick={() => setEdit(true)}>
           Edit
@@ -443,7 +443,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         <p className="source-line">
           {recipe.sourceUrl ? (
             <button className="link" onClick={() => openExternal(recipe.sourceUrl)}>
-              {sourceLabel || 'Source'} ↗
+              {sourceLabel || 'Source'} <Icon name="external" size={14} />
             </button>
           ) : (
             PLATFORM[recipe.platform] && <span>{PLATFORM[recipe.platform]}</span>
@@ -462,10 +462,10 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         )}
         <div className="recipe-actions">
           <button className="big" disabled={!steps.length} onClick={() => setCooking(true)}>
-            ▶ Start cooking
+            <Icon name="play" fill /> Start cooking
           </button>
           <button className="big secondary" disabled={!ingredientCount} onClick={() => setShopping(true)}>
-            {added ? '✓ On the list' : <><Icon name="cart" /> Add to list</>}
+            {added ? <><Icon name="check" /> On the list</> : <><Icon name="cart" /> Add to list</>}
           </button>
         </div>
       </header>
@@ -475,14 +475,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           <h2>Ingredients</h2>
           <div className="stepper">
             <button className="secondary round" aria-label="Fewer portions" disabled={cookFor <= 1} onClick={() => setCookFor((n) => Math.max(1, n - 1))}>
-              −
+              <Icon name="minus" />
             </button>
             <span className="count">
               {recipe.servings ? cookFor : `×${cookFor}`}
               <span className="count-label">{recipe.servings ? (cookFor === 1 ? 'portion' : 'portions') : 'recipe'}</span>
             </span>
             <button className="secondary round" aria-label="More portions" onClick={() => setCookFor((n) => Math.min(99, n + 1))}>
-              +
+              <Icon name="plus" />
             </button>
           </div>
         </div>
