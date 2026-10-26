@@ -165,6 +165,12 @@ progress { width: 100%; accent-color: var(--accent); }
 
 /* Headers */
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; min-height: 40px; }
+.topbar-actions { display: flex; gap: 8px; }
+.share-options { display: grid; gap: 8px; margin: 12px 0 4px; }
+.share-option { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; box-shadow: none; }
+.share-option > span { display: grid; gap: 2px; }
+.share-option .note { font-weight: 400; }
+.share-option .icon-svg { color: var(--accent); flex: 0 0 auto; }
 .main-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 16px; }
 .main-header .actions { display: flex; gap: 6px; align-items: center; }
 
@@ -1092,3 +1098,12 @@ button.cook-timer-time { overflow: hidden; }
 .macro strong { font-variant-numeric: tabular-nums; }
 .macro span { font-size: 0.78rem; color: var(--muted); }
 .macros .note { margin-left: 2px; }
+
+/* Computer screens: sheets open as dialogs in the middle instead of from the bottom edge */
+@media (min-width: 900px) and (hover: hover) {
+  .sheet-backdrop { align-items: center; }
+  .sheet { border-radius: 20px; max-height: 84vh; padding-bottom: 16px; }
+  .sheet:not(.tall) { max-width: 560px; }
+  .sheet-handle { display: none; }
+  .sheet-actions { bottom: -16px; }
+}

@@ -16,6 +16,7 @@ import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients, scaleSteps } from './lib/scale.js'
 import { swapIngredient, swapsFor } from './lib/swaps.js'
 import SwapSheet from './SwapSheet.jsx'
+import ShareSheet from './ShareSheet.jsx'
 import CollectionSheet from './CollectionSheet.jsx'
 import { toast } from './lib/toast.js'
 import { seekableBlob } from './lib/webmFix.js'
@@ -69,6 +70,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [photoNote, setPhotoNote] = useState(null)
   const [swapFor, setSwapFor] = useState(null) // index of the ingredient showing its swaps
   const [filing, setFiling] = useState(false) // the collections sheet is open
+  const [sharing, setSharing] = useState(false)
   const [imageBroken, setImageBroken] = useState(false)
   useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
@@ -132,6 +134,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const macros = recipeMacros(recipe.servings ? recipe.ingredients : scaled, match)
   const macroShare = recipe.servings ? 1 / recipe.servings : 1
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
+    .filter(Boolean)
+    .join(' · ')
+  // What the shared copy is for: the portions and time as now on screen
+  const shareMeta = [
+    recipe.servings ? `${cookFor} ${cookFor === 1 ? 'portion' : 'portions'}` : factor !== 1 ? `×${cookFor} recipe` : null,
+    totalMinutes(recipe) ? `${recipe.timesEstimated ? 'about ' : ''}${formatMinutes(totalMinutes(recipe))}` : null,
+    sourceLabel || null,
+  ]
     .filter(Boolean)
     .join(' · ')
 
@@ -403,9 +413,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         <button className="link" onClick={onBack}>
           <Icon name="back" /> Recipes
         </button>
-        <button className="small secondary" onClick={() => setEdit(true)}>
-          Edit
-        </button>
+        <span className="topbar-actions">
+          <button className="small secondary" onClick={() => setSharing(true)}>
+            <Icon name="share" /> Share
+          </button>
+          <button className="small secondary" onClick={() => setEdit(true)}>
+            Edit
+          </button>
+        </span>
       </div>
 
       {video ?? <section className="card photo-empty">{photoButtons}</section>}
@@ -623,6 +638,20 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           </button>
         </div>
       </section>
+
+      {sharing && (
+        <ShareSheet
+          title={recipe.title || 'Recipe'}
+          meta={shareMeta}
+          text={[recipeToText({ ingredients: shown, steps: stepsText }, [recipe.title, shareMeta].filter(Boolean).join('\n')), recipe.note?.trim() ? `Note: ${recipe.note.trim()}` : '', recipe.sourceUrl ?? ''].filter(Boolean).join('\n\n')}
+          pictures={[recipe.photo, recipe.image, recipe.photoThumb, recipe.thumb].filter(Boolean)}
+          ingredients={shown}
+          steps={steps}
+          note={recipe.note}
+          footer={recipe.sourceUrl ?? ''}
+          onClose={() => setSharing(false)}
+        />
+      )}
 
       {recipe.id && <CookedLog cooked={recipe.cooked} by={me} onChange={(cooked) => onSavePatch({ cooked })} />}
 
