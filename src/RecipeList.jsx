@@ -8,6 +8,7 @@ import { averageRating } from './lib/ratings.js'
 import { allCollections, inCollection } from './lib/collections.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
+import { formatKcal, portionKcal } from './lib/calories.js'
 
 const matches = (r, q) =>
   !q ||
@@ -18,7 +19,10 @@ const matches = (r, q) =>
   r.collections?.some((c) => c.toLowerCase().includes(q)) ||
   r.ingredients?.some((i) => i.name?.toLowerCase().includes(q))
 
-const QUICK = 30
+// Quick filters: total time and calories of one portion at most this much
+const TIMES = [30, 60]
+const KCALS = [500, 700]
+const TOP_RATED = 4
 const byCount = (values) => {
   const counts = new Map()
   for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1)
@@ -44,12 +48,12 @@ function Thumb({ recipe }) {
   )
 }
 
-/** One short row of numbers under the title: time, portions, what is at home, rating. */
-function CardFacts({ recipe: r, home }) {
+/** One short row of numbers under the title: time, kcal per portion, what is at home, rating. */
+function CardFacts({ recipe: r, home, kcal }) {
   const minutes = totalMinutes(r)
   const facts = [
     minutes ? <span key="t"><Icon name="clock" size={14} /> {r.timesEstimated ? '~' : ''}{formatMinutes(minutes)}</span> : null,
-    r.servings ? <span key="p" title="Portions"><Icon name="user" size={14} /> {r.servings}</span> : null,
+    kcal != null ? <span key="k" title="Calories per portion"><Icon name="flame" size={14} /> {formatKcal(kcal)} kcal</span> : null,
     home?.total ? (
       <span key="h" className={home.missing.length === 0 ? 'home-ok' : ''} title="Ingredients at home">
         <Icon name="home" size={14} /> {home.have}/{home.total}
@@ -102,12 +106,15 @@ function CollectionHead({ collection, onRename, onClose }) {
  * shopping list and given the number of portions to buy for.
  */
 export default function RecipeList({ recipes, pantry = [], onOpen, selection, onSelect, onRenameCollection }) {
-  const { canonical } = useCatalog()
+  const { canonical, match } = useCatalog()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [collection, setCollection] = useState(null) // its name
   const [cuisine, setCuisine] = useState(null)
-  const [quick, setQuick] = useState(false)
+  const [maxTime, setMaxTime] = useState(null) // minutes
+  const [maxKcal, setMaxKcal] = useState(null) // per portion
+  const [topRated, setTopRated] = useState(false)
+  const [notCooked, setNotCooked] = useState(false)
   const [fromHome, setFromHome] = useState(false)
   const [sort, setSort] = useState('new')
   const q = query.trim().toLowerCase()
@@ -118,10 +125,13 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const timed = recipes.some((r) => totalMinutes(r))
   const rated = recipes.some((r) => averageRating(r))
   const cooked = recipes.some((r) => r.cooked?.length)
+  const kcal = new Map(recipes.map((r) => [r.id, portionKcal(r, match)]))
+  const counted = [...kcal.values()].some((k) => k != null)
   // What can be cooked from what is at home: recipes missing at most this many ingredients
   const home = new Map(pantry.length ? recipes.map((r) => [r.id, homeMatch(r, pantry, canonical)]) : [])
   const MISSING_OK = 2
-  const filtered = !!(category || cuisine || quick || fromHome)
+  const filtered = !!(category || cuisine || maxTime || maxKcal || topRated || notCooked || fromHome)
+  const clearFilters = () => (setCategory(null), setCuisine(null), setMaxTime(null), setMaxKcal(null), setTopRated(false), setNotCooked(false), setFromHome(false))
   const shown = recipes
     .filter(
       (r) =>
@@ -129,23 +139,30 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
         (!open || inCollection(r, open.name)) &&
         (!category || r.categories?.includes(category)) &&
         (!cuisine || r.cuisine === cuisine) &&
-        (!quick || (totalMinutes(r) != null && totalMinutes(r) <= QUICK)) &&
+        (!maxTime || (totalMinutes(r) != null && totalMinutes(r) <= maxTime)) &&
+        (!maxKcal || (kcal.get(r.id) != null && kcal.get(r.id) <= maxKcal)) &&
+        (!topRated || averageRating(r) >= TOP_RATED) &&
+        (!notCooked || !r.cooked?.length) &&
         (!fromHome || (home.get(r.id)?.total > 0 && home.get(r.id).missing.length <= MISSING_OK)),
     )
-    .sort((a, b) =>
-      sort === 'az'
-        ? (a.title || '').localeCompare(b.title || '')
-        : sort === 'quick'
-          ? (totalMinutes(a) ?? 1e9) - (totalMinutes(b) ?? 1e9)
-          : sort === 'rated'
-            ? (averageRating(b) ?? 0) - (averageRating(a) ?? 0)
-            : sort === 'home'
-              ? (home.get(a.id)?.missing.length ?? 1e9) - (home.get(b.id)?.missing.length ?? 1e9) || (home.get(b.id)?.have ?? 0) - (home.get(a.id)?.have ?? 0)
-              : sort === 'lately'
-                ? (lastCooked(a) ?? 0) - (lastCooked(b) ?? 0)
-                : 0,
-    )
-  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed || home.size)
+    .sort((a, b) => {
+      const by = {
+        az: () => (a.title || '').localeCompare(b.title || ''),
+        quick: () => (totalMinutes(a) ?? 1e9) - (totalMinutes(b) ?? 1e9),
+        light: () => (kcal.get(a.id) ?? 1e9) - (kcal.get(b.id) ?? 1e9),
+        rated: () => (averageRating(b) ?? 0) - (averageRating(a) ?? 0),
+        home: () => (home.get(a.id)?.missing.length ?? 1e9) - (home.get(b.id)?.missing.length ?? 1e9) || (home.get(b.id)?.have ?? 0) - (home.get(a.id)?.have ?? 0),
+        lately: () => (lastCooked(a) ?? 0) - (lastCooked(b) ?? 0),
+      }[sort]
+      return by ? by() : 0
+    })
+  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed || counted || rated || cooked || home.size)
+  const quickFilters = [
+    ...(timed ? TIMES.map((m) => [`t${m}`, `Under ${m} min`, maxTime === m, () => setMaxTime(maxTime === m ? null : m)]) : []),
+    ...(counted ? KCALS.map((k) => [`k${k}`, `Under ${k} kcal`, maxKcal === k, () => setMaxKcal(maxKcal === k ? null : k)]) : []),
+    ...(rated ? [['top', `${TOP_RATED}+ stars`, topRated, () => setTopRated(!topRated)]] : []),
+    ...(cooked ? [['new', 'Not cooked yet', notCooked, () => setNotCooked(!notCooked)]] : []),
+  ]
   return (
     <>
       {collections.length > 0 && (
@@ -184,17 +201,12 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
       {showFilters ? (
         <div className="recipe-filters">
           <div className="aisle-chips">
-            <button className={`chip-btn${!filtered ? ' on' : ''}`} onClick={() => (setCategory(null), setCuisine(null), setQuick(false), setFromHome(false))}>
+            <button className={`chip-btn${!filtered ? ' on' : ''}`} onClick={clearFilters}>
               All
             </button>
             {home.size > 0 && (
               <button className={`chip-btn${fromHome ? ' on' : ''}`} aria-pressed={fromHome} onClick={() => (setFromHome(!fromHome), !fromHome && setSort('home'))}>
                 Can cook now
-              </button>
-            )}
-            {timed && (
-              <button className={`chip-btn${quick ? ' on' : ''}`} aria-pressed={quick} onClick={() => setQuick(!quick)}>
-                Under {QUICK} min
               </button>
             )}
             {categories.map((c) => (
@@ -203,6 +215,15 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
               </button>
             ))}
           </div>
+          {quickFilters.length > 0 && (
+            <div className="aisle-chips" role="group" aria-label="Time, calories and rating">
+              {quickFilters.map(([k, label, on, toggle]) => (
+                <button key={k} className={`chip-btn${on ? ' on' : ''}`} aria-pressed={on} onClick={toggle}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           {cuisines.length > 0 && (
             <div className="aisle-chips">
               {cuisines.map((c) => (
@@ -221,6 +242,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
                 ['new', 'Newest'],
                 ['az', 'A–Z'],
                 ...(timed ? [['quick', 'Quickest']] : []),
+                ...(counted ? [['light', 'Fewest kcal']] : []),
                 ...(rated ? [['rated', 'Top rated']] : []),
                 ...(home.size ? [['home', 'Most at home']] : []),
                 ...(cooked ? [['lately', 'Not cooked lately']] : []),
@@ -244,7 +266,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
                 <Thumb recipe={r} />
                 <span className="card-text">
                   <span className="recipe-title">{r.title || 'Untitled recipe'}</span>
-                  <CardFacts recipe={r} home={home.get(r.id)} />
+                  <CardFacts recipe={r} home={home.get(r.id)} kcal={kcal.get(r.id)} />
                   {(r.cuisine || lastCooked(r) || PLATFORM[r.platform]) && (
                     <span className="card-sub">
                       {[r.cuisine, lastCooked(r) ? `Cooked ${cookedAgo(lastCooked(r))}` : PLATFORM[r.platform]].filter(Boolean).join(' · ')}
