@@ -19,6 +19,7 @@ import { splitSteps } from './lib/cook.js'
 import { isOut, planCooking } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
+import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -35,7 +36,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits, categories = [], cuisines = [] }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits, translateTo = null, categories = [], cuisines = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -98,6 +99,38 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   }
 
   // A photo the cook added wins; then the video (with the photo as its cover); then the website's picture
+  // Translation: switch to the original text and back, or translate an older recipe
+  const [translating, setTranslating] = useState(null) // null, 'busy' or a message
+  const changeText = (r) => {
+    const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original }
+    return edit || !recipe.id ? set(patch) : onSavePatch(patch)
+  }
+  const translate = async () => {
+    setTranslating('busy')
+    try {
+      const t = await translateRecipe(recipe, translateTo, { onStep: () => {} })
+      if (t) changeText(t)
+      setTranslating(t ? null : `This recipe already looks like ${languageName(translateTo)}.`)
+    } catch (err) {
+      setTranslating(err?.message ?? String(err))
+    }
+  }
+  const languageBar = recipe.original ? (
+    <div className="language-bar">
+      🌐 In {languageName(recipe.lang)} ·{' '}
+      <button className="link" onClick={() => changeText(swapOriginal(recipe))}>
+        Show in {languageName(recipe.original.lang)}
+      </button>
+    </div>
+  ) : translateTo ? (
+    <div className="language-bar">
+      <button className="link" disabled={translating === 'busy'} onClick={translate}>
+        🌐 {translating === 'busy' ? 'Translating… (the first time downloads the language)' : `Translate to ${languageName(translateTo)}`}
+      </button>
+      {translating && translating !== 'busy' && <span className="note"> {translating}</span>}
+    </div>
+  ) : null
+
   const setPhoto = (photo) => (edit || !recipe.id ? set({ photo }) : onSavePatch({ photo }))
   const pickPhoto = async (e) => {
     const file = e.target.files?.[0]
@@ -218,6 +251,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
         <section className="card recipe">
           <input className="title" aria-label="Recipe name" placeholder="Recipe name" value={recipe.title} onChange={(e) => set({ title: e.target.value })} />
+          {languageBar}
           {recipe.sourceUrl && (
             <button className="link source" onClick={() => openExternal(recipe.sourceUrl)}>
               {sourceLabel || 'Source'} ↗
@@ -318,6 +352,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>
+        {languageBar}
         <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
         {recipe.note?.trim() && (
           <div className="recipe-note-view">

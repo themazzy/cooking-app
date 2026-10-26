@@ -4,6 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { draftFromImport } from './lib/recipeDraft.js'
+import { TARGETS, detectLanguage, languageName, translateRecipe } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
@@ -84,6 +85,8 @@ export default function App() {
     ebagLinks: true,
     units: 'original',
     photoLanguage: 'latin',
+    translateTo: 'en',
+    keepOwnLanguages: true,
     ebagSearch: EBAG_SEARCH,
     ...readStore(SETTINGS_KEY, {}),
   }))
@@ -270,21 +273,41 @@ export default function App() {
       .catch((err) => setShrink((s) => (s?.key === key ? { key, state: 'failed', error: err?.message ?? String(err) } : s)))
   }, [refreshRecipes])
 
-  /** Shows an import (or paste) as a new, unsaved recipe page. */
+  /** The recipe translated into the chosen language, or as it is (also when translating fails). */
+  const translateDraft = useCallback(
+    async (recipe) => {
+      const to = settings.translateTo
+      if (!native || !to || to === 'off') return recipe
+      try {
+        const from = await detectLanguage(recipe)
+        if (!from || from === to || (settings.keepOwnLanguages && TARGETS[from])) return recipe
+        const translated = await translateRecipe(recipe, to, { from, onStep: (t) => step(t) })
+        if (!translated) return recipe
+        step(`Translated from ${languageName(from)}. The recipe page can show the original.`, 'ok')
+        return translated
+      } catch (err) {
+        step(`Not translated: ${err?.message ?? err}`, 'warn')
+        return recipe
+      }
+    },
+    [native, settings.translateTo, settings.keepOwnLanguages],
+  )
+
+  /** Shows an import (or paste) as a new, unsaved recipe page, translated if it is in another language. */
   const openDraft = useCallback(
-    (r, videoBlob = null, extra = {}) => {
+    async (r, videoBlob = null, extra = {}) => {
       const key = newId()
-      const recipe = {
+      const recipe = await translateDraft({
         ...draftFromImport(r),
         ...extra,
         key,
         video: videoBlob ? { size: videoBlob.size, originalSize: videoBlob.size, type: videoBlob.type, shrunk: false } : null,
-      }
+      })
       setEditing({ recipe, videoBlob, dirty: true })
       go('#/new')
       if (videoBlob && settings.saveVideos) startShrink(key, videoBlob, settings.videoQuality)
     },
-    [settings.saveVideos, settings.videoQuality, startShrink],
+    [settings.saveVideos, settings.videoQuality, startShrink, translateDraft],
   )
 
   const addManually = () => {
@@ -508,7 +531,7 @@ export default function App() {
       } finally {
         if (r.description || r.transcript || r.comments?.length) {
           remember(r)
-          openDraft(r, videoBlob)
+          await openDraft(r, videoBlob)
         }
         // Always available, so a wrong result can be reported too
         setReport(
@@ -557,7 +580,7 @@ export default function App() {
       const transcript = await runTranscription(await file.arrayBuffer())
       const r = { url: null, platform: 'file', author: null, description: pasted || null, transcript, at: Date.now() }
       remember(r)
-      openDraft(r, file.type.startsWith('video/') ? file : null)
+      await openDraft(r, file.type.startsWith('video/') ? file : null)
     } catch (err) {
       step(err.message || String(err), 'error')
     } finally {
@@ -594,7 +617,7 @@ export default function App() {
       step(`Read ${text.split('\n').filter(Boolean).length} lines.`, 'ok')
       const r = { url: null, platform: 'photo', description: text, at: Date.now() }
       remember(r)
-      openDraft(r, null, { thumb: await photoThumb(files[0]) })
+      await openDraft(r, null, { thumb: await photoThumb(files[0]) })
       for (const p of photoPages) URL.revokeObjectURL(p.url)
       setPhotoPages([])
     } catch (err) {
@@ -646,6 +669,7 @@ export default function App() {
           onUseStock={useStock}
           units={settings.units}
           onUnits={(units) => setSettings((s) => ({ ...s, units }))}
+          translateTo={native && settings.translateTo !== 'off' ? settings.translateTo : null}
           categories={allCategories(recipes)}
           cuisines={allCuisines(recipes)}
         />
@@ -747,6 +771,28 @@ export default function App() {
               </select>
             </label>
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
+            <label>
+              Translate recipes into{' '}
+              <select value={settings.translateTo} onChange={(e) => setSettings({ ...settings, translateTo: e.target.value })}>
+                <option value="off">Don't translate</option>
+                {Object.entries(TARGETS).map(([k, name]) => (
+                  <option key={k} value={k}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {settings.translateTo !== 'off' && (
+              <label>
+                <input type="checkbox" checked={settings.keepOwnLanguages} onChange={(e) => setSettings({ ...settings, keepOwnLanguages: e.target.checked })} /> Leave
+                English, Czech and Bulgarian recipes as they are
+              </label>
+            )}
+            <p className="hint">
+              {native
+                ? 'Translation runs on the phone. Each language downloads once (about 30 MB), then works offline. You can switch back to the original on the recipe page.'
+                : 'Translation only works in the Android app.'}
+            </p>
             <label>
               <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}
               Save a copy of the video with each recipe (on this phone only)

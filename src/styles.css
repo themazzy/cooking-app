@@ -360,6 +360,8 @@ img.hero { width: 100%; max-height: 40vh; object-fit: cover; border-radius: var(
 .recipe-head { margin-bottom: 16px; }
 .recipe-head h1 { font-size: 1.6rem; }
 .meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+.language-bar { color: var(--muted); font-size: 0.88rem; margin: 4px 0 8px; }
+.language-bar .link { font-size: inherit; padding: 0; }
 .meta-chip {
   font-size: 0.85rem;
   font-weight: 500;
