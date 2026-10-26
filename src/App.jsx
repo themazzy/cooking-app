@@ -25,6 +25,7 @@ import ShoppingList from './ShoppingList.jsx'
 import PlanPage from './PlanPage.jsx'
 import { prunePlan } from './lib/plan.js'
 import { addToList, makeList } from './lib/shopping.js'
+import { mergeLists } from './lib/listMerge.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
@@ -142,20 +143,35 @@ export default function App() {
   }, [])
 
   const syncing = useRef(false)
+  const syncAgain = useRef(false)
   const runSync = useCallback(async () => {
-    if (!user || syncing.current) return
+    if (!user) return
+    // A sync asked for while one runs (a save, the other phone) runs right after it
+    if (syncing.current) {
+      syncAgain.current = true
+      return
+    }
     syncing.current = true
     try {
-      await syncRecipes()
-      await refreshRecipes()
-      catalogRefresh.current?.()
-      setPantry(await loadPantry())
-      const list = await syncShopping(shoppingRef.current)
-      if (list !== shoppingRef.current) {
-        setShopping(list)
-        writeStore(SHOPPING_KEY, list)
-      }
-      setSyncState({ at: Date.now() })
+      do {
+        syncAgain.current = false
+        await syncRecipes()
+        await refreshRecipes()
+        catalogRefresh.current?.()
+        setPantry(await loadPantry())
+        const sent = shoppingRef.current
+        const list = await syncShopping(sent)
+        if (list !== sent) {
+          // Changed here while syncing: keep both, and send the result next round
+          const current = shoppingRef.current
+          const next = current === sent ? list : { ...mergeLists(sent, current, list), updatedAt: Date.now() }
+          if (current !== sent) syncAgain.current = true
+          setShopping(next)
+          shoppingRef.current = next
+          writeStore(SHOPPING_KEY, next)
+        }
+        setSyncState({ at: Date.now() })
+      } while (syncAgain.current)
     } catch (err) {
       setSyncState({ error: err?.message ?? String(err) })
     } finally {
@@ -176,9 +192,11 @@ export default function App() {
       .then((u) => (unsubscribe = u))
       .catch(() => {})
     const sub = CapApp.addListener('resume', runSync)
+    window.addEventListener('online', runSync)
     return () => {
       unsubscribe?.()
       sub.then((h) => h.remove())
+      window.removeEventListener('online', runSync)
     }
   }, [user, runSync])
 
