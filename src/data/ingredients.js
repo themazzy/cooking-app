@@ -16,7 +16,7 @@ Beef | Meat | Beef | beef meat
 Ground beef | Meat | Minced Beef | minced beef, beef mince, lean minced beef, lean ground beef, mince, ground meat, minced meat
 Beef brisket | Meat | Beef Brisket | brisket
 Beef fillet | Meat | Beef Fillet | beef tenderloin, fillet steak
-Steak | Meat | /ingredients/steak.svg | 
+Steak | Meat | /ingredients/steak.webp | 
 Beef shin | Meat | Beef Shin | shin of beef
 Veal | Meat | Veal | veal cutlet, veal mince, minced veal, ground veal
 Pork | Meat | Pork | 
@@ -30,27 +30,27 @@ Chicken | Meat | Chicken | whole chicken, chicken meat
 Chicken breast | Meat | Chicken Breast | chicken breasts, chicken fillet, chicken fillets, boneless chicken breast
 Chicken thighs | Meat | Chicken Thighs | chicken thigh, boneless chicken thighs
 Ground chicken | Meat | Turkey Mince | minced chicken, chicken mince
-Turkey | Meat | /ingredients/turkey.svg | 
+Turkey | Meat | /ingredients/turkey.webp | 
 Duck | Meat | Duck | 
 Lamb | Meat | Lamb | mutton
 Oxtail | Meat | Oxtail | ox tail
 Beef kidney | Meat | Beef Kidney |
 Lamb kidney | Meat | Lamb Kidney |
-Chicken liver | Meat | /ingredients/chicken-liver.svg | 
-Pork ribs | Meat | /ingredients/pork-ribs.svg | spare ribs, baby back ribs, ribs
-Pork tenderloin | Meat | /ingredients/pork-tenderloin.svg | pork fillet
-Pork knuckle | Meat | /ingredients/pork-knuckle.svg | ham hock, pork shank
-Salami | Meat | /ingredients/salami.svg | 
+Chicken liver | Meat | /ingredients/chicken-liver.webp | 
+Pork ribs | Meat | /ingredients/pork-ribs.webp | spare ribs, baby back ribs, ribs
+Pork tenderloin | Meat | /ingredients/pork-tenderloin.webp | pork fillet
+Pork knuckle | Meat | /ingredients/pork-knuckle.webp | ham hock, pork shank
+Salami | Meat | /ingredients/salami.webp | 
 Black pudding | Meat | Black Pudding | blood sausage
 Doner meat | Meat | Doner Meat | kebab meat, gyros meat
 Italian sausage | Meat | Italian Fennel Sausages | italian fennel sausages, salsiccia
-Lukanka | Meat | /ingredients/lukanka.svg | 
-Kebapche | Meat | /ingredients/kebapche.svg | kebapcheta
-Meatballs | Meat | /ingredients/meatballs.svg | kyufte, kofta
-Rabbit | Meat | /ingredients/rabbit.svg | 
-Venison | Meat | /ingredients/venison.svg | deer
-Goose | Meat | /ingredients/goose.svg | 
-Quail | Meat | /ingredients/quail.svg | 
+Lukanka | Meat | /ingredients/lukanka.webp | 
+Kebapche | Meat | /ingredients/kebapche.webp | kebapcheta
+Meatballs | Meat | /ingredients/meatballs.webp | kyufte, kofta
+Rabbit | Meat | /ingredients/rabbit.webp | 
+Venison | Meat | /ingredients/venison.webp | deer
+Goose | Meat | /ingredients/goose.webp | 
+Quail | Meat | /ingredients/quail.webp | 
 Salmon | Fish | Salmon | salmon fillet, salmon fillets, smoked salmon
 Tuna | Fish | Tuna | canned tuna, tuna steak
 White fish | Fish | White Fish Fillets | white fish fillets, hake, pollock, tilapia, sea bass
