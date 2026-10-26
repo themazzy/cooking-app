@@ -32,12 +32,20 @@ const label = (unit, text) => (unit === 'cup' ? (/^(1|½|⅓|⅔|¼|¾|0,\d+)$/.
 // Ounces and pounds round to a quarter so they read like a recipe
 const quarter = (n) => (n >= 10 ? Math.round(n) : Math.round(n * 4) / 4)
 
-// Dry, pourable ingredients (flour, sugar, semolina, rice, oats, cocoa) are
-// weighed in metric kitchens, so cups and millilitres of them become grams.
-// Spoons stay spoons: half a spoon of starch reads better than 7 g.
-const DRY_AISLES = new Set(['Baking', 'Pasta & grains', 'Nuts & seeds', 'Spices'])
+// Solid ingredients are weighed in metric kitchens, so cups and millilitres
+// of flour, sugar, rice, oats, nuts, grated cheese, chopped vegetables or
+// berries become grams; liquids stay in ml. Anything lighter than water by
+// volume is solid; in the dry aisles heavier things too (salt, baking soda,
+// brown sugar), except flavourings. Spoons stay spoons: half a spoon of
+// starch reads better than 7 g.
+const DRY_AISLES = new Set(['Baking', 'Pasta & grains', 'Nuts & seeds', 'Spices', 'Bakery'])
+const KEEP_VOLUME = new Set(['vanilla', 'food colouring', 'rum flavouring', 'ice cream', 'whipped cream'])
 const ML = { ml: 1, dl: 100, l: 1000, floz: 29.57, pint: 473.2, quart: 946.4, cup: 240 }
-const isDry = (entry) => entry?.density != null && entry.density < 0.9 && DRY_AISLES.has(entry.aisle)
+const isDry = (entry) => {
+  const d = entry?.density
+  if (d == null || KEEP_VOLUME.has(entry.name?.toLowerCase())) return false
+  return d < 0.9 || (d < 1.3 && DRY_AISLES.has(entry.aisle))
+}
 
 function toGrams(n, unit, density) {
   const v = n * ML[unit] * density

@@ -125,116 +125,116 @@ Tofu|120|||13|2|7
 Tempeh|195|||20|8|11
 Seitan|370|||75|14|2
 Hummus|175||1|8|14|10
-Onion|40|110||1.1|9|0.1
-Red onion|40|110||1.1|9|0.1
-Spring onions|32|15||1.8|7|0.2
-Shallots|72|30||2.5|17|0.1
-Leek|61|200||1.5|14|0.3
-Garlic|149|5||6.4|33|0.5
-Ginger|80|15||1.8|18|0.8
-Potatoes|77|170||2|17|0.1
-Sweet potatoes|86|200||1.6|20|0.1
-Carrots|41|60||0.9|10|0.2
-Celery|16|40||0.7|3|0.2
-Celeriac|42|500||1.5|9|0.3
-Tomatoes|18|120||0.9|3.9|0.2
-Cherry tomatoes|18|15||0.9|3.9|0.2
-Cucumber|15|300||0.7|3.6|0.1
-Bell pepper|26|150||1|6|0.3
-Chilli|40|15||1.9|9|0.4
-Courgette|17|200||1.2|3.1|0.3
-Aubergine|25|300||1|6|0.2
+Onion|40|110|0.67|1.1|9|0.1
+Red onion|40|110|0.67|1.1|9|0.1
+Spring onions|32|15|0.42|1.8|7|0.2
+Shallots|72|30|0.67|2.5|17|0.1
+Leek|61|200|0.37|1.5|14|0.3
+Garlic|149|5|0.57|6.4|33|0.5
+Ginger|80|15|0.4|1.8|18|0.8
+Potatoes|77|170|0.63|2|17|0.1
+Sweet potatoes|86|200|0.55|1.6|20|0.1
+Carrots|41|60|0.54|0.9|10|0.2
+Celery|16|40|0.42|0.7|3|0.2
+Celeriac|42|500|0.65|1.5|9|0.3
+Tomatoes|18|120|0.75|0.9|3.9|0.2
+Cherry tomatoes|18|15|0.62|0.9|3.9|0.2
+Cucumber|15|300|0.55|0.7|3.6|0.1
+Bell pepper|26|150|0.62|1|6|0.3
+Chilli|40|15|0.45|1.9|9|0.4
+Courgette|17|200|0.52|1.2|3.1|0.3
+Aubergine|25|300|0.35|1|6|0.2
 Mushrooms|22|20|0.4|3.1|3.3|0.3
-Shiitake mushrooms|34|15||2.2|7|0.5
-Broccoli|34|350||2.8|7|0.4
-Cauliflower|25|600||1.9|5|0.3
-Cabbage|25|1000||1.3|6|0.1
-Brussels sprouts|43|10||3.4|9|0.3
-Kale|49|||4.3|9|0.9
+Shiitake mushrooms|34|15|0.3|2.2|7|0.5
+Broccoli|34|350|0.38|2.8|7|0.4
+Cauliflower|25|600|0.45|1.9|5|0.3
+Cabbage|25|1000|0.37|1.3|6|0.1
+Brussels sprouts|43|10|0.37|3.4|9|0.3
+Kale|49||0.28|4.3|9|0.9
 Spinach|23||0.3|2.9|3.6|0.4
-Lettuce|15|300||1.4|2.9|0.2
-Rocket|25|||2.6|3.7|0.7
-Asparagus|20|20||2.2|3.9|0.1
-Green beans|31|||1.8|7|0.2
+Lettuce|15|300|0.2|1.4|2.9|0.2
+Rocket|25||0.08|2.6|3.7|0.7
+Asparagus|20|20|0.56|2.2|3.9|0.1
+Green beans|31||0.45|1.8|7|0.2
 Peas|81||0.6|5.4|14|0.4
-Sugar snap peas|42|||2.8|7.6|0.2
+Sugar snap peas|42||0.4|2.8|7.6|0.2
 Sweetcorn|86||0.65|3.3|19|1.4
-Pumpkin|26|||1|6.5|0.1
-Beetroot|43|150||1.6|10|0.2
-Radishes|16|10||0.7|3.4|0.1
-Fennel|31|250||1.2|7|0.2
-Turnip|28|150||0.9|6.4|0.1
-Parsnip|75|150||1.2|18|0.3
-Vine tomatoes|18|100||0.9|3.9|0.2
-Plum tomatoes|18|70||0.9|3.9|0.2
-Sun-dried tomatoes|260|5||14|56|3
-Yellow pepper|27|150||1|6.3|0.2
-Green pepper|20|150||0.9|4.6|0.2
-Red pepper|31|150||1|6|0.3
-Kapia pepper|31|120||1|6|0.3
-Jalapeño|29|15||0.9|6.5|0.4
+Pumpkin|26||0.48|1|6.5|0.1
+Beetroot|43|150|0.57|1.6|10|0.2
+Radishes|16|10|0.48|0.7|3.4|0.1
+Fennel|31|250|0.37|1.2|7|0.2
+Turnip|28|150|0.55|0.9|6.4|0.1
+Parsnip|75|150|0.55|1.2|18|0.3
+Vine tomatoes|18|100|0.75|0.9|3.9|0.2
+Plum tomatoes|18|70|0.75|0.9|3.9|0.2
+Sun-dried tomatoes|260|5|0.45|14|56|3
+Yellow pepper|27|150|0.62|1|6.3|0.2
+Green pepper|20|150|0.62|0.9|4.6|0.2
+Red pepper|31|150|0.62|1|6|0.3
+Kapia pepper|31|120|0.62|1|6|0.3
+Jalapeño|29|15|0.38|0.9|6.5|0.4
 Scotch bonnet|40|10||1.9|9|0.4
-Butternut squash|45|1000||1|12|0.1
-Swede|37|500||1.1|8.6|0.2
+Butternut squash|45|1000|0.58|1|12|0.1
+Swede|37|500|0.58|1.1|8.6|0.2
 Jerusalem artichokes|73|40||2|17|0
 Artichokes|47|130||3.3|11|0.2
-Okra|33|12||1.9|7|0.2
-Bok choy|13|150||1.5|2.2|0.2
-Chinese cabbage|16|1000||1.2|3.2|0.2
-Red cabbage|31|1000||1.4|7|0.2
-Sauerkraut|19|||0.9|4.3|0.1
-Iceberg lettuce|14|500||0.9|3|0.1
-Chestnut mushrooms|22|15||3.1|3.3|0.3
-Wild mushrooms|30|||3|4|0.5
-Oyster mushrooms|33|||3.3|6|0.4
+Okra|33|12|0.42|1.9|7|0.2
+Bok choy|13|150|0.3|1.5|2.2|0.2
+Chinese cabbage|16|1000|0.32|1.2|3.2|0.2
+Red cabbage|31|1000|0.37|1.4|7|0.2
+Sauerkraut|19||0.6|0.9|4.3|0.1
+Iceberg lettuce|14|500|0.3|0.9|3|0.1
+Chestnut mushrooms|22|15|0.4|3.1|3.3|0.3
+Wild mushrooms|30||0.35|3|4|0.5
+Oyster mushrooms|33||0.36|3.3|6|0.4
 Corn on the cob|86|200||3.3|19|1.4
 Creamed corn|72|||1.7|17|0.4
-Watercress|11|||2.3|1.3|0.1
-Bean sprouts|30|||3|6|0.2
-Horseradish|48|||1.2|11|0.7
-Baby potatoes|70|40||1.9|16|0.1
+Watercress|11||0.14|2.3|1.3|0.1
+Bean sprouts|30||0.44|3|6|0.2
+Horseradish|48||0.55|1.2|11|0.7
+Baby potatoes|70|40|0.63|1.9|16|0.1
 Vine leaves|93|3||5.6|17|2.1
-Avocado|160|150||2|8.5|15
+Avocado|160|150|0.63|2|8.5|15
 Lemon|29|100||1.1|9|0.3
 Lemon juice|22||1|0.4|7|0.2
 Lemon zest|47|3|0.4|1.5|10|0.3
 Lime|30|60||0.7|10.5|0.2
 Orange|47|150||0.9|12|0.1
-Apples|52|180||0.3|14|0.2
-Pears|57|180||0.4|15|0.1
-Banana|89|120||1.1|23|0.3
+Apples|52|180|0.52|0.3|14|0.2
+Pears|57|180|0.6|0.4|15|0.1
+Banana|89|120|0.63|1.1|23|0.3
 Strawberries|32|12|0.6|0.7|7.7|0.3
 Raspberries|52||0.5|1.2|12|0.7
 Blueberries|57||0.6|0.7|14|0.3
 Blackberries|43||0.6|1.4|10|0.5
-Cherries|63|7||1.1|16|0.2
-Peaches|39|150||0.9|10|0.3
-Apricots|48|35||1.4|11|0.4
-Dried apricots|240|8||3.4|63|0.5
+Cherries|63|7|0.6|1.1|16|0.2
+Peaches|39|150|0.65|0.9|10|0.3
+Apricots|48|35|0.65|1.4|11|0.4
+Dried apricots|240|8|0.55|3.4|63|0.5
 Raisins|300||0.65|3.1|79|0.5
-Dates|280|8||2.5|75|0.4
+Dates|280|8|0.62|2.5|75|0.4
 Coconut|355||0.35|3.3|15|33
-Mango|60|300||0.8|15|0.4
-Pineapple|50|1000||0.5|13|0.1
-Kiwi|61|75||1.1|15|0.5
-Grapes|69|5||0.7|18|0.2
-Watermelon|30|||0.6|7.6|0.2
-Melon|34|||0.8|8|0.2
-Plums|46|50||0.7|11|0.3
-Figs|74|50||0.8|19|0.3
-Pomegranate|83|250||1.7|19|1.2
+Mango|60|300|0.7|0.8|15|0.4
+Pineapple|50|1000|0.69|0.5|13|0.1
+Kiwi|61|75|0.75|1.1|15|0.5
+Grapes|69|5|0.63|0.7|18|0.2
+Watermelon|30||0.63|0.6|7.6|0.2
+Melon|34||0.7|0.8|8|0.2
+Plums|46|50|0.69|0.7|11|0.3
+Figs|74|50|0.62|0.8|19|0.3
+Pomegranate|83|250|0.73|1.7|19|1.2
 Grapefruit|42|250||0.8|11|0.1
 Mandarins|53|80||0.8|13|0.3
 Passion fruit|97|20||2.2|23|0.7
 Quince|57|200||0.4|15|0.1
-Rhubarb|21|||0.9|4.5|0.2
-Cranberries|46|||0.4|12|0.1
-Redcurrants|56|||1.4|14|0.2
+Rhubarb|21||0.5|0.9|4.5|0.2
+Cranberries|46||0.42|0.4|12|0.1
+Redcurrants|56||0.47|1.4|14|0.2
 Sultanas|300||0.65|2.7|79|0.5
 Dried fruit|280||0.65|2.5|70|0.5
-Prunes|240|8||2.2|64|0.4
-Glacé cherries|300|5||0.4|75|0.2
-Sour cherries|50|||1|12|0.3
+Prunes|240|8|0.7|2.2|64|0.4
+Glacé cherries|300|5|0.7|0.4|75|0.2
+Sour cherries|50||0.6|1|12|0.3
 Orange zest|97|3|0.4|1.5|25|0.2
 Lime juice|25||1|0.4|8.4|0.1
 Ackee|150|||2.9|0.8|15
@@ -292,7 +292,7 @@ White pepper|300||0.55|10|69|2
 Pink peppercorns|300||0.4|10|64|3
 Celery salt|20||1.2|1|4|0.5
 Onion salt|30||1.2|1|7|0
-Sea salt|0||1|0|0|0
+Sea salt|0||1.1|0|0|0
 Cajun seasoning|280||0.5|10|55|8
 Fajita seasoning|280||0.5|9|57|7
 Biryani masala|350||0.45|13|55|14
@@ -509,7 +509,7 @@ Pine nuts|675||0.6|14|13|68
 Pecans|690||0.45|9|14|72
 Sesame seeds|575||0.6|18|23|50
 Sunflower seeds|585||0.55|21|20|51
-Chestnuts|200|10||2.4|44|2.2
+Chestnuts|200|10|0.6|2.4|44|2.2
 Flaked almonds|580||0.35|21|22|50
 Pistachios|560||0.5|20|28|45
 Macadamia nuts|720||0.55|8|14|76
@@ -597,38 +597,38 @@ Salmon roe|250||1|24|3|15
 Fish roe|140||1|22|1.5|6
 Sashimi-grade fish|150|||22|0|6
 Pike perch|85|||19|0|1
-Daikon|18|800||0.6|4|0.1
+Daikon|18|800|0.5|0.6|4|0.1
 Lotus root|74|||2.6|17|0.1
-Bamboo shoots|27|||2.6|5|0.3
-Water chestnuts|97|15||1.4|24|0.1
+Bamboo shoots|27||0.55|2.6|5|0.3
+Water chestnuts|97|15|0.52|1.4|24|0.1
 Wood ear mushrooms|25|||0.5|7|0.1
-Enoki mushrooms|37|100||2.7|8|0.3
+Enoki mushrooms|37|100|0.27|2.7|8|0.3
 King oyster mushrooms|35|80||3|6|0.4
 Shimeji mushrooms|30|100||2.5|5|0.3
 Maitake mushrooms|31|||1.9|7|0.2
-Porcini|30|||3.7|5|0.4
+Porcini|30||0.3|3.7|5|0.4
 Gai lan|22|||1.1|4|0.7
 Choy sum|20|||1.6|3|0.3
 Garlic chives|30||0.1|3.3|4.4|0.7
 Chinese celery|16|||0.7|3|0.2
-Snow peas|42|||2.8|7.6|0.2
+Snow peas|42||0.4|2.8|7.6|0.2
 Bitter melon|17|200||1|3.7|0.2
 Winter melon|13|||0.4|3|0.2
-Taro|112|150||1.5|26|0.2
+Taro|112|150|0.55|1.5|26|0.2
 Burdock root|72|200||1.5|17|0.2
-Kabocha|35|1000||1.6|8|0.2
+Kabocha|35|1000|0.48|1.6|8|0.2
 Shiso|37|0.5||3.9|7.5|0.1
 Mitsuba|15||0.1|1|3|0.1
 Thai basil|23||0.1|3.2|2.7|0.6
-Japanese cucumber|15|150||0.7|3.6|0.1
-Negi|34|100||1.8|8|0.1
+Japanese cucumber|15|150|0.55|0.7|3.6|0.1
+Negi|34|100|0.42|1.8|8|0.1
 Sweet potato leaves|42|||4|9|0.3
 Konjac|10|||0.1|3|0
-Bulgarian peppers|27|100||1|6.3|0.2
-Green tomatoes|23|120||1.2|5|0.2
-Kohlrabi|27|300||1.7|6|0.1
-Savoy cabbage|27|1000||2|6|0.1
-Root parsley|55|80||2.3|12|0.4
+Bulgarian peppers|27|100|0.62|1|6.3|0.2
+Green tomatoes|23|120|0.75|1.2|5|0.2
+Kohlrabi|27|300|0.56|1.7|6|0.1
+Savoy cabbage|27|1000|0.37|2|6|0.1
+Root parsley|55|80|0.55|2.3|12|0.4
 Potato dumplings|150|60||3|33|0.5
 Bread dumplings|230|50||7|45|2.5
 Bread rolls|280|50||9|52|3
