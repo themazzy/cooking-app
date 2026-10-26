@@ -20,6 +20,7 @@ import { splitSteps } from './lib/cook.js'
 import { isOut, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
+import { formatKcal, recipeCalories } from './lib/calories.js'
 import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
@@ -100,6 +101,11 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const steps = splitSteps(stepsText)
   const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
   const ingredientCount = recipe.ingredients.filter((i) => i.name?.trim()).length
+  // Estimated calories: of the whole recipe, and of what is being cooked now
+  const calories = recipeCalories(recipe.ingredients, match)
+  const cookingCalories = factor !== 1 ? recipeCalories(scaled, match) : calories
+  const hasCalories = calories.rows.some((r) => r.kcal > 0)
+  const perPortion = hasCalories && recipe.servings ? calories.total / recipe.servings : null
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
     .filter(Boolean)
     .join(' · ')
@@ -418,10 +424,20 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             <strong>{ingredientCount}</strong>
             <span>ingredients</span>
           </div>
-          <div className="stat">
-            <strong>{steps.length}</strong>
-            <span>{steps.length === 1 ? 'step' : 'steps'}</span>
-          </div>
+          {hasCalories ? (
+            <div className="stat">
+              <strong>
+                {calories.missing.length ? '~' : ''}
+                {formatKcal(perPortion ?? calories.total)}
+              </strong>
+              <span>{perPortion != null ? 'kcal/portion' : 'kcal total'}</span>
+            </div>
+          ) : (
+            <div className="stat">
+              <strong>{steps.length}</strong>
+              <span>{steps.length === 1 ? 'step' : 'steps'}</span>
+            </div>
+          )}
         </div>
         <p className="source-line">
           {recipe.sourceUrl ? (
@@ -502,6 +518,29 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
               ) : null,
             )}
           </ul>
+        )}
+        {hasCalories && (
+          <details className="kcal-sum">
+            <summary>
+              🔥 About {formatKcal(cookingCalories.total)} kcal
+              {recipe.servings ? ` for ${cookFor} ${cookFor === 1 ? 'portion' : 'portions'} · ${formatKcal(perPortion)} per portion` : ''}
+            </summary>
+            <ul>
+              {cookingCalories.rows
+                .filter((r) => r.kcal > 0)
+                .sort((a, b) => b.kcal - a.kcal)
+                .map((r, n) => (
+                  <li key={n}>
+                    <span>{r.name}</span>
+                    <span>{formatKcal(r.kcal)} kcal</span>
+                  </li>
+                ))}
+            </ul>
+            {cookingCalories.missing.length > 0 && (
+              <p className="note">Not counted (no amount or calories known): {cookingCalories.missing.join(', ')}. Calories of your own ingredients can be set on the Ingredients tab.</p>
+            )}
+            <p className="note">An estimate from typical values for raw ingredients.</p>
+          </details>
         )}
       </section>
 

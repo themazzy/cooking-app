@@ -3,9 +3,12 @@ import { SEED_INGREDIENTS } from './data/ingredients.js'
 import { buildCatalogIndex, imageUrl, matchIngredient, normalizeName } from './lib/catalog.js'
 import { supabase } from './lib/supabase.js'
 import { getHousehold } from './lib/sync.js'
+import { NUTRITION } from './lib/calories.js'
 
 const CACHE_KEY = 'cooking-app:catalog'
 const COLUMNS = 'id, household_id, name, aisle, image, image_data, base, aliases'
+// Calories of the household's own ingredients (supabase-ingredient-kcal.sql adds the columns)
+const KCAL_COLUMNS = 'kcal, piece_g'
 
 const readCache = () => {
   try {
@@ -15,14 +18,35 @@ const readCache = () => {
   }
 }
 
-/** Custom entries inherit the picture and aisle of the ingredient they stand for. */
+/** The built-in calories of an entry, unless the household gave it its own. */
+const withNutrition = (e, fallback) => {
+  const n = NUTRITION.get(e.name.toLowerCase()) ?? fallback
+  return {
+    ...e,
+    kcal: e.kcal ?? n?.kcal ?? null,
+    piece_g: e.piece_g ?? n?.piece_g ?? null,
+    density: n?.density ?? null,
+    // What the household typed itself, for editing
+    own_kcal: e.kcal ?? null,
+    own_piece_g: e.piece_g ?? null,
+  }
+}
+
+/** Custom entries inherit the picture, aisle and calories of the ingredient they stand for. */
 function withBase(entries) {
-  const byName = new Map(entries.filter((e) => !e.household_id).map((e) => [e.name.toLowerCase(), e]))
+  const shared = entries.filter((e) => !e.household_id).map((e) => withNutrition(e))
+  const byName = new Map(shared.map((e) => [e.name.toLowerCase(), e]))
   return entries.map((e) => {
+    if (!e.household_id) return byName.get(e.name.toLowerCase())
     const base = e.base ? byName.get(e.base.toLowerCase()) : null
-    return base ? { ...e, image: e.image ?? base.image, aisle: e.aisle || base.aisle } : e
+    const own = withNutrition(e, base)
+    return base ? { ...own, image: e.image ?? base.image, aisle: e.aisle || base.aisle } : own
   })
 }
+
+// Before the calorie columns exist, saving them fails; say what to do
+const kcalHint = (error) =>
+  /kcal|piece_g/.test(error?.message ?? '') ? Object.assign(new Error('Calories need the new database columns: run supabase-ingredient-kcal.sql in Supabase first.'), { cause: error }) : error
 
 const CatalogContext = createContext(null)
 
@@ -35,7 +59,8 @@ export function CatalogProvider({ children }) {
   const [entries, setEntries] = useState(() => readCache() ?? SEED_INGREDIENTS)
 
   const refresh = useCallback(async () => {
-    const { data, error } = await supabase.from('ingredients').select(COLUMNS).order('name')
+    let { data, error } = await supabase.from('ingredients').select(`${COLUMNS}, ${KCAL_COLUMNS}`).order('name')
+    if (error?.code === '42703') ({ data, error } = await supabase.from('ingredients').select(COLUMNS).order('name'))
     if (error || !data?.length) return
     setEntries(data)
     try {
@@ -53,7 +78,7 @@ export function CatalogProvider({ children }) {
     async (entry) => {
       const household_id = (await getHousehold()).id
       const { error } = await supabase.from('ingredients').insert({ ...entry, household_id })
-      if (error) throw error
+      if (error) throw kcalHint(error)
       await refresh()
     },
     [refresh],
@@ -61,7 +86,7 @@ export function CatalogProvider({ children }) {
   const update = useCallback(
     async (id, patch) => {
       const { error } = await supabase.from('ingredients').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
-      if (error) throw error
+      if (error) throw kcalHint(error)
       await refresh()
     },
     [refresh],
