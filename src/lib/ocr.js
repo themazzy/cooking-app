@@ -149,28 +149,34 @@ async function readPhotoPages(files, langs, onProgress) {
   const base = new URL('tesseract/', document.baseURI).href
   const core = hasSimd() ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js'
   let timer
+  let fail = null
   const starting = createWorker(langs, 1, {
     workerPath: `${base}worker.min.js`,
     corePath: `${base}${core}`,
     langPath: `${base}lang`,
     workerBlobURL: false,
     cacheMethod: 'none', // the data is in the app already
+    gzip: false, // stored unpacked, see scripts/copy-tesseract.mjs
     logger: (m) => {
       last = `${m.status} ${Math.round((m.progress ?? 0) * 100)} %`
       onProgress?.({ status: m.status, progress: m.progress, page: page + 1, pages: files.length })
     },
     errorHandler: (e) => {
       last = `error: ${e}`
+      fail?.()
     },
   })
   const worker = await Promise.race([
     starting,
     new Promise((_, reject) => {
-      timer = setTimeout(() => {
+      // Gives up after a minute, or at once when the reader reports an error
+      fail = () => {
+        clearTimeout(timer)
         starting.then((w) => w.terminate()).catch(() => {})
         const chrome = navigator.userAgent.match(/Chrome\/(\d+)/)?.[1]
         reject(new Error(`The text reader did not start (stuck at: ${last}; ${core}, WebView ${chrome ?? '?'}). Please send this message to Claude.`))
-      }, START_LIMIT_MS)
+      }
+      timer = setTimeout(fail, START_LIMIT_MS)
     }),
   ]).finally(() => clearTimeout(timer))
   try {
