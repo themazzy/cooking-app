@@ -284,6 +284,17 @@ Bresaola | брезаола
 Mortadella | мортадела
 Kielbasa | полска наденица
 Merguez | мергез
+Soup bones | кокали за супа
+Chicken carcass | пилешки кости
+Beef neck | телешки врат
+Flat iron steak | флет айрън стек
+Picanha | пиканя
+Tri-tip | трай тип
+Veal escalope | телешки шницел
+Veal chops | телешки котлети
+Lamb neck | агнешки врат
+Goat | ярешко месо
+Pork back fat | свинска сланина
 Pork knuckle | свински джолан
 Salami | салам
 Black pudding | кървавица

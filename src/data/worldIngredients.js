@@ -115,7 +115,7 @@ Bone marrow | Meat | /ingredients/bone-marrow.webp | marrow bones, marrow bone, 
 Veal shank | Meat | /ingredients/veal-shank.webp | osso buco, ossobuco, veal shanks, telecí kolínko | Veal
 Pork chops | Meat | /ingredients/pork-chops.webp | pork chop, pork cutlets, vepřová kotleta, vepřové kotlety, kotlety, kotleta | Pork
 Pork loin | Meat | /ingredients/pork-loin.webp | pork loin roast, vepřová pečeně, vepřová kotleta bez kosti, karé | Pork
-Pork leg | Meat | /ingredients/pork-leg.webp | leg of pork, fresh ham, vepřová kýta, veprova kyta | Pork
+Pork leg | Meat | /ingredients/pork-leg.webp | leg of pork, fresh ham, pork schnitzel, pork escalope, vepřový řízek, vepřové řízky, vepřová kýta, veprova kyta | Pork
 Pork cheeks | Meat | /ingredients/pork-cheeks.webp | pork cheek, vepřová líčka, veprova licka | Pork
 Pork liver | Meat | /ingredients/pork-liver.webp | pigs liver, vepřová játra
 Gammon | Meat | /ingredients/gammon.webp | gammon steak, gammon joint, gammon steaks | Ham
@@ -147,6 +147,17 @@ Bresaola | Meat | /ingredients/bresaola.webp |
 Mortadella | Meat | /ingredients/mortadella.webp | mortadela
 Kielbasa | Meat | /ingredients/kielbasa.webp | polish sausage, kiełbasa, polská klobása | Sausages
 Merguez | Meat | /ingredients/merguez.webp | merguez sausage, merguez sausages | Sausages
+Soup bones | Meat | /ingredients/soup-bones.webp | beef bones, bones, stock bones, kosti, kosti na vývar, hovězí kosti, vývarové kosti, кокали за супа
+Chicken carcass | Meat | /ingredients/chicken-carcass.webp | chicken bones, chicken frame, chicken back, kuřecí skelet, kuřecí kosti, kuřecí kostra | Chicken
+Beef neck | Meat | /ingredients/beef-neck.webp | neck of beef, hovězí krk, hovezi krk | Beef
+Flat iron steak | Meat | /ingredients/flat-iron-steak.webp | flat iron, top blade steak | Steak
+Picanha | Meat | /ingredients/picanha.webp | rump cap, top sirloin cap, hovězí špička | Steak
+Tri-tip | Meat | /ingredients/tri-tip.webp | tri tip, tri-tip roast | Beef
+Veal escalope | Meat | /ingredients/veal-escalope.webp | veal escalopes, veal schnitzel, scaloppine, telecí řízek, telecí řízky, telecí plátky | Veal
+Veal chops | Meat | /ingredients/veal-chops.webp | veal chop, telecí kotleta, telecí kotlety | Veal
+Lamb neck | Meat | /ingredients/lamb-neck.webp | neck of lamb, lamb neck fillet, jehněčí krk | Lamb
+Goat | Meat | /ingredients/goat.webp | goat meat, kid, kid goat, kůzle, kůzlečí, kozí maso, козе месо, ярешко
+Pork back fat | Meat | /ingredients/pork-back-fat.webp | fatback, back fat, pork fat, hřbetní sádlo, plátové sádlo, сланина
 Glutinous rice | Pasta & grains |  | sticky rice, sweet rice, mochigome, 糯米 | Rice
 Glutinous rice flour | Baking |  | sweet rice flour, mochiko, shiratamako, 糯米粉
 Rice flour | Baking |  | rýžová mouka, joshinko
@@ -239,7 +250,8 @@ Bacon | slaninu, anglickou slaninu, slaniny
 Ham | šunka, šunku, sunka, šunky
 Sausages | uzenina, uzeniny
 Chicken | kuře, kuřecí maso, kureci maso, kuřete, kuřecího masa, kuřecí maso
-Chicken breast | kuřecí prsa, kureci prsa, kuřecí prsní řízky, kuřecí řízky, kuřecí prsíčka
+Chicken breast | kuřecí prsa, kureci prsa, kuřecí prsní řízky, kuřecí řízky, kuřecí prsíčka, kuřecí řízek
+Goat cheese | kozí sýr, kozího sýra
 Chicken thighs | kuřecí stehna, kuřecí stehýnka, kureci stehna
 Chicken liver | kuřecí játra, kureci jatra, játra
 Turkey | krůtí, krůtí maso

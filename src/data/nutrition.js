@@ -88,6 +88,17 @@ Bresaola|150|8||33|0|2
 Mortadella|310|20||15|1|27
 Kielbasa|300|||13|2|26
 Merguez|300|50||15|1|26
+Soup bones|200|||15|0|15
+Chicken carcass|140|400||14|0|9
+Beef neck|180|||19|0|11
+Flat iron steak|180|250||20|0|11
+Picanha|230|||19|0|17
+Tri-tip|180|||20|0|10
+Veal escalope|110|120||22|0|2
+Veal chops|150|250||20|0|7
+Lamb neck|230|||17|0|18
+Goat|110|||21|0|2.5
+Pork back fat|760|||3|0|82
 Pork knuckle|230|1000||18|0|17
 Salami|410|8||22|2|35
 Black pudding|300|||11|15|21
