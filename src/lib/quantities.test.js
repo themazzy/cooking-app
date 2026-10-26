@@ -3,7 +3,7 @@ import { SEED_INGREDIENTS } from '../data/ingredients.js'
 import { buildCatalogIndex, matchIngredient } from './catalog.js'
 import { NUTRITION, gramsOf, recipeCalories } from './calories.js'
 import { parseIngredientLine } from './ingredients.js'
-import { buildShoppingList, formatAmount, parseAmount, scaleAmount } from './scale.js'
+import { buildShoppingList, formatAmount, parseAmount, scaleAmount, sumRow } from './scale.js'
 import { parseStock, takeFrom } from './stock.js'
 import { convertIngredient } from './units.js'
 
@@ -188,5 +188,30 @@ describe('calories', () => {
     expect(c.missing).toEqual([])
     expect(Math.round(c.rows[0].kcal)).toBe(814)
     expect(c.rows[1].kcal).toBe(NUTRITION.get('sugar').kcal)
+  })
+})
+
+// Rows as older imports saved them in Jan's recipes
+describe('saved recipes', () => {
+  it('skips headings saved as ingredients', () => {
+    expect(sumRow({ qty: '', unit: '', name: 'For the custard filling' })).toBeNull()
+    expect(sumRow({ qty: '', unit: '', name: 'salt to taste' })).not.toBeNull()
+    const list = buildShoppingList([{ recipe: { title: 'Buns', ingredients: [{ qty: '', unit: '', name: 'For the milk bread' }, { qty: '1', unit: 'cup', name: 'milk' }] }, factor: 1 }], match)
+    expect(list.map((i) => i.name)).toEqual(['Milk'])
+  })
+  it('counts a unit left in the name', () => {
+    const c = recipeCalories([{ qty: '1', unit: '', name: 'tablespoon of cornstarch' }, { qty: '1', unit: '', name: 'mug Full cream milk' }, { qty: '50', unit: 'ml', name: 'of cream' }], match)
+    expect(c.missing).toEqual([])
+    expect(c.rows.map((r) => r.name)).toEqual(['cornstarch', 'Full cream milk', 'cream'])
+  })
+  it('matches pork lard, mirim and rice cakes by the cup', () => {
+    expect(m('pork lard ((or sunflower / canola oil))')).toBe('Lard')
+    expect(m('Mirim')).toBe('Mirin')
+    expect(metric('2', 'cup', 'Rice Cakes')).toBe('310 g')
+  })
+  it('converts both ends of a range into one unit', () => {
+    const us = convertIngredient({ qty: '1–2', unit: 'l', name: 'water' }, 'imperial', match)
+    expect(`${us.qty} ${us.unit}`).toBe('1–2 qt')
+    expect(metric('2–3', 'lb', 'potatoes')).toBe('0,9–1,4 kg')
   })
 })

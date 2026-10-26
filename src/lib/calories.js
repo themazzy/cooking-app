@@ -1,5 +1,5 @@
 import { NUTRITION_LINES } from '../data/nutrition.js'
-import { canonicalUnit, parseAmount, stickGrams } from './scale.js'
+import { canonicalUnit, parseAmount, stickGrams, sumRow } from './scale.js'
 
 // Estimated calories of a recipe: each ingredient's amount turned into grams,
 // times its kcal per 100 g from the catalog. Ingredients without an amount
@@ -58,8 +58,7 @@ export function ingredientKcal(ing, entry) {
 export function recipeCalories(ingredients, match) {
   const rows = []
   const missing = []
-  for (const i of ingredients ?? []) {
-    if (!i.name?.trim()) continue
+  for (const i of (ingredients ?? []).map(sumRow).filter(Boolean)) {
     const entry = match(i.name)
     // Salt, water and the like count as nothing, with or without an amount
     const kcal = entry?.kcal === 0 ? 0 : ingredientKcal(i, entry)
@@ -86,8 +85,7 @@ export function portionKcal(recipe, match) {
  */
 export function recipeMacros(ingredients, match) {
   const out = { protein: 0, carbs: 0, fat: 0, missing: [] }
-  for (const i of ingredients ?? []) {
-    if (!i.name?.trim()) continue
+  for (const i of (ingredients ?? []).map(sumRow).filter(Boolean)) {
     const entry = match(i.name)
     if (entry?.kcal === 0) continue
     const g = entry && MACROS.every((m) => entry[m] != null) ? gramsOf(i, entry) : null

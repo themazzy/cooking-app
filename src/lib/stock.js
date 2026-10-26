@@ -1,4 +1,4 @@
-import { BASE, canonicalUnit, display, parseAmount } from './scale.js'
+import { BASE, canonicalUnit, display, parseAmount, sumRow } from './scale.js'
 
 // Amounts kept at home ("1,5 kg", "3", "1 bottle"), what cooking takes out of
 // them, staples that run low, and expiry dates.
@@ -145,7 +145,7 @@ export const usesUp = (item, next) => (parseStock(next)?.value ?? 1) <= 0 && !St
  */
 export function homeMatch(recipe, pantry, canonical) {
   const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
-  const names = (recipe.ingredients ?? []).map((i) => i.name?.trim()).filter(Boolean)
+  const names = (recipe.ingredients ?? []).map(sumRow).filter(Boolean).map((i) => i.name.trim())
   const missing = names.filter((n) => !atHome.has(canonical(n)))
   return { have: names.length - missing.length, total: names.length, missing }
 }
