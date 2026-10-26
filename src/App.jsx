@@ -701,6 +701,7 @@ export default function App() {
               <select value={settings.language} onChange={(e) => setSettings({ ...settings, language: e.target.value })}>
                 <option value="auto">Detect</option>
                 <option value="czech">Czech</option>
+                <option value="bulgarian">Bulgarian</option>
                 <option value="english">English</option>
               </select>
             </label>

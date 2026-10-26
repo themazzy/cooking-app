@@ -1,28 +1,8 @@
 import { pickRecipe } from './recipeSource.js'
 import { toEditable } from './recipeEdit.js'
-import { tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
+import { detectServings, tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
 
-const NUM_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8, dva: 2, dvě: 2, tři: 3, čtyři: 4, pět: 5, šest: 6 }
-const N = '(\\d{1,2}|one|two|three|four|five|six|eight|dva|dvě|tři|čtyři|pět|šest)'
-const SERVINGS = [
-  new RegExp(`\\b(?:serves|servings?|portions?|porce|porcí|yield)\\s*[:\\-]?\\s*${N}\\b`, 'iu'),
-  new RegExp(`\\b${N}\\s*(?:servings?|portions?|people|persons|porc[eíi]|osob[ya]?|lidi)\\b`, 'iu'),
-  new RegExp(`\\b(?:for|pro|na)\\s+${N}\\s*(?:servings?|portions?|people|persons|porc[eíi]|osob[ya]?|lidi)?\\b(?=[\\s:.,)]|$)`, 'iu'),
-]
-
-/** Number of portions mentioned in a recipe text, or null. */
-export function detectServings(text) {
-  if (!text) return null
-  for (const re of SERVINGS) {
-    const m = text.match(re)
-    if (m) {
-      const v = m[1].toLowerCase()
-      const n = NUM_WORDS[v] ?? Number(v)
-      if (n > 0 && n <= 30) return n
-    }
-  }
-  return null
-}
+export { detectServings }
 
 /** A readable title: the first line that is not just hashtags or emoji. */
 export function titleFrom(text, fallback) {
@@ -61,7 +41,7 @@ export function draftFromImport(result) {
     sourceUrl: result.url ?? null,
     platform: result.platform ?? null,
     author: result.author ?? null,
-    servings: detectServings(picked?.text) ?? detectServings(result.description) ?? detectServings(result.transcript),
+    servings: result.meta?.servings ?? detectServings(picked?.text) ?? detectServings(result.description) ?? detectServings(result.transcript),
     ingredients: editable.ingredients,
     steps: editable.steps,
     categories: result.meta?.categories?.length ? result.meta.categories : tags.categories,
