@@ -1,23 +1,14 @@
-// Looks up candidate photos on Wikimedia Commons (free licences) for meat cuts
-// that have no TheMealDB picture, and saves small thumbnails plus their licence
+// Looks up candidate photos on Wikimedia Commons (free licences) for catalog
+// entries that have no TheMealDB picture (edit SEARCHES for each round), and saves small thumbnails plus their licence
 // details to photo-candidates/. Run by .github/workflows/meat-photos.yml, since
 // the build containers can't reach Commons.
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const SEARCHES = {
-  'rump-steak': ['rump steak meat', 'incategory:"Beef steaks"'], 'flank-steak': ['flank steak', 'bavette meat'], 'skirt-steak': ['skirt steak', 'hanger steak'],
-  'beef-round': ['beef topside joint', 'incategory:"Raw beef"'], 'beef-short-ribs': ['short ribs beef', 'incategory:"Beef ribs"'], 'beef-cheeks': ['beef cheek meat', 'ox cheek'],
-  'beef-chuck': ['beef chuck', 'chuck roast'], 'stewing-beef': ['beef cubes', 'diced beef meat', 'stewing beef'], 'tripe': ['tripe food', 'incategory:"Tripe"'],
-  'veal-shank': ['ossobuco', 'veal shank'], 'pork-tenderloin': ['pork tenderloin', 'pork fillet meat'], 'gammon': ['gammon', 'gammon steak'],
-  'chicken-gizzards': ['gizzards food', 'chicken gizzard'], 'lamb-shanks': ['lamb shank', 'lamb shanks'], 'pheasant': ['pheasant meat', 'roast pheasant'],
-  'wild-boar': ['wild boar meat', 'boar meat'], 'calf-liver': ['calf liver', 'veal liver'], 'pork-liver': ['pork liver', 'pig liver food'],
-  'beef-tongue': ['beef tongue', 'ox tongue food'], 'bone-marrow': ['marrow bones', 'bone marrow food'], 'pork-loin': ['pork loin', 'pork loin roast'],
-  'pork-leg': ['pork leg meat', 'leg of pork'], 'pork-cheeks': ['pork cheeks', 'pig cheek meat'], 'pork-neck': ['pork neck', 'pork collar', 'krkovice'],
-  'pork-shoulder': ['pork shoulder', 'pork shoulder roast'], 'pork-ribs': ['pork ribs', 'spare ribs', 'incategory:"Spare ribs"'], 'pork-knuckle': ['pork knuckle', 'ham hock', 'Schweinshaxe'],
-  'chicken-hearts': ['chicken hearts', 'incategory:"Chicken hearts (food)"'], 'turkey-breast': ['turkey breast meat', 'turkey breast fillet'], 'turkey-legs': ['turkey leg meat', 'turkey drumstick'],
-  'turkey': ['roast turkey', 'whole turkey meat', 'thanksgiving turkey'], 'duck-breast': ['duck breast', 'magret'], 'rack-of-lamb': ['rack of lamb', 'lamb rack'],
-  'quail': ['quail meat', 'roasted quail'], 'goose': ['roast goose', 'goose meat'], 'hare': ['hare meat', 'jugged hare'],
-  'lardons': ['lardons', 'diced bacon'], 'elenski-but': ['Елено бут', 'Еленски бут'], 'mortadella': ['mortadella', 'mortadella bologna'], 'smoked-meat': ['smoked pork meat', 'Kassler', 'smoked meat'],
+  'soup-bones': ['soup bones beef', 'beef bones raw', 'bones for broth'], 'chicken-carcass': ['chicken carcass', 'chicken frame bones'],
+  'beef-neck': ['beef neck meat', 'beef neck'], 'flat-iron-steak': ['flat iron steak'], 'picanha': ['picanha', 'picanha raw'], 'tri-tip': ['tri-tip', 'tri tip beef'],
+  'veal-escalope': ['veal escalope', 'veal cutlet raw', 'Wiener Schnitzel raw'], 'veal-chops': ['veal chop', 'veal chops'],
+  'lamb-neck': ['lamb neck', 'neck of lamb'], 'goat': ['goat meat', 'kid goat meat'], 'pork-back-fat': ['pork back fat', 'fatback pork', 'Speck fat'],
 }
 
 const API = 'https://commons.wikimedia.org/w/api.php'
