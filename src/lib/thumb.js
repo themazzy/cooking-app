@@ -36,10 +36,10 @@ const waitFor = (el, event, ms = 8000) =>
   })
 
 /**
- * A photo the cook took or picked for a recipe, scaled down to a WebP of a
- * few hundred KB at most so it can sync with the recipe text.
+ * A photo the cook took or picked for a recipe, scaled down to a WebP of
+ * about 100 KB (sharp on a phone screen, light to store and sync).
  */
-export async function recipePhoto(file, longSide = 1280) {
+export async function recipePhoto(file, longSide = 960) {
   const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
   try {
     const scale = Math.min(1, longSide / Math.max(bitmap.width, bitmap.height))

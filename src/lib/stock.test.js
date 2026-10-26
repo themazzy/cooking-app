@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addTo, daysLeft, isOut, parseStock, planCooking, shortfall, takeFrom } from './stock.js'
+import { addTo, daysLeft, isOut, parseStock, shortfall, stockReview, takeFrom, takeUsed, usesUp } from './stock.js'
 
 describe('stock amounts', () => {
   it('parses amounts into base units', () => {
@@ -53,7 +53,7 @@ it('plans what cooking takes out', () => {
     { id: 3, name: 'Eggs', amount: '6' },
   ]
   const canonical = (n) => n.toLowerCase().replace(/s$/, '')
-  const plan = planCooking(
+  const plan = stockReview(
     [
       { qty: '200', unit: 'g', name: 'flour' },
       { qty: '2', unit: 'tbsp', name: 'olive oil' },
@@ -63,8 +63,21 @@ it('plans what cooking takes out', () => {
     pantry,
     canonical,
   )
-  expect(plan.map((p) => [p.item.name, p.used, p.next])).toEqual([
-    ['Flour', '200 g + 50 g', '750 g'],
-    ['Eggs', '2', '4'],
+  // Olive oil is listed but left off: a bottle and spoons don't compare
+  expect(plan.map((p) => [p.item.name, p.used, p.next, p.on])).toEqual([
+    ['Flour', '250 g', '750 g', true],
+    ['Olive oil', '2 tbsp', '1 bottle', false],
+    ['Eggs', '2', '4', true],
   ])
+})
+
+it('takeUsed works from an edited amount', () => {
+  expect(takeUsed('1 kg', '300 g')).toBe('700 g')
+  expect(takeUsed('1 kg', 'some')).toBeNull()
+})
+
+it('usesUp: used up and not a staple', () => {
+  expect(usesUp({ min_amount: '' }, '0 g')).toBe(true)
+  expect(usesUp({ min_amount: '1 kg' }, '0 g')).toBe(false)
+  expect(usesUp({ min_amount: '' }, '')).toBe(false)
 })

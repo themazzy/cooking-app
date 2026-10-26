@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 // A tiny stand-in for the Supabase tables and the phone's recipe store
 const db = { recipes: [], shopping_lists: [] }
 const local = new Map()
+const photos = new Map()
+const bucket = new Map()
 
 function query(table) {
   const filters = []
@@ -45,7 +47,13 @@ vi.mock('./supabase.js', () => ({
     auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) },
     rpc: async () => ({ data: { id: 'h1' }, error: null }),
     from: (table) => query(table),
-    storage: { from: () => ({ remove: async () => ({}) }) },
+    storage: {
+      from: () => ({
+        remove: async (paths) => (paths.forEach((p) => bucket.delete(p)), {}),
+        list: async () => ({ data: [] }),
+        upload: async (path, blob) => (bucket.set(path, blob), { error: null }),
+      }),
+    },
   },
 }))
 vi.mock('./store.js', () => ({
@@ -55,6 +63,10 @@ vi.mock('./store.js', () => ({
   deleteRecipe: async (id) => void local.delete(id),
   getVideo: async () => null,
   putVideo: async () => {},
+  getPhoto: async (id) => photos.get(id),
+  putPhoto: async (id, p) => void photos.set(id, p),
+  deletePhoto: async (id) => void photos.delete(id),
+  newId: () => Math.random().toString(36).slice(2),
 }))
 
 const { syncRecipes, syncShopping } = await import('./sync.js')
@@ -65,6 +77,8 @@ beforeEach(() => {
   db.recipes = []
   db.shopping_lists = []
   local.clear()
+  photos.clear()
+  bucket.clear()
   localStorage.clear()
 })
 
@@ -93,6 +107,29 @@ describe('syncRecipes', () => {
     db.recipes.push({ id: 'a', household_id: 'h1', data: {}, deleted: true, updated_at: iso(2000), video_path: null })
     await syncRecipes()
     expect(local.has('a')).toBe(false)
+  })
+})
+
+describe('recipe photos', () => {
+  const photo = `data:image/webp;base64,${btoa('pic')}`
+
+  it('uploads a new photo and keeps it out of the recipe row', async () => {
+    photos.set('a', { key: 'k1', data: photo })
+    local.set('a', { id: 'a', title: 'A', photoKey: 'k1', photoPath: null, updatedAt: 1000 })
+    await syncRecipes()
+    expect(bucket.has('h1/a-k1.webp')).toBe(true)
+    expect(db.recipes[0].data.photoPath).toBe('h1/a-k1.webp')
+    expect(db.recipes[0].data.photo).toBeUndefined()
+    expect(local.get('a').photoPath).toBe('h1/a-k1.webp')
+  })
+
+  it('moves a photo saved inside an older recipe into the photo store', async () => {
+    local.set('a', { id: 'a', title: 'A', photo, updatedAt: 1000, syncedAt: 1000 })
+    await syncRecipes()
+    expect(local.get('a').photo).toBeUndefined()
+    expect(photos.get('a').data).toBe(photo)
+    expect(db.recipes[0].data.photo).toBeUndefined()
+    expect(bucket.size).toBe(1)
   })
 })
 

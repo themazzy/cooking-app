@@ -6,6 +6,14 @@ import { getHousehold } from './sync.js'
 
 const CACHE_KEY = 'cooking-app:pantry'
 
+/** What went wrong saving to the pantry, in words for the screen. */
+export function pantryError(err) {
+  const text = err?.message ?? String(err)
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return 'Not saved: the phone is offline. Try again when it is connected.'
+  if (/fetch|network|timed? ?out/i.test(text)) return `Not saved: no connection to the server (${text}). Try again in a moment.`
+  return `Not saved: ${text}`
+}
+
 export function cachedPantry() {
   try {
     return JSON.parse(localStorage.getItem(CACHE_KEY)) ?? []

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
+import StockReview from './StockReview.jsx'
 import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
 
@@ -58,7 +59,6 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
   const [timers, setTimers] = useState([])
   const [now, setNow] = useState(Date.now())
   const [custom, setCustom] = useState(null) // minutes typed for a new timer, while the form is open
-  const [stockDone, setStockDone] = useState(null) // null, 'saving', 'done', or an error
   const [cookedNote, setCookedNote] = useState('')
   const [logged, setLogged] = useState(false)
   const track = useRef(null)
@@ -314,41 +314,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
                 )}
               </div>
             )}
-            {stockPlan.length > 0 && onUseStock && (
-              <div className="card stock-plan">
-                <h2>Take it out of the stock?</h2>
-                <ul>
-                  {stockPlan.map((p) => (
-                    <li key={p.item.id}>
-                      <span>{p.item.name}</span>
-                      <span className="note">
-                        {p.item.amount} − {p.used} → <strong>{p.next}</strong>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                {stockDone === 'done' ? (
-                  <p className="hint">Stock updated.</p>
-                ) : (
-                  <button
-                    className="secondary"
-                    disabled={stockDone === 'saving'}
-                    onClick={async () => {
-                      setStockDone('saving')
-                      try {
-                        await onUseStock(stockPlan)
-                        setStockDone('done')
-                      } catch (e) {
-                        setStockDone(e?.message ?? String(e))
-                      }
-                    }}
-                  >
-                    {stockDone === 'saving' ? 'Updating…' : 'Update the stock'}
-                  </button>
-                )}
-                {stockDone && !['saving', 'done'].includes(stockDone) && <p className="hint error">{stockDone}</p>}
-              </div>
-            )}
+            {onUseStock && <StockReview rows={stockPlan} onApply={onUseStock} />}
             <button onClick={onClose}>Back to the recipe</button>
             </div>
           </section>

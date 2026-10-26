@@ -4,6 +4,7 @@ import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
 import { isOut } from './lib/stock.js'
+import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -14,6 +15,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const [extra, setExtra] = useState('')
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(null) // key of the item showing what it is for
+  const [toPantry, setToPantry] = useState(null) // null, 'saving' or an error
   const { match, canonical } = useCatalog()
   // A list object can exist only to carry the meal plan
   if (!list || (!list.items?.length && !list.recipes?.length)) {
@@ -154,18 +156,27 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
           {onToPantry && list.items.some((i) => i.checked) && (
             <button
               className="secondary"
+              disabled={toPantry === 'saving'}
               onClick={async () => {
-                await onToPantry(list.items.filter((i) => i.checked))
-                onChange({ ...list, items: list.items.filter((i) => !i.checked) })
+                setToPantry('saving')
+                try {
+                  await onToPantry(list.items.filter((i) => i.checked))
+                  onChange({ ...list, items: list.items.filter((i) => !i.checked) })
+                  setToPantry(null)
+                } catch (err) {
+                  // The ticked items stay on the list to try again
+                  setToPantry(pantryError(err))
+                }
               }}
             >
-              Put ticked at home
+              {toPantry === 'saving' ? 'Saving…' : 'Put ticked at home'}
             </button>
           )}
           <button className="secondary" onClick={onNew}>
             New list
           </button>
         </div>
+        {toPantry && toPantry !== 'saving' && <p className="hint error">{toPantry}</p>}
       </section>
     </>
   )

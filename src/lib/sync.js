@@ -1,12 +1,16 @@
 import { supabase } from './supabase.js'
-import { deleteRecipe, getRecipe, getVideo, listRecipes, putRecipe, putVideo } from './store.js'
+import { deleteRecipe, getPhoto, getRecipe, getVideo, listRecipes, newId, putPhoto, putRecipe, putVideo } from './store.js'
 import { mergeLists } from './listMerge.js'
+import { blobToDataUrl, dataUrlToBlob, localPhoto, storePhoto } from './photos.js'
 
 // Keeps the recipes on this phone and the household's recipes in Supabase in
 // step. The phone stays the working copy (it works offline); each sync
 // pushes what changed here and pulls what changed elsewhere, newest wins.
 // Saved videos stay on the phone that saved them; only older recipes may
 // still have one in the household's storage (videoPath), which can be played.
+// Recipe photos go to the same private bucket (see photos.js).
+
+const BUCKET = 'recipe-videos'
 
 const DELETED_KEY = 'cooking-app:deleted'
 // The shopping list as both phones last agreed on it, to join their edits
@@ -40,11 +44,30 @@ export const forgetHousehold = () => {
   localStorage.removeItem(SHOPPING_BASE_KEY)
 }
 
-export async function joinHousehold(code) {
+/**
+ * Moves this account into the household with the invite code. With `bring`,
+ * the recipes on this phone are copied into it (under new ids, since the
+ * old household keeps its own copies); otherwise they are removed from this
+ * phone, as they belong to the household left behind.
+ */
+export async function joinHousehold(code, { bring = true } = {}) {
+  const before = await getHousehold().catch(() => null)
   const { data, error } = await supabase.rpc('join_household', { code })
   if (error) throw error
   household = data
+  if (before?.id === data.id) return data
   localStorage.removeItem(SHOPPING_BASE_KEY)
+  for (const recipe of await listRecipes()) {
+    if (bring) {
+      const id = newId()
+      const [video, photo] = await Promise.all([getVideo(recipe.id), getPhoto(recipe.id)])
+      if (video) await putVideo(id, video)
+      if (photo) await putPhoto(id, photo)
+      const { syncedAt: _s, videoPath: _v, photoStale: _p, ...rest } = recipe
+      await putRecipe({ ...rest, id, photoPath: null, updatedAt: Date.now() })
+    }
+    await deleteRecipe(recipe.id)
+  }
   return data
 }
 
@@ -53,14 +76,36 @@ export function markDeleted(id) {
   write(DELETED_KEY, [...new Set([...read(DELETED_KEY, []), id])])
 }
 
+/** Uploads the recipe's photo when it has a new one. Returns its bucket path, or throws. */
+async function uploadPhoto(hid, recipe) {
+  const data = await localPhoto(recipe)
+  if (!data) return null
+  const path = `${hid}/${recipe.id}-${recipe.photoKey}.webp`
+  const blob = dataUrlToBlob(data)
+  const { error } = await supabase.storage.from(BUCKET).upload(path, blob, { upsert: true, contentType: blob.type })
+  if (error) throw error
+  return path
+}
+
+/** Returns a warning when the recipe went up but its photo could not. */
 async function pushRecipe(hid, recipe, userId) {
-  const { syncedAt: _s, videoUploaded: _u, ...data } = recipe
+  let warning = null
+  let photoPath = recipe.photoPath ?? null
+  if (recipe.photoKey && !photoPath) {
+    try {
+      photoPath = await uploadPhoto(hid, recipe)
+    } catch (err) {
+      warning = `Photos are not shared yet (${err?.message ?? err})`
+    }
+  }
+  if (recipe.photoStale && recipe.photoStale !== photoPath) await supabase.storage.from(BUCKET).remove([recipe.photoStale]).catch(() => {})
+  const { syncedAt: _s, videoUploaded: _u, photo: _p, photoStale: _ps, ...data } = recipe
   const path = recipe.videoPath ?? null
   const row = {
     id: recipe.id,
     household_id: hid,
     title: recipe.title ?? '',
-    data: { ...data, videoPath: path },
+    data: { ...data, videoPath: path, photoPath },
     video_path: path,
     deleted: false,
     updated_at: new Date(recipe.updatedAt ?? Date.now()).toISOString(),
@@ -70,7 +115,11 @@ async function pushRecipe(hid, recipe, userId) {
   if (error) throw error
   // Saved again while uploading: that newer edit stays, and goes up next time
   const now = await getRecipe(recipe.id)
-  if (now && now.updatedAt === recipe.updatedAt) await putRecipe({ ...now, syncedAt: recipe.updatedAt })
+  if (now && now.updatedAt === recipe.updatedAt) {
+    const photoNow = now.photoKey === recipe.photoKey ? { photoPath, photoStale: null } : {}
+    await putRecipe({ ...now, ...photoNow, syncedAt: recipe.updatedAt })
+  }
+  return warning
 }
 
 /**
@@ -93,7 +142,8 @@ export async function syncRecipes() {
       .update({ deleted: true, video_path: null, updated_at: new Date().toISOString(), updated_by: user.id })
       .eq('id', id)
     if (error) throw error
-    await supabase.storage.from('recipe-videos').remove([`${hid}/${id}.webm`, `${hid}/${id}.mp4`])
+    const { data: photos } = await supabase.storage.from(BUCKET).list(hid, { search: id })
+    await supabase.storage.from(BUCKET).remove([`${hid}/${id}.webm`, `${hid}/${id}.mp4`, ...(photos ?? []).map((f) => `${hid}/${f.name}`)])
   }
   // Deletions made while this ran are kept for next time
   if (deleted.length) write(DELETED_KEY, read(DELETED_KEY, []).filter((id) => !deleted.includes(id)))
@@ -133,20 +183,31 @@ export async function syncRecipes() {
     }
   }
 
-  // 3. Recipes saved or changed here since their last sync. One that fails
-  // (say, a recipe of a household this account has left) does not stop the rest.
-  const failed = []
+  // Recipes saved before photos had their own store carry the photo inside;
+  // it moves out, and the recipe goes up again without it
   for (const recipe of await listRecipes()) {
-    if (recipe.syncedAt === recipe.updatedAt) continue
+    if (!('photo' in recipe)) continue
+    const { photo, ...rest } = recipe
+    if (typeof photo === 'string') await putRecipe({ ...(await storePhoto(recipe)), updatedAt: Date.now() })
+    else await putRecipe(rest)
+  }
+
+  // 3. Recipes saved or changed here since their last sync, and photos that
+  // could not go up last time. One that fails does not stop the rest.
+  const failed = []
+  let warning = null
+  for (const recipe of await listRecipes()) {
+    const photoWaiting = recipe.photoKey && !recipe.photoPath && (await localPhoto(recipe))
+    if (recipe.syncedAt === recipe.updatedAt && !photoWaiting) continue
     try {
-      await pushRecipe(hid, recipe, user.id)
+      warning = (await pushRecipe(hid, recipe, user.id)) ?? warning
       pushed++
     } catch (err) {
       failed.push(`${recipe.title || 'A recipe'}: ${err?.message ?? err}`)
     }
   }
   if (failed.length) throw new Error(`${failed.length} recipe${failed.length > 1 ? 's' : ''} not uploaded (${failed[0]})`)
-  return { pushed, pulled }
+  return { pushed, pulled, warning }
 }
 
 /** The recipe's video from this phone, or downloaded from the household's storage. */
@@ -154,10 +215,21 @@ export async function loadVideo(recipe) {
   const local = await getVideo(recipe.id)
   if (local) return local
   if (!recipe.videoPath) return null
-  const { data, error } = await supabase.storage.from('recipe-videos').download(recipe.videoPath)
+  const { data, error } = await supabase.storage.from(BUCKET).download(recipe.videoPath)
   if (error) throw error
   await putVideo(recipe.id, data)
   return data
+}
+
+/** The recipe's photo as a data URL: from this phone, or downloaded from the household's storage. */
+export async function loadPhoto(recipe) {
+  const here = await localPhoto(recipe)
+  if (here || !recipe?.photoKey || !recipe.photoPath) return here
+  const { data, error } = await supabase.storage.from(BUCKET).download(recipe.photoPath)
+  if (error) throw error
+  const url = await blobToDataUrl(data)
+  await putPhoto(recipe.id, { key: recipe.photoKey, data: url })
+  return url
 }
 
 /**
