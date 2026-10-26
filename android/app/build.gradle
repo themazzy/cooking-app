@@ -64,6 +64,9 @@ dependencies {
     // through AICore (its model is on the phone, not in the APK)
     implementation "com.google.android.gms:play-services-mlkit-language-id:17.0.0"
     implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
+    // Product barcodes for the pantry: Google's code scanner, whose camera
+    // screen and model also come from Play services (no camera permission)
+    implementation "com.google.android.gms:play-services-code-scanner:16.1.0"
 }
 
 apply from: 'capacitor.build.gradle'
