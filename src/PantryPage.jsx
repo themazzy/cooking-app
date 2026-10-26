@@ -216,9 +216,25 @@ export default function PantryPage({ items, loading = false, onChanged }) {
     if (picking) setAdded(`${item.name}${patch.amount ? `, ${patch.amount}` : ''}`)
   }
 
-  const onReceipt = async (e) => {
+  // Receipt photos collect first (a long receipt takes several), then are read together
+  const [shots, setShots] = useState(null) // null when the receipt sheet is closed, else [{ file, url }]
+  const addShots = (e) => {
     const files = [...(e.target.files ?? [])]
     e.target.value = ''
+    if (files.length) setShots((list) => [...(list ?? []), ...files.map((file) => ({ file, url: URL.createObjectURL(file) }))])
+  }
+  const closeShots = () =>
+    setShots((list) => {
+      for (const s of list ?? []) URL.revokeObjectURL(s.url)
+      return null
+    })
+  const readShots = () => {
+    const files = shots.map((s) => s.file)
+    closeShots()
+    onReceipt(files)
+  }
+
+  const onReceipt = async (files) => {
     if (!files.length) return
     setMessage(null)
     setReceipt({ reading: 0, status: 'Reading the receipt…' })
@@ -226,7 +242,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
       const text = await readReceiptPhotos(files, (p) =>
         setReceipt({
           reading: Math.round((p.progress ?? 0) * 100),
-          status: p.status === 'recognizing text' ? 'Reading the receipt…' : 'Downloading the text reader (once)…',
+          status: p.status === 'recognizing text' ? 'Reading the receipt…' : 'Starting the text reader…',
         }),
       )
       setReceipt({ found: readReceipt(text, entries) })
@@ -279,10 +295,9 @@ export default function PantryPage({ items, loading = false, onChanged }) {
       <header className="main-header">
         <h1>At home</h1>
         <div className="actions">
-          <label className="button small secondary">
+          <button className="small secondary" disabled={!!receipt && !receipt.found} onClick={() => setShots([])}>
             <Icon name="camera" /> Receipt
-            <input type="file" accept="image/*" multiple hidden disabled={!!receipt} onChange={onReceipt} />
-          </label>
+          </button>
           <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
             <Icon name="plus" size={16} strokeWidth={2.5} /> Add
           </button>
@@ -355,6 +370,52 @@ export default function PantryPage({ items, loading = false, onChanged }) {
         </section>
       )}
 
+      {shots && (
+        <div className="sheet-backdrop" onClick={closeShots}>
+          <div className="sheet" role="dialog" aria-label="Receipt photos" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle" aria-hidden="true" />
+            <h2>Read a receipt</h2>
+            <p className="hint top">Take a photo of the receipt, flat and in good light. For a long one, take several, top to bottom.</p>
+            {shots.length > 0 && (
+              <ol className="photo-pages">
+                {shots.map((p, n) => (
+                  <li key={p.url}>
+                    <img src={p.url} alt={`Photo ${n + 1}`} />
+                    <span className="page-no">{n + 1}</span>
+                    <button
+                      className="remove"
+                      aria-label={`Remove photo ${n + 1}`}
+                      onClick={() =>
+                        setShots((list) => {
+                          URL.revokeObjectURL(list[n].url)
+                          return list.filter((_, i) => i !== n)
+                        })
+                      }
+                    >
+                      <Icon name="close" size={16} />
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <div className="row">
+              <label className={`button${shots.length ? ' secondary' : ''}`}>
+                <Icon name="camera" /> {shots.length ? 'Take another' : 'Take photo'}
+                <input type="file" accept="image/*" capture="environment" hidden onChange={addShots} />
+              </label>
+              <label className="button secondary">
+                <Icon name="image" /> From gallery
+                <input type="file" accept="image/*" multiple hidden onChange={addShots} />
+              </label>
+            </div>
+            {shots.length > 0 && (
+              <button className="big read-pages" onClick={readShots}>
+                Read {shots.length} photo{shots.length > 1 ? 's' : ''}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {receipt?.found && <ReceiptSheet found={receipt.found} onAdd={addFromReceipt} onClose={() => setReceipt(null)} />}
       {picking && !editing && <Picker items={items} added={added} onPick={open} onClose={() => setPicking(false)} />}
       {editing && (
