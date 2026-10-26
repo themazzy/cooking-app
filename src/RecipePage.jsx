@@ -99,7 +99,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   }
 
   // A photo the cook added wins; then the video (with the photo as its cover); then the website's picture
-  // Translation: switch to the original text and back, or translate an older recipe
+  // Translation (in the edit screen): switch to the original text and back, or translate an older recipe
   const [translating, setTranslating] = useState(null) // null, 'busy' or a message
   const changeText = (r) => {
     const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original }
@@ -366,7 +366,6 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         <h1>{recipe.title || 'Untitled recipe'}</h1>
         <div className="head-line">
           <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
-          {languageBar}
         </div>
         {(recipe.cuisine || recipe.categories?.length > 0) && (
           <div className="tag-scroll">
