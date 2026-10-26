@@ -36,7 +36,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits, translateTo = null, categories = [], cuisines = [] }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -511,6 +511,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           title={recipe.title}
           ingredients={shown}
           steps={stepsText}
+          alarm={alarm}
           stockPlan={planCooking(scaled, pantry, canonical)}
           onUseStock={onUseStock}
           onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note) }) : null}

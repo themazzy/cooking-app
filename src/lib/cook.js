@@ -1,12 +1,63 @@
 // Helpers for cooking mode: the steps one by one, the ingredients each step
 // mentions, and timers for the times written in a step.
 
-/** The steps text as a list, one step per non-empty line, without "1." numbering. */
-export const splitSteps = (steps) =>
-  String(steps ?? '')
+const NUMBER = /^(?:\d+\s*[.)]|step\s*\d+\s*[:.)]?|krok\s*\d+\s*[:.)]?|стъпка\s*\d+\s*[:.)]?)\s*/iu
+const BULLET = /^[-•*–]\s*/
+// "For the sauce:" — a short line that names the part of the recipe the next steps make
+const isHeading = (line) => /[:：]$/.test(line) && line.length <= 50
+// A line cut off in the middle of a sentence, such as wrapped text from a photo:
+// the line before stops on a comma or a joining word and this one goes on in lowercase
+const CUT_OFF = /(?:[,\-–]|(?<!\p{L})(?:and|or|the|a|an|of|with|to|in|into|on|for|until|i|s|se|na|do|v|ve|z|ze|и|с|в|на|до|за|от))$/iu
+const isContinuation = (prev, line) => CUT_OFF.test(prev) && /^[\p{Ll}(]/u.test(line)
+
+/** "1. Chop. 2. Fry." on one line → two lines, when the numbers count up from 1. */
+const splitInlineNumbers = (line) => {
+  const parts = line.split(/\s+(?=\d+[.)]\s+\p{Lu})/u)
+  if (parts.length < 2) return [line]
+  const nums = parts.map((p) => parseInt(p, 10))
+  const counts = nums.every((n, i) => (i === 0 ? true : n === nums[i - 1] + 1))
+  return counts && parts.slice(1).every((p) => NUMBER.test(p)) ? parts : [line]
+}
+
+/**
+ * The steps text as a list of whole steps, without "1." numbering.
+ * Numbered steps keep the lines that follow them; without numbers, blank lines
+ * separate steps when steps run over several lines, otherwise each line is one.
+ * A heading such as "For the sauce:" goes in front of the step after it.
+ */
+export function splitSteps(steps) {
+  const lines = String(steps ?? '')
     .split('\n')
-    .map((s) => s.trim().replace(/^(?:\d+[.)]|step\s*\d+[:.]?|[-•*])\s*/i, ''))
-    .filter(Boolean)
+    .map((s) => s.trim())
+    .flatMap((s) => (s ? splitInlineNumbers(s) : ['']))
+  const numbered = lines.filter((l) => NUMBER.test(l)).length >= 2
+  // Blank lines between steps, and at least one step longer than a line
+  const paragraphs = !numbered && lines.includes('') && lines.some((l, i) => l && lines[i + 1])
+  const out = []
+  let heading = ''
+  let open = false // the last step can still take more lines
+  for (const raw of lines) {
+    if (!raw) {
+      if (paragraphs) open = false
+      continue
+    }
+    const isNumbered = NUMBER.test(raw)
+    const line = raw.replace(NUMBER, '').replace(BULLET, '').trim()
+    if (!line) continue
+    if (isHeading(line) && !isNumbered) {
+      heading = heading ? `${heading} ${line}` : line
+      open = false
+      continue
+    }
+    const joins = out.length > 0 && !heading && !isNumbered && !BULLET.test(raw) && (numbered || paragraphs ? open : isContinuation(out[out.length - 1], line))
+    if (joins) out[out.length - 1] += ` ${line}`
+    else out.push(heading ? `${heading} ${line}` : line)
+    heading = ''
+    open = true
+  }
+  if (heading) out.push(heading)
+  return out
+}
 
 const UNIT_SECONDS = { s: 1, sec: 1, secs: 1, second: 1, seconds: 1, m: 60, min: 60, mins: 60, minute: 60, minutes: 60, h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600 }
 const TIME = /(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|to)\s*(\d+(?:[.,]\d+)?))?\s*(seconds?|secs?|minutes?|mins?|hours?|hrs?|[hms])\b/gi
@@ -28,36 +79,79 @@ export function findTimers(text) {
   return out
 }
 
-const words = (s) =>
+// Words that say how an ingredient is prepared, not what it is
+const DESCRIPTORS = new Set(
+  'fresh chopped diced sliced grated minced ground finely roughly thinly large small medium big ripe peeled boneless skinless cooked raw whole halved quartered crushed softened melted cold warm hot dried frozen canned toasted organic optional extra light dark'.split(' '),
+)
+
+const tokens = (s) =>
   String(s ?? '')
     .toLowerCase()
-    .split(/[,(]/)[0]
-    .replace(/[^\p{L}\s-]/gu, ' ')
-    .trim()
+    .replace(/[^\p{L}]+/gu, ' ')
+    .split(' ')
+    .filter(Boolean)
 
-const forms = (term) => {
-  const t = words(term)
-  if (!t) return []
-  const out = new Set([t])
-  if (t.endsWith('es')) out.add(t.slice(0, -2))
-  if (t.endsWith('s')) out.add(t.slice(0, -1))
-  else out.add(`${t}s`)
-  return [...out].filter((x) => x.length > 2)
+// The ingredient itself, before ", minced" or "(about 200 g)"
+const nameTokens = (name) => tokens(String(name ?? '').split(/[,(]/)[0])
+
+const CYRILLIC = /\p{Script=Cyrillic}/u
+const VOWELS = /^[aeiouyáéíóúůýěаъоуеиюяй]*$/u
+
+/**
+ * Whether a word in the step is a form of a word in the ingredient's name:
+ * "onion" ~ "onions", "tomato" ~ "tomatoes", Czech "cibule" ~ "cibuli" / "cibulku",
+ * Bulgarian "домат" ~ "доматите", "лук" ~ "лука". Not "rice" ~ "ricotta".
+ */
+export function sameWord(term, word) {
+  if (term === word) return true
+  const [short, long] = term.length <= word.length ? [term, word] : [word, term]
+  let p = 0
+  while (p < short.length && short[p] === long[p]) p++
+  const extra = long.length - p
+  if (short.length <= 3) {
+    // Too short to guess endings, except a plural or a Bulgarian article
+    return p === short.length && (long === `${short}s` || long === `${short}es` || (CYRILLIC.test(short) && extra <= 3))
+  }
+  // Endings that differ: English adds "s"/"es"/"ies", Czech and Bulgarian swap
+  // a vowel at the end and add a few letters ("cibule" → "cibulkou")
+  const cut = short.slice(p)
+  if (cut.length > (short.length >= 6 ? 2 : 1) || !VOWELS.test(cut)) return false
+  return extra <= (CYRILLIC.test(long) ? 5 : 3)
+}
+
+const phraseIn = (phrase, text) => {
+  if (!phrase.length) return false
+  for (let i = 0; i + phrase.length <= text.length; i++) {
+    if (phrase.every((t, k) => sameWord(t, text[i + k]))) return true
+  }
+  return false
+}
+
+/** The word lists an ingredient can be called by in a step, best first. */
+function ingredientTerms(ing, match) {
+  const name = nameTokens(ing.name)
+  if (!name.length) return []
+  const bare = name.filter((w) => !DESCRIPTORS.has(w))
+  const entry = match(ing.name)
+  const out = [name, bare]
+  // The last word names the thing: "red onion" → "onion", "soy sauce" stays whole below
+  const head = bare[bare.length - 1]
+  if (head && head.length >= 3) out.push([head])
+  if (entry) for (const phrase of [entry.name, ...(entry.aliases ?? [])]) out.push(tokens(phrase))
+  const seen = new Set()
+  return out.filter((t) => t.length && !seen.has(t.join(' ')) && seen.add(t.join(' ')))
 }
 
 /**
  * Indexes of the ingredients a step mentions, by the ingredient's own name,
  * its catalog name and aliases, or the last word of its name ("red onion" → "onion").
+ * Word endings may differ, so plurals and Czech or Bulgarian forms are found too.
  */
 export function stepIngredients(step, ingredients, match = () => null) {
-  const text = ` ${words(step).replace(/\s+/g, ' ')} `
+  const text = tokens(step)
   const hits = []
   ingredients.forEach((ing, n) => {
-    const name = words(ing.name)
-    if (!name) return
-    const entry = match(ing.name)
-    const terms = [name, name.split(/\s+/).pop(), entry?.name, ...(entry?.aliases ?? [])].flatMap(forms)
-    if (terms.some((t) => text.includes(` ${t} `))) hits.push(n)
+    if (ingredientTerms(ing, match).some((t) => phraseIn(t, text))) hits.push(n)
   })
   return hits
 }
@@ -69,3 +163,23 @@ export const formatClock = (seconds) => {
   const sec = String(s % 60).padStart(2, '0')
   return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
 }
+
+// Timers: { id, label, total, endsAt } while running, { …, left } while paused, done when time is up
+
+export const newTimer = (label, seconds, now = Date.now()) => ({ id: `${now}-${Math.random()}`, label, total: seconds, endsAt: now + seconds * 1000, left: null, done: false })
+
+/** Seconds left on a timer. */
+export const timeLeft = (t, now = Date.now()) => (t.endsAt != null ? Math.max(0, (t.endsAt - now) / 1000) : (t.left ?? 0))
+
+export const pauseTimer = (t, now = Date.now()) => (t.endsAt == null || t.done ? t : { ...t, left: timeLeft(t, now), endsAt: null })
+
+export const resumeTimer = (t, now = Date.now()) => (t.endsAt != null || t.done ? t : { ...t, endsAt: now + (t.left ?? 0) * 1000, left: null })
+
+/** Adds (or takes off) seconds. A finished timer given more time runs again. */
+export function adjustTimer(t, seconds, now = Date.now()) {
+  if (t.done) return seconds > 0 ? { ...t, done: false, endsAt: now + seconds * 1000, left: null, total: seconds } : t
+  if (t.endsAt != null) return { ...t, endsAt: Math.max(now, t.endsAt + seconds * 1000), total: Math.max(0, t.total + seconds) }
+  return { ...t, left: Math.max(0, (t.left ?? 0) + seconds), total: Math.max(0, t.total + seconds) }
+}
+
+export const restartTimer = (t, now = Date.now()) => ({ ...t, done: false, endsAt: now + t.total * 1000, left: null })
