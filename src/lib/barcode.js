@@ -57,12 +57,45 @@ export function packAmount(product) {
   return `${Math.round(qty * 1000) / 1000} ${unit}`
 }
 
-/** Brand and name of an Open Food Facts product, as printed on the pack. */
-export function productLabel(product) {
+/** Brand and name of an Open Food Facts product ("Coca-Cola Zero"), the name it gets as its own ingredient. */
+export function productName(product) {
   const name = [product?.product_name, product?.product_name_bg, product?.product_name_cs, product?.product_name_en, product?.generic_name_en].find((n) => n?.trim())?.trim() ?? ''
   const brand = String(product?.brands ?? '').split(',')[0].trim()
-  const label = brand && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name || brand
-  return [label, product?.quantity?.trim()].filter(Boolean).join(', ')
+  return brand && !name.toLowerCase().includes(brand.toLowerCase()) ? `${brand} ${name}` : name || brand
+}
+
+/** Brand, name and size of an Open Food Facts product, as printed on the pack. */
+export function productLabel(product) {
+  return [productName(product), product?.quantity?.trim()].filter(Boolean).join(', ')
+}
+
+// Open Food Facts categories that say which aisle a product with no catalog match goes in
+const CATEGORY_AISLES = [
+  ['beverages', 'Drinks'],
+  ['frozen-foods', 'Frozen'],
+  ['dairies', 'Dairy & eggs'],
+  ['eggs', 'Dairy & eggs'],
+  ['cheeses', 'Dairy & eggs'],
+  ['meats', 'Meat'],
+  ['seafood', 'Fish'],
+  ['fishes', 'Fish'],
+  ['breads', 'Bakery'],
+  ['pastas', 'Pasta & grains'],
+  ['cereals-and-their-products', 'Pasta & grains'],
+  ['nuts', 'Nuts & seeds'],
+  ['seeds', 'Nuts & seeds'],
+  ['condiments', 'Oils & sauces'],
+  ['sauces', 'Oils & sauces'],
+  ['fats', 'Oils & sauces'],
+  ['spices', 'Spices'],
+  ['fruits', 'Fruit'],
+  ['vegetables', 'Vegetables'],
+]
+
+/** The aisle of an Open Food Facts product from its categories, or 'Other'. */
+export function productAisle(product) {
+  const tags = new Set((product?.categories_tags ?? []).filter((t) => t.startsWith('en:')).map((t) => t.slice(3)))
+  return CATEGORY_AISLES.find(([tag]) => tags.has(tag))?.[1] ?? 'Other'
 }
 
 /**
@@ -83,7 +116,7 @@ export function guessIngredient(product, match) {
   return null
 }
 
-const OFF_FIELDS = 'product_name,product_name_en,product_name_bg,product_name_cs,generic_name,generic_name_en,brands,quantity,product_quantity,product_quantity_unit,categories_tags'
+const OFF_FIELDS = 'product_name,product_name_en,product_name_bg,product_name_cs,generic_name,generic_name_en,brands,quantity,product_quantity,product_quantity_unit,categories_tags,image_front_small_url,image_front_url,image_small_url'
 // Open Food Facts asks every app to name itself
 const OFF_UA = 'CookingApp/1.0 (github.com/themazzy/cooking-app)'
 
@@ -147,5 +180,32 @@ export async function lookupBarcode(code, match) {
   }
   if (!product) return { code, source: null, offline, product: '', pack: '', entry: null, ingredient: '' }
   const entry = guessIngredient(product, match)
-  return { code, source: 'openfoodfacts', product: productLabel(product), pack: packAmount(product), entry, ingredient: entry?.name ?? '' }
+  return {
+    code,
+    source: 'openfoodfacts',
+    product: productLabel(product),
+    name: productName(product),
+    aisle: entry?.aisle ?? productAisle(product),
+    picture: product.image_front_small_url || product.image_small_url || product.image_front_url || '',
+    pack: packAmount(product),
+    entry,
+    ingredient: entry?.name ?? '',
+  }
+}
+
+/** A product photo from Open Food Facts as a Blob (native HTTP on the phone, so no CORS), or null. */
+export async function fetchPicture(url) {
+  if (!url) return null
+  try {
+    if (Capacitor.isNativePlatform()) {
+      const res = await CapacitorHttp.get({ url, headers: { 'User-Agent': OFF_UA }, responseType: 'blob', connectTimeout: 10000, readTimeout: 15000 })
+      if (res.status >= 400 || typeof res.data !== 'string') return null
+      const bytes = Uint8Array.from(atob(res.data), (c) => c.charCodeAt(0))
+      return new Blob([bytes], { type: res.headers?.['Content-Type'] ?? res.headers?.['content-type'] ?? 'image/jpeg' })
+    }
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+    return res.ok ? await res.blob() : null
+  } catch {
+    return null
+  }
 }

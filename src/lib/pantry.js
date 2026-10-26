@@ -50,6 +50,19 @@ export async function addToPantry(name, amount = '', extra = {}) {
   } else if (error) throw error
 }
 
+/** Renames what is at home along with the household ingredient it is, so the two stay linked. */
+export async function renamePantryItems(from, to) {
+  if (!from?.trim() || !to?.trim() || from.trim() === to.trim()) return
+  const household_id = (await getHousehold()).id
+  const { error } = await supabase
+    .from('pantry_items')
+    .update({ name: to.trim(), updated_at: new Date().toISOString() })
+    .eq('household_id', household_id)
+    .ilike('name', from.trim().replace(/[\\%_]/g, '\\$&'))
+  // The new name is already at home too: both rows stay
+  if (error && error.code !== '23505') throw error
+}
+
 export async function updatePantryItem(id, patch) {
   const { error } = await supabase.from('pantry_items').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', id)
   if (error) throw error

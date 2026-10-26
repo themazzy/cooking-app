@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
-import { IngredientIcon, useCatalog } from './catalog.jsx'
+import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { addToPantry, pantryError, removeFromPantry, updatePantryItem } from './lib/pantry.js'
 import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
 import { readReceiptPhotos } from './lib/ocr.js'
@@ -15,10 +15,12 @@ import { UnitChips, convertQty } from './UnitPicker.jsx'
 import Icon from './Icon.jsx'
 
 const SOON = 3 // days
+const LINKED_KEY = 'cooking-app:linked-ingredients'
+
 const QUICK = { g: ['100', '250', '500', '1000'], kg: ['1', '2', '5'], ml: ['250', '500', '1000'], l: ['1', '2'], pcs: ['1', '2', '6', '10'] }
 
 /** Amount, unit, minimum and use-by date of one stock item, new or already at home. */
-function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
+function ItemSheet({ item, entry, onSave, onRemove, onClose, onPicture, message }) {
   const [initialQty, initialUnit] = splitAmount(item.amount)
   const unitDefault = defaultUnit(entry ?? { name: item.name, aisle: 'Other' })
   const [qty, setQty] = useState(initialQty)
@@ -44,16 +46,34 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
     />
   )
   const save = () => onSave({ amount: joinAmount(qty, unit), min_amount: joinAmount(minQty, minUnit), expires_on: expires || null })
+  const [savingPicture, setSavingPicture] = useState(false)
+  const pickPicture = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setSavingPicture(true)
+    await onPicture(file)
+    setSavingPicture(false)
+  }
 
   return (
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet" role="dialog" aria-label={item.name} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" aria-hidden="true" />
         <div className="item-head">
-          <IngredientIcon entry={entry ?? { name: item.name }} size={56} />
+          <label className="picture-edit" aria-label={`Change the picture of ${item.name}`}>
+            <IngredientIcon entry={entry ?? { name: item.name }} size={56} />
+            <span className="picture-badge" aria-hidden="true">
+              <Icon name={savingPicture ? 'clock' : 'camera'} size={14} />
+            </span>
+            <input type="file" accept="image/*" hidden disabled={savingPicture} onChange={pickPicture} />
+          </label>
           <div>
             <h2>{item.name}</h2>
-            <span className="note">{item.id ? 'At home' : 'Add to what you have at home'}</span>
+            <span className="note">
+              {item.id ? 'At home' : 'Add to what you have at home'}
+              {entry?.household_id && entry?.base && entry.name !== entry.base ? ` · counts as ${entry.base}` : ''}
+            </span>
           </div>
         </div>
         <label className="field">How much is at home</label>
@@ -187,7 +207,7 @@ function Picker({ items, onPick, onClose, added }) {
 
 /** The household's stock: amounts, staples to keep (with a minimum) and use-by dates. */
 export default function PantryPage({ items, loading = false, onChanged }) {
-  const { entries, match } = useCatalog()
+  const { entries, loaded, match, named, ensure, setPicture } = useCatalog()
   const [receipt, setReceipt] = useState(null) // { reading: pct } or { found }
   const [message, setMessage] = useState(null)
   const [query, setQuery] = useState('')
@@ -205,6 +225,46 @@ export default function PantryPage({ items, loading = false, onChanged }) {
     } catch (e) {
       setMessage(pantryError(e))
       return false
+    }
+  }
+
+  // Everything at home is in the ingredient list too: names the catalog does not
+  // have become the household's own ingredients (once per name on this phone,
+  // so one deleted from Ingredients does not come back)
+  useEffect(() => {
+    if (!loaded) return
+    let linked
+    try {
+      linked = new Set(JSON.parse(localStorage.getItem(LINKED_KEY)) ?? [])
+    } catch {
+      linked = new Set()
+    }
+    const missing = [...new Set(items.map((i) => i.name.trim()).filter((n) => n && !named(n) && !linked.has(n.toLowerCase())))]
+    if (!missing.length) return
+    ;(async () => {
+      for (const name of missing) {
+        try {
+          await ensure(name)
+          linked.add(name.toLowerCase())
+        } catch {
+          // offline: tried again next time
+        }
+      }
+      try {
+        localStorage.setItem(LINKED_KEY, JSON.stringify([...linked]))
+      } catch {
+        // a convenience
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, loaded])
+
+  const changePicture = async (name, file) => {
+    try {
+      await setPicture(name, await photoToIcon(file))
+      toast(`New picture for ${name}`)
+    } catch (e) {
+      toast(e?.message ?? String(e), { kind: 'error' })
     }
   }
 
@@ -282,9 +342,11 @@ export default function PantryPage({ items, loading = false, onChanged }) {
 
   // A scanned product: its amount added to what is at home, and the barcode remembered.
   // Returns true, or what went wrong for the scan sheet to show.
-  const addScanned = async ({ code, ingredient, product, pack, amount }) => {
+  const addScanned = async ({ code, ingredient, own, base, aisle, picture, product, pack, amount }) => {
     let remembered = true
     try {
+      // A product kept under its own name is one of the household's ingredients, with the pack photo
+      if (own) await ensure(ingredient, { base, aisle, image_data: picture })
       const key = ingredient.toLowerCase()
       const have = items.find((i) => (match(i.name)?.name ?? i.name).toLowerCase() === key)
       if (have) await updatePantryItem(have.id, { amount: amount ? addTo(have.amount, ...amount.match(/^(\S+)\s*(.*)$/).slice(1)) : have.amount })
@@ -461,9 +523,10 @@ export default function PantryPage({ items, loading = false, onChanged }) {
         <ItemSheet
           key={editing.item.id ?? editing.item.name}
           item={editing.item}
-          entry={editing.entry}
+          entry={named(editing.item.name) ?? editing.entry}
           message={message}
           onSave={save}
+          onPicture={(file) => changePicture(editing.item.name, file)}
           onRemove={async () => {
             if (await run(() => removeFromPantry(editing.item.id))) {
               toast(`${editing.item.name} removed`)
