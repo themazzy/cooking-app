@@ -255,8 +255,10 @@ export default function PantryPage({ items, loading = false, onChanged }) {
   const addFromReceipt = async (rows) => {
     const merged = new Map()
     for (const r of rows) {
-      const prev = merged.get(r.entry.name)
-      merged.set(r.entry.name, prev == null ? r.amount : addTo(prev, ...(r.amount.match(/^(\S+)\s*(.*)$/)?.slice(1) ?? ['', ''])))
+      const name = r.entry?.name ?? r.name.trim()
+      if (!name) continue
+      const prev = merged.get(name)
+      merged.set(name, prev == null ? r.amount : addTo(prev, ...(r.amount.match(/^(\S+)\s*(.*)$/)?.slice(1) ?? ['', ''])))
     }
     const ok = await run(async () => {
       for (const [name, amount] of merged) {

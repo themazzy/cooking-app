@@ -656,9 +656,18 @@ label.field input { color: var(--text); }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 button.link.more { margin-top: 10px; }
 .receipt-list { flex: 1 1 auto; overflow-y: auto; }
-.receipt-list ul.shopping li { display: flex; align-items: center; gap: 8px; }
+.receipt-list ul.shopping li { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
+.receipt-list ul.shopping li label { flex: 1 1 0; }
 .receipt-list ul.shopping li.checked span { text-decoration: none; }
 .unknown ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 4px; }
+.unknown li { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.unknown li .note { min-width: 0; overflow-wrap: anywhere; }
+.unknown li button { flex: none; }
+.receipt-list ul.shopping .pantry-amount { flex: none; width: 5.5em; height: auto; }
+.receipt-name { min-width: 0; }
+.receipt-name .from { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.receipt-name .count { color: var(--muted); }
+ul.shopping input.receipt-own { flex: 1 1 0; width: auto; height: auto; min-width: 0; font-size: 0.95rem; padding: 6px 8px; min-height: 36px; }
 .photo-actions { margin: 0 0 14px; }
 .photo-empty { border: 1.5px dashed var(--border); box-shadow: none; background: transparent; }
 .photo-empty .photo-actions { margin: 0; justify-content: center; }

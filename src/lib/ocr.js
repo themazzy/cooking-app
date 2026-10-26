@@ -43,6 +43,219 @@ async function prepare(file, max = 2200, enhance = true) {
   return canvas
 }
 
+/** The largest bright, grey area of a small copy of the photo (the paper of a receipt) as { x, y, w, h } in 0..1, or null. */
+function findPaper(bitmap) {
+  const scale = 320 / Math.max(bitmap.width, bitmap.height)
+  const w = Math.max(1, Math.round(bitmap.width * scale))
+  const h = Math.max(1, Math.round(bitmap.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  const d = ctx.getImageData(0, 0, w, h).data
+  // Paper is the bright side of the brightness split (Otsu), without colour (unlike a wooden table)
+  const lum = new Uint8Array(w * h)
+  const hist = new Uint32Array(256)
+  for (let i = 0; i < lum.length; i++) {
+    lum[i] = (d[i * 4] * 299 + d[i * 4 + 1] * 587 + d[i * 4 + 2] * 114) / 1000
+    hist[lum[i]]++
+  }
+  let sum = 0
+  for (let t = 0; t < 256; t++) sum += t * hist[t]
+  let best = 0
+  let split = 128
+  for (let t = 0, n = 0, s = 0; t < 256; t++) {
+    n += hist[t]
+    s += t * hist[t]
+    if (!n || n === lum.length) continue
+    const m1 = s / n
+    const m2 = (sum - s) / (lum.length - n)
+    const between = n * (lum.length - n) * (m1 - m2) ** 2
+    if (between > best) [best, split] = [between, t]
+  }
+  const paper = new Uint8Array(w * h)
+  for (let i = 0; i < paper.length; i++) {
+    const r = d[i * 4]
+    const g = d[i * 4 + 1]
+    const b = d[i * 4 + 2]
+    paper[i] = lum[i] > split && Math.max(r, g, b) - Math.min(r, g, b) < 45 ? 1 : 0
+  }
+  // The largest connected piece of paper; the print inside it are holes and don't matter
+  const seen = new Uint8Array(w * h)
+  const stack = new Int32Array(w * h)
+  let top = null
+  for (let start = 0; start < paper.length; start++) {
+    if (!paper[start] || seen[start]) continue
+    let n = 0
+    let size = 0
+    let [x0, y0, x1, y1] = [w, h, 0, 0]
+    stack[n++] = start
+    seen[start] = 1
+    while (n) {
+      const i = stack[--n]
+      const x = i % w
+      const y = (i - x) / w
+      size++
+      if (x < x0) x0 = x
+      if (x > x1) x1 = x
+      if (y < y0) y0 = y
+      if (y > y1) y1 = y
+      for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) {
+        if (j >= 0 && j < paper.length && paper[j] && !seen[j]) {
+          seen[j] = 1
+          stack[n++] = j
+        }
+      }
+    }
+    if (!top || size > top.size) top = { size, x0, y0, x1, y1 }
+  }
+  // Too small to be the receipt, or the whole picture already (a scan or screenshot)
+  if (!top || top.size < paper.length * 0.08) return null
+  // What is not paper and reaches the photo's edge is background (the table), to be painted white
+  const outside = new Uint8Array(w * h)
+  let n = 0
+  for (let i = 0; i < w * h; i++) {
+    const x = i % w
+    const y = (i - x) / w
+    if ((x === 0 || y === 0 || x === w - 1 || y === h - 1) && !paper[i]) {
+      outside[i] = 1
+      stack[n++] = i
+    }
+  }
+  while (n) {
+    const i = stack[--n]
+    const x = i % w
+    for (const j of [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, i - w, i + w]) {
+      if (j >= 0 && j < paper.length && !paper[j] && !outside[j]) {
+        outside[j] = 1
+        stack[n++] = j
+      }
+    }
+  }
+  const pad = 2
+  const box = { x: Math.max(0, top.x0 - pad) / w, y: Math.max(0, top.y0 - pad) / h, w: (Math.min(w, top.x1 + pad + 1) - Math.max(0, top.x0 - pad)) / w, h: (Math.min(h, top.y1 + pad + 1) - Math.max(0, top.y0 - pad)) / h }
+  return box.w * box.h > 0.9 ? null : { ...box, outside, mw: w, mh: h }
+}
+
+/**
+ * A receipt photo ready for reading: cut to the paper, sized so the print is
+ * large enough (about 1400 px across the paper), and black and white by a
+ * local threshold, so shadows and uneven light across the paper don't matter.
+ */
+export async function prepareReceipt(file) {
+  const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+  const { width: bw, height: bh } = bitmap
+  const box = findPaper(bitmap) ?? { x: 0, y: 0, w: 1, h: 1 }
+  const sx = box.x * bw
+  const sy = box.y * bh
+  const sw = box.w * bw
+  const sh = box.h * bh
+  // Thermal receipts print 32 to 48 characters a line, so this gives letters around 30 px high
+  const scale = Math.min(2.5, 1400 / sw, 6000 / sh)
+  const canvas = document.createElement('canvas')
+  const w = (canvas.width = Math.round(sw * scale))
+  const h = (canvas.height = Math.round(sh * scale))
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, w, h)
+  bitmap.close?.()
+  const img = ctx.getImageData(0, 0, w, h)
+  const d = img.data
+  // Bradley's threshold: a pixel is ink when it is clearly darker than the average around it
+  const sums = new Float64Array((w + 1) * (h + 1))
+  for (let y = 0; y < h; y++) {
+    let row = 0
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4
+      const g = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000
+      d[i] = g
+      row += g
+      sums[(y + 1) * (w + 1) + x + 1] = sums[y * (w + 1) + x + 1] + row
+    }
+  }
+  const r = Math.max(8, Math.round(w / 24))
+  for (let y = 0; y < h; y++) {
+    const ya = Math.max(0, y - r)
+    const yb = Math.min(h, y + r + 1)
+    for (let x = 0; x < w; x++) {
+      const xa = Math.max(0, x - r)
+      const xb = Math.min(w, x + r + 1)
+      const area = (yb - ya) * (xb - xa)
+      const total = sums[yb * (w + 1) + xb] - sums[ya * (w + 1) + xb] - sums[yb * (w + 1) + xa] + sums[ya * (w + 1) + xa]
+      const i = (y * w + x) * 4
+      d[i] = d[i + 1] = d[i + 2] = d[i] * area < total * 0.85 ? 0 : 255
+    }
+  }
+  if (box.outside) {
+    // The table around a tilted receipt, white (one mask cell around it too, for the paper's edge)
+    const { outside, mw, mh } = box
+    for (let y = 0; y < h; y++) {
+      const my = Math.floor(((sy + y / scale) / bh) * mh)
+      for (let x = 0; x < w; x++) {
+        const mx = Math.floor(((sx + x / scale) / bw) * mw)
+        let out = false
+        for (let dy = -1; dy <= 1 && !out; dy++)
+          for (let dx = -1; dx <= 1 && !out; dx++) {
+            const yy = my + dy
+            const xx = mx + dx
+            if (yy >= 0 && yy < mh && xx >= 0 && xx < mw && outside[yy * mw + xx]) out = true
+          }
+        if (out) {
+          const i = (y * w + x) * 4
+          d[i] = d[i + 1] = d[i + 2] = 255
+        }
+      }
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  return straighten(canvas, d)
+}
+
+/**
+ * The receipt turned level when the photo is a little tilted. The print's
+ * rows line up best (ink rows and blank rows most different) at the right angle.
+ */
+function straighten(canvas, d) {
+  const { width: w, height: h } = canvas
+  const xs = []
+  const ys = []
+  for (let y = 0; y < h; y += 3) for (let x = 0; x < w; x += 3) if (!d[(y * w + x) * 4]) xs.push(x) && ys.push(y)
+  if (xs.length < 200) return canvas
+  const rowsAt = (deg) => {
+    const t = Math.tan((deg * Math.PI) / 180)
+    const rows = new Float64Array(Math.ceil(h / 3) + Math.ceil((w * Math.abs(t)) / 3) + 2)
+    const shift = t < 0 ? 0 : (w * t) / 3
+    for (let i = 0; i < xs.length; i++) rows[Math.round((ys[i] - xs[i] * t) / 3 + shift)]++
+    let sum = 0
+    for (const r of rows) sum += r * r
+    return sum
+  }
+  let best = 0
+  let score = rowsAt(0)
+  for (let deg = -8; deg <= 8; deg += 0.5) {
+    const v = rowsAt(deg)
+    if (v > score) [best, score] = [deg, v]
+  }
+  // Finer around the best
+  for (let deg = best - 0.4; deg <= best + 0.4; deg += 0.1) {
+    const v = rowsAt(deg)
+    if (v > score) [best, score] = [deg, v]
+  }
+  if (Math.abs(best) < 0.3) return canvas
+  const a = (-best * Math.PI) / 180
+  const out = document.createElement('canvas')
+  out.width = Math.ceil(Math.abs(w * Math.cos(a)) + Math.abs(h * Math.sin(a)))
+  out.height = Math.ceil(Math.abs(w * Math.sin(a)) + Math.abs(h * Math.cos(a)))
+  const ctx = out.getContext('2d')
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, out.width, out.height)
+  ctx.translate(out.width / 2, out.height / 2)
+  ctx.rotate(a)
+  ctx.drawImage(canvas, -w / 2, -h / 2)
+  return out
+}
+
 // Lines compared loosely: OCR reads the same line a little differently on two photos
 const key = (line) => line.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
 
@@ -118,7 +331,11 @@ export async function readRecipePhotos(files, onProgress, language = 'latin') {
 }
 
 /** The text of receipt photos; Tesseract, because ML Kit can't read Cyrillic. */
-export const readReceiptPhotos = (files, onProgress) => readPhotos(files, 'bul+eng', onProgress)
+export async function readReceiptPhotos(files, onProgress) {
+  // One block of lines in print order (page segmentation 6); spaces kept, as they split name and price
+  const pages = await readPhotoPages(files, 'bul+eng', onProgress, { prepare: prepareReceipt, params: { tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' } })
+  return pages.join('\n\n')
+}
 
 /**
  * The text of one or more photos, in order. `langs` are Tesseract language
@@ -142,7 +359,7 @@ const hasSimd = () => {
 const START_LIMIT_MS = 60000
 
 /** Each photo's text, read by Tesseract. */
-async function readPhotoPages(files, langs, onProgress) {
+async function readPhotoPages(files, langs, onProgress, { prepare: ready = prepare, params } = {}) {
   const { createWorker } = await import('tesseract.js')
   let page = 0
   let last = 'starting'
@@ -180,9 +397,10 @@ async function readPhotoPages(files, langs, onProgress) {
     }),
   ]).finally(() => clearTimeout(timer))
   try {
+    if (params) await worker.setParameters(params)
     const texts = []
     for (; page < files.length; page++) {
-      const { data } = await worker.recognize(await prepare(files[page]))
+      const { data } = await worker.recognize(await ready(files[page]))
       texts.push(data.text.trim())
     }
     return texts
