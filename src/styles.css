@@ -745,6 +745,15 @@ button.plan-shop { width: 100%; margin-top: 4px; }
 .pick-list li { margin: 0; border-bottom: 1px solid var(--border); }
 .pick-list button { width: 100%; flex-direction: column; align-items: flex-start; text-align: left; padding: 10px 0; }
 .pick-list .note { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+.pick-list.suggested { max-height: none; }
+.pick-list.suggested .note { color: var(--ok); }
+.pick-head { margin: 12px 0 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.week-picks { list-style: none; padding: 0; margin: 8px 0; max-height: 55vh; overflow-y: auto; }
+.week-picks li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.week-picks .day { flex: 0 0 4.6em; font-weight: 600; font-size: 0.85rem; color: var(--muted); }
+.week-picks .grow { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.week-picks .note { font-size: 0.82rem; color: var(--muted); }
+.week-picks button.link { padding: 6px; }
 .sort-select { width: auto; min-height: 36px; padding: 4px 10px; }
 
 /* Cooking history */
