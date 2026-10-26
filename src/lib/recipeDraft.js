@@ -1,8 +1,42 @@
 import { pickRecipe } from './recipeSource.js'
 import { toEditable } from './recipeEdit.js'
+import { parseRecipeText } from './ingredients.js'
 import { detectServings, tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
 
 export { detectServings }
+
+// Languages the parser has words for (units, headings). Recipes in any other
+// language are translated to English line by line first, then read.
+export const PARSER_LANGS = new Set(['en', 'cs', 'sk', 'bg', 'de', 'es', 'it', 'fr', 'pl', 'ru'])
+
+/** The lines of the text a draft was read from, as pickRecipe split it, to translate before reading. */
+export function sourceLines(result) {
+  const picked = pickRecipe(result)
+  if (!picked?.text) return []
+  const text = picked.source === 'transcript' ? picked.text.replace(/([.!?])\s+/g, '$1\n') : picked.text
+  return text.split('\n').map((l) => l.trim()).filter(Boolean)
+}
+
+/**
+ * The draft read again from its source text translated to English (`lines`, same
+ * order as sourceLines), keeping what it was as the original. Null when the
+ * English text gives no more ingredients with amounts than the first reading.
+ */
+export function draftFromTranslatedSource(draft, title, lines, from) {
+  const parsed = parseRecipeText(lines.join('\n'))
+  const counted = (list) => list.filter((i) => (i.qty ?? i.quantity) != null && String(i.qty ?? i.quantity).trim() !== '').length
+  if (!parsed.ingredients.length || counted(parsed.ingredients) < counted(draft.ingredients)) return null
+  const editable = toEditable(parsed)
+  return {
+    ...draft,
+    title: title?.trim() || draft.title,
+    ingredients: editable.ingredients,
+    steps: editable.steps || draft.steps,
+    servings: draft.servings ?? detectServings(lines.join('\n')),
+    lang: 'en',
+    original: { lang: from, title: draft.title, ingredients: draft.ingredients, steps: draft.steps },
+  }
+}
 
 /** A readable title: the first line that is not just hashtags or emoji. */
 export function titleFrom(text, fallback) {

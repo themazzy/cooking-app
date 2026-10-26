@@ -221,30 +221,34 @@ export async function translateRecipe(recipe, to, { from = null, onStep = () => 
   const lang = from ?? (await detectLanguage(recipe))
   if (!lang || lang === to) return null
   const texts = recipeTexts(recipe)
-  let done = null
-  if ((await nanoStatus()) === 'available') {
-    onStep(`Translating from ${languageName(lang)} with Gemini Nano on the phone…`)
-    try {
-      done = await nano(texts, lang, to)
-    } catch (err) {
-      onStep(`Gemini Nano could not translate it (${err?.message ?? err}), using Google Translate.`)
-    }
-  }
-  if (!done) {
-    onStep(`Translating from ${languageName(lang)} with Google Translate…`)
-    try {
-      done = []
-      for (const batch of batches(texts, 4000)) done.push(...(await google(batch.map((n) => texts[n]), lang, to)).texts)
-    } catch (err) {
-      onStep(`Google Translate refused (${err?.message ?? err}), trying MyMemory…`)
-      done = await myMemory(texts, lang, to)
-    }
-  }
+  const done = await translateTexts(texts, lang, to, onStep)
   const map = new Map(texts.map((t, n) => [t, done[n] ?? t]))
   return {
     ...applyTranslation(recipe, map),
     lang: to,
-    original: { lang, title: recipe.title, ingredients: recipe.ingredients, steps: recipe.steps },
+    // A recipe read through English (an unknown language) keeps its real original
+    original: recipe.original ?? { lang, title: recipe.title, ingredients: recipe.ingredients, steps: recipe.steps },
+  }
+}
+
+/** Texts translated with Gemini Nano on the phone, else Google Translate, else MyMemory. Same order. */
+export async function translateTexts(texts, from, to, onStep = () => {}) {
+  if ((await nanoStatus()) === 'available') {
+    onStep(`Translating from ${languageName(from)} with Gemini Nano on the phone…`)
+    try {
+      return await nano(texts, from, to)
+    } catch (err) {
+      onStep(`Gemini Nano could not translate it (${err?.message ?? err}), using Google Translate.`)
+    }
+  }
+  onStep(`Translating from ${languageName(from)} with Google Translate…`)
+  try {
+    const done = []
+    for (const batch of batches(texts, 4000)) done.push(...(await google(batch.map((n) => texts[n]), from, to)).texts)
+    return done
+  } catch (err) {
+    onStep(`Google Translate refused (${err?.message ?? err}), trying MyMemory…`)
+    return myMemory(texts, from, to)
   }
 }
 

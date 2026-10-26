@@ -3,8 +3,8 @@ import { App as CapApp } from '@capacitor/app'
 import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
-import { draftFromImport } from './lib/recipeDraft.js'
-import { TARGETS, detectLanguage, languageName, translateRecipe } from './lib/translate.js'
+import { PARSER_LANGS, draftFromImport, draftFromTranslatedSource, sourceLines } from './lib/recipeDraft.js'
+import { TARGETS, detectLanguage, languageName, translateRecipe, translateTexts } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { allCollections, collectionName, inCollection, renameCollection } from './lib/collections.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
@@ -375,8 +375,9 @@ export default function App() {
       const to = settings.translateTo
       if (!to || to === 'off') return recipe
       try {
-        const from = await detectLanguage(recipe)
-        if (!from || from === to || (settings.keepOwnLanguages && TARGETS[from])) return recipe
+        // A recipe read through English already knows its language and keeps its original
+        const from = recipe.original ? recipe.lang : await detectLanguage(recipe)
+        if (!from || from === to || (!recipe.original && settings.keepOwnLanguages && TARGETS[from])) return recipe
         const translated = await translateRecipe(recipe, to, { from, onStep: (t) => step(t) })
         if (!translated) return recipe
         step(`Translated from ${languageName(from)}. The recipe page can show the original.`, 'ok')
@@ -389,12 +390,37 @@ export default function App() {
     [settings.translateTo, settings.keepOwnLanguages],
   )
 
+  /**
+   * A recipe in a language the parser has no words for (Turkish, Hungarian…) is
+   * translated to English line by line and read again; the first reading stays
+   * as the original. Only when translating is on.
+   */
+  const readThroughEnglish = useCallback(
+    async (result, draft) => {
+      if (!settings.translateTo || settings.translateTo === 'off') return draft
+      try {
+        const from = await detectLanguage(draft)
+        if (!from || PARSER_LANGS.has(from)) return draft
+        const lines = sourceLines(result)
+        if (!lines.length) return draft
+        const [title, ...done] = await translateTexts([draft.title, ...lines], from, 'en', (t) => step(t))
+        const read = draftFromTranslatedSource(draft, title, done, from)
+        if (read) step(`Read through an English translation (the app has no words for ${languageName(from)}).`, 'ok')
+        return read ?? draft
+      } catch (err) {
+        step(`Could not read it through English: ${err?.message ?? err}`, 'warn')
+        return draft
+      }
+    },
+    [settings.translateTo],
+  )
+
   /** Shows an import (or paste) as a new, unsaved recipe page, translated if it is in another language. */
   const openDraft = useCallback(
     async (r, videoBlob = null, extra = {}) => {
       const key = newId()
       const recipe = await translateDraft({
-        ...draftFromImport(r),
+        ...(await readThroughEnglish(r, draftFromImport(r))),
         ...extra,
         key,
         video: videoBlob ? { size: videoBlob.size, originalSize: videoBlob.size, type: videoBlob.type, shrunk: false } : null,
@@ -403,7 +429,24 @@ export default function App() {
       go('#/new')
       if (videoBlob && settings.saveVideos) startShrink(key, videoBlob, settings.videoQuality)
     },
-    [settings.saveVideos, settings.videoQuality, startShrink, translateDraft],
+    [settings.saveVideos, settings.videoQuality, startShrink, translateDraft, readThroughEnglish],
+  )
+
+  /** Ingredients and steps read again from a recipe's saved source text, as a new import would read them. */
+  const rereadRecipe = useCallback(
+    async (recipe) => {
+      const result = { ...(recipe.raw ?? {}), author: recipe.author }
+      const first = draftFromImport(result)
+      const out = await translateDraft(await readThroughEnglish(result, { ...first, title: recipe.original?.title ?? recipe.title }))
+      return {
+        ingredients: out.ingredients,
+        steps: out.steps,
+        source: first.source,
+        lang: out.original ? out.lang : (recipe.lang ?? null),
+        original: out.original ?? null,
+      }
+    },
+    [readThroughEnglish, translateDraft],
   )
 
   const addManually = () => {
@@ -839,6 +882,7 @@ export default function App() {
           onSavePatch={saveEditing}
           onDelete={deleteEditing}
           onDiscard={discardEditing}
+          onReread={rereadRecipe}
           onBack={back}
           onAddToList={(entry) => {
             updateShopping(addToList(shopping, entry, recipes, catalog.match))

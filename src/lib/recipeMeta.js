@@ -240,13 +240,14 @@ const COUNT = `(\\d{1,2}|${Object.keys(NUM_WORDS).join('|')})(?:-?(?:ма|ри))
 // \b only knows ASCII letters, so Czech and Bulgarian words need these
 const START = '(?<![\\p{L}\\d])'
 const END = '(?![\\p{L}\\d])'
-const LABEL = 'serves|servings?|portions?|yields?|makes|počet porcí|porce|porcí|porcie|брой порции|порции|порция'
-const PEOPLE = 'servings?|portions?|people|persons|porc[eíi]|porcie|porciu|osob[ya]?|osôb|lidi|порции|порция|човека|човек|души'
+const LABEL = 'serves|servings?|portions?|yields?|makes|počet porcí|porce|porcí|porcie|брой порции|порции|порция|portionen|porzioni|raciones|porciones|porcje|porcji|порций|порции'
+const PEOPLE =
+  'servings?|portions?|people|persons|porc[eíi]|porcie|porciu|osob[ya]?|osôb|lidi|порции|порция|човека|човек|души|personen|portionen|porzioni|persone|raciones|porciones|personas|personnes|parts|porcje|porcji|osoby|osób|порций|персоны|персон|человека|человек'
 const SERVINGS = [
   new RegExp(`${START}(?:${LABEL})\\s*[:\\-–]?\\s*(?:about\\s+|cca\\.?\\s+|около\\s+)?${COUNT}${END}`, 'iu'),
   new RegExp(`${START}${COUNT}\\s*(?:${PEOPLE})${END}`, 'iu'),
   // "for 4" only at the end of a phrase, so "за 10 минути" (for 10 minutes) is not a portion count
-  new RegExp(`${START}(?:for|pro|na|za|за)\\s+${COUNT}(?:\\s*(?:${PEOPLE})${END}|(?=[ \\t]*(?:[:.,)\\n]|$)))`, 'iu'),
+  new RegExp(`${START}(?:for|pro|na|za|за|für|para|per|pour|dla|на)\\s+${COUNT}(?:\\s*(?:${PEOPLE})${END}|(?=[ \\t]*(?:[:.,)\\n]|$)))`, 'iu'),
 ]
 
 /** Number of portions mentioned in a recipe text, or null. */

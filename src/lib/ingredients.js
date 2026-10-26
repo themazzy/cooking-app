@@ -1,27 +1,28 @@
 import { detectServings, timesFromText } from './recipeMeta.js'
 
 // Rule-based reader for recipe captions and transcripts, in Czech, Bulgarian
-// and English. It finds ingredient lines ("200 g hladké mouky", "2 с.л. олио", "Flour - 2 cups") and
+// and English, plus the units and headings of German, Spanish, Italian, French,
+// Polish and Russian (other languages are translated to English first, in App). It finds ingredient lines ("200 g hladké mouky", "2 с.л. олио", "Flour - 2 cups") and
 // method steps. Anything it can't place is left for the user to edit.
 
 const UNITS = {
-  g: ['g', 'gr', 'gram', 'gramy', 'gramů', 'gramu', 'grams', 'gramm', 'г', 'гр', 'грам', 'грама'],
-  kg: ['kg', 'kilo', 'kila', 'кг', 'килограм', 'килограма', 'кило'],
-  ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра'],
+  g: ['g', 'gr', 'gram', 'gramy', 'gramů', 'gramu', 'grams', 'gramm', 'г', 'гр', 'грам', 'грама', 'grammi', 'gramos', 'grammes', 'gramów', 'грамм', 'грамма', 'граммов'],
+  kg: ['kg', 'kilo', 'kila', 'кг', 'килограм', 'килограма', 'кило', 'килограмм'],
+  ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра', 'millilitri', 'мл.'],
   dl: ['dl', 'decilitr', 'decilitry', 'decilitrů', 'дл'],
-  l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра'],
-  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек'],
-  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек'],
-  cup: ['hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши'],
-  pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт'],
-  clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката'],
-  pinch: ['špetka', 'špetku', 'špetky', 'pinch', 'щипка', 'щипки'],
-  can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins', 'консерва', 'консерви', 'кутия', 'кутии', 'буркан', 'буркана'],
-  pack: ['balení', 'bal', 'balíček', 'balíčky', 'balíčku', 'pack', 'packs', 'packet', 'packets', 'пакет', 'пакета', 'пакетче', 'пакетчета', 'опаковка', 'опаковки'],
+  l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра', 'litro', 'litri', 'litros', 'литр'],
+  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек', 'c. à soupe', 'c.à.s', 'c. a soupe', 'cuil. à soupe', 'cuchara', 'cucharadas soperas', 'cucchiai rasi', 'столовой ложки', 'ст. ложка', 'ст. ложки', 'ст.ложки'],
+  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек', 'c. à café', 'c. à thé', 'c.à.c', 'c. a café', 'cuil. à café', 'cucharaditas rasas', 'cucchiaini rasi', 'ч. ложка', 'ч. ложки', 'ч.ложки', 'чайной ложки'],
+  cup: ['hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши', 'tasse', 'tasses', 'taza', 'tazas', 'tazza', 'tazze', 'szklanka', 'szklanki', 'szklanek', 'стакан', 'стакана', 'стаканов', 'vaso', 'vasos', 'bicchiere', 'bicchieri', 'verre', 'verres', 'Tasse', 'Tassen'],
+  pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт', 'pezzo', 'pezzi', 'pieza', 'piezas', 'pièce', 'pièces', 'sztuka', 'sztuki', 'штука', 'штуки', 'штук'],
+  clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката', 'Zehe', 'Zehen', 'spicchio', 'spicchi', 'diente', 'dientes', 'gousse', 'gousses', 'ząbek', 'ząbki', 'ząbków', 'зубчик', 'зубчика', 'зубчиков'],
+  pinch: ['špetka', 'špetku', 'špetky', 'pinch', 'щипка', 'щипки', 'Prise', 'Prisen', 'Messerspitze', 'pizzico', 'pizzichi', 'pizca', 'pizcas', 'pincée', 'pincées', 'szczypta', 'szczypty', 'щепотка', 'щепотки'],
+  can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins', 'консерва', 'консерви', 'кутия', 'кутии', 'буркан', 'буркана', 'Dose', 'Dosen', 'lata', 'latas', 'barattolo', 'barattoli', 'boîte', 'boîtes', 'puszka', 'puszki', 'банка', 'банки'],
+  pack: ['balení', 'bal', 'balíček', 'balíčky', 'balíčku', 'pack', 'packs', 'packet', 'packets', 'пакет', 'пакета', 'пакетче', 'пакетчета', 'опаковка', 'опаковки', 'Packung', 'Packungen', 'Päckchen', 'Pck', 'Pkg', 'bustina', 'bustine', 'confezione', 'sobre', 'sobres', 'paquete', 'paquetes', 'sachet', 'sachets', 'paquet', 'paczka', 'paczki', 'opakowanie', 'пакетик', 'пакетика', 'упаковка'],
   head: ['hlava', 'hlavy', 'hlav', 'head', 'heads', 'глава', 'глави', 'главичка', 'главички'],
-  slice: ['plátek', 'plátky', 'plátků', 'slice', 'slices', 'филия', 'филии', 'резен', 'резена', 'резенчета'],
-  bunch: ['svazek', 'svazky', 'svazku', 'bunch', 'връзка', 'връзки', 'китка', 'китки'],
-  handful: ['hrst', 'hrsti', 'handful', 'шепа', 'шепи'],
+  slice: ['plátek', 'plátky', 'plátků', 'slice', 'slices', 'филия', 'филии', 'резен', 'резена', 'резенчета', 'Scheibe', 'Scheiben', 'fetta', 'fette', 'rebanada', 'rebanadas', 'loncha', 'lonchas', 'tranche', 'tranches', 'plaster', 'plastry', 'ломтик', 'ломтика', 'ломтиков'],
+  bunch: ['svazek', 'svazky', 'svazku', 'bunch', 'връзка', 'връзки', 'китка', 'китки', 'Bund', 'mazzetto', 'mazzo', 'manojo', 'botte', 'pęczek', 'pęczki', 'пучок', 'пучка'],
+  handful: ['hrst', 'hrsti', 'handful', 'шепа', 'шепи', 'Handvoll', 'manciata', 'puñado', 'poignée', 'garść', 'горсть'],
   floz: ['fl oz', 'fl. oz', 'fl.oz', 'floz', 'fluid ounce', 'fluid ounces'],
   pint: ['pint', 'pints', 'pt'],
   quart: ['quart', 'quarts', 'qt'],
@@ -29,7 +30,7 @@ const UNITS = {
   lb: ['lb', 'lbs', 'pound', 'pounds'],
 }
 
-export const UNIT_LOOKUP = new Map(Object.entries(UNITS).flatMap(([canon, words]) => words.map((w) => [w, canon])))
+export const UNIT_LOOKUP = new Map(Object.entries(UNITS).flatMap(([canon, words]) => words.map((w) => [w.toLowerCase(), canon])))
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '\\s*')
 const UNIT_RE = [...UNIT_LOOKUP.keys()].sort((a, b) => b.length - a.length).map(escape).join('|')
 
@@ -47,11 +48,14 @@ const QTY_FIRST = new RegExp(`^${QTY}\\s*(?:${UNIT})?\\s*(?:of\\s+)?(.+)$`, 'iu'
 const LABELLED = new RegExp(`^(.+?)\\s*[:–—-]\\s+${QTY}\\s*(?:${UNIT})?\\s*(.*)$`, 'iu')
 // "mouka 200 g", "Flour - 200g", "cukr: 2 lžíce"
 // "Salt and pepper: to taste", "Sůl: podle chuti"
-const TO_TASTE = /^(.+?)\s*[:–—-]\s+(to taste|as needed|optional|podle chuti|dle chuti|podle potřeby|dle potřeby|volitelně|на вкус|по вкус|по желание|според вкуса|колкото поеме)\.?$/iu
+const TASTE = '(?:to taste|as needed|optional|podle chuti|dle chuti|podle potřeby|dle potřeby|volitelně|на вкус|по вкус|по желание|според вкуса|колкото поеме|nach geschmack|nach belieben|q\\.\\s?b\\.?|quanto basta|a gusto|al gusto|c/n|cantidad necesaria|au goût|selon le goût|do smaku|по вкусу)'
+const TO_TASTE = new RegExp(`^(.+?)\\s*[:–—-]?\\s+(${TASTE})\\.?$`, 'iu')
+// "q.b. formaggio grattugiato", "a gusto Sal", "c/n Agua"
+const TASTE_FIRST = new RegExp(`^(${TASTE})\\s+(.+)$`, 'iu')
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
 const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти)(?![\p{L}])/iu
-const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування)(?![\p{L}])/iu
+const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування|paso a paso|pasos|modo de preparación|procedimiento|passaggi|étapes)(?![\p{L}])/iu
 // A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", and the same in the languages
 // recipes often come in before they are translated: "Für die Soße", "Para la salsa", "Per il sugo", "Pour la sauce", "Do sosu", "Для соуса"
 const FOR = '(?:for|na|pro|за|für|para|per|pour|do|для)'
@@ -83,7 +87,10 @@ export function groupHeading(line, inList) {
   return null
 }
 
-const NUMBERED_STEP = /^(?:step\s*|krok\s*|стъпка\s*)?\d{1,2}\s*[.)]\s+(?=\p{L})/iu
+const STEP_WORD = '(?:step|krok|стъпка|schritt|paso|passo|étape|etape|шаг)'
+const NUMBERED_STEP = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*[.):]\\s+(?=\\p{L})`, 'iu')
+// A step number on a line of its own ("1", "Стъпка 1", "Schritt 2"), as recipe sites lay them out
+const STEP_NUMBER_ONLY = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*[.):]?$`, 'iu')
 const DECORATION = /^[\s\-–—•*·>]+|^[\p{Extended_Pictographic}️‍\s]+/u
 
 export function parseQuantity(s) {
@@ -116,7 +123,7 @@ const stripMeasures = (s) => s.replace(IN_PARENS, ' ').replace(LOOSE, ' ').repla
 const cleanName = (s) =>
   stripMeasures(s)
     .replace(/^[-–:,/\s]+|[\s.,;:/]+$/g, '')
-    .replace(/^(?:of|de|di|du)\s+(?=\p{L})/iu, '') // "50 ml / 2 oz of cream", "300 g de harina"
+    .replace(/^(?:of|de|di|du|des)\s+(?=\p{L})|^(?:d|dell|dall)['’](?=\p{L})/iu, '') // "50 ml / 2 oz of cream", "300 g de harina", "1 c. à soupe d'origan"
     .trim()
 
 // A unit left at the start of a name, as a translation leaves it: "tablespoon of cornstarch", "heaped teaspoon salt"
@@ -133,9 +140,27 @@ export function tidyIngredient(i) {
 }
 
 // Amounts written as words at the start of a line: "половин чаша", "půl lžičky", "две яйца"
-const WORD_AMOUNTS = { половин: '½', půl: '½', един: '1', една: '1', едно: '1', два: '2', две: '2', три: '3', четири: '4', пет: '5', шест: '6' }
+const WORD_AMOUNTS = {
+  половин: '½', půl: '½', един: '1', една: '1', едно: '1', два: '2', две: '2', три: '3', четири: '4', пет: '5', шест: '6',
+  jedna: '1', jeden: '1', dvě: '2', dva: '2', tři: '3', čtyři: '4',
+  half: '½', one: '1', two: '2', three: '3', four: '4',
+  halbe: '½', halber: '½', eine: '1', einen: '1', zwei: '2', drei: '3',
+  medio: '½', media: '½', mezzo: '½', mezza: '½', due: '2', dos: '2', tres: '3',
+  demi: '½', demie: '½', deux: '2', trois: '3',
+  pół: '½', dwie: '2', trzy: '3',
+  половина: '½', одна: '1', одно: '1',
+}
 const WORD_AMOUNT = new RegExp(`^(${Object.keys(WORD_AMOUNTS).join('|')})\\s+(?=\\p{L})`, 'iu')
-const wordAmount = (s) => s.replace(WORD_AMOUNT, (all, w) => `${WORD_AMOUNTS[w.toLowerCase()]} `)
+// Short words that are only an amount before a unit: "a pinch of salt", "un cucchiaio d'olio", "ein EL Öl"
+const ARTICLE_UNIT = new RegExp(`^(?:a|an|un|una|uno|une|ein|einen|eine)\\s+(?=(?:heaped |level |rounded )?(?:${UNIT_RE})\\.?(?![\\p{L}]))`, 'iu')
+// A line that starts with a unit and no amount means one: "Щипка сол", "Чайная ложка муки", "płaska łyżeczka sody"
+const UNIT_FIRST = new RegExp(`^(?:(?:płaska|płaskie|czubata|czubate|heaped|level|rounded|gestrichener|gehäufter|rasa|colmo)\\s+)?(?=(?:${UNIT_RE})\\.?\\s+\\p{L})`, 'iu')
+const wordAmount = (s) => {
+  const t = s.replace(WORD_AMOUNT, (all, w) => `${WORD_AMOUNTS[w.toLowerCase()]} `).replace(ARTICLE_UNIT, '1 ')
+  const m = t.match(UNIT_FIRST)
+  // Only units long enough not to be a word ("g", "l", "pl" stay as they are)
+  return m && /^\p{L}{3}/u.test(t.slice(m[0].length)) && unitOf(t.slice(m[0].length).match(new RegExp(`^(?:${UNIT_RE})`, 'iu'))?.[0] ?? '') ? `1 ${t.slice(m[0].length)}` : t
+}
 
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
@@ -169,6 +194,8 @@ export function parseIngredientLine(line) {
   }
   m = text.match(TO_TASTE)
   if (m && cleanName(m[1])) return { raw: text, quantity: null, quantityMax: null, unit: null, name: cleanName(m[1]), note: m[2] }
+  m = text.match(TASTE_FIRST)
+  if (m && cleanName(m[2])) return { raw: text, quantity: null, quantityMax: null, unit: null, name: cleanName(m[2]), note: m[1] }
   m = text.match(NAME_FIRST)
   if (m) {
     const name = cleanName(m[1])
@@ -253,17 +280,23 @@ export function parseRecipeText(text) {
       continue
     }
     // "Ingredients", or "Необходими продукти за 4 порции"
-    if (INGREDIENT_HEADER.test(header) && (wordCount(header) <= 4 || (wordCount(header) <= 7 && detectServings(header)))) {
+    // A sentence ("Składniki przekładamy do miski.") is not a heading
+    const sentence = /[.!?]$/.test(line)
+    if (!sentence && INGREDIENT_HEADER.test(header) && (wordCount(header) <= 4 || (wordCount(header) <= 7 && detectServings(header)))) {
       section = 'ingredients'
       group = null
       continue
     }
-    if (STEP_HEADER.test(header) && wordCount(header) <= 4) {
+    if (!sentence && STEP_HEADER.test(header) && wordCount(header) <= 4) {
       section = 'steps'
       group = null
       continue
     }
 
+    if (STEP_NUMBER_ONLY.test(line)) {
+      if (section !== 'ingredients' || /\p{L}/u.test(line)) section = 'steps'
+      continue
+    }
     if (NUMBERED_STEP.test(line) && !(section === 'ingredients' && parseIngredientLine(line.replace(NUMBERED_STEP, '')))) {
       steps.push(line.replace(NUMBERED_STEP, ''))
       section ??= 'steps'
@@ -285,6 +318,8 @@ export function parseRecipeText(text) {
     const ing = parseIngredientLine(line)
     // Outside an ingredient list, only short lines with a quantity count, so
     // sentences like "Bake for 25 minutes at 180 °C" don't become ingredients
+    // "4 порции", "4 Personen" is the portion count, not an ingredient
+    if (ing && !ing.unit && wordCount(line) <= 3 && detectServings(line)) continue
     if (ing && (section === 'ingredients' || ing.unit || wordCount(line) <= 5)) {
       add(ing)
     } else if (section === 'ingredients' && !/[.!?]$/.test(line) && wordCount(line) <= 20) {
