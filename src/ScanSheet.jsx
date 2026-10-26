@@ -4,6 +4,7 @@ import { canScan, fetchPicture, isValidBarcode, lookupBarcode, normalizeBarcode,
 import { defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
 import { UnitChips, convertQty } from './UnitPicker.jsx'
 import Icon from './Icon.jsx'
+import NumberField, { unitStep } from './NumberField.jsx'
 
 const SOURCE = {
   household: 'Saved by your household',
@@ -244,7 +245,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
             </button>
             <label className="field" htmlFor="scan-pack">One pack holds</label>
             <div className="amount-row">
-              <input id="scan-pack" inputMode="decimal" placeholder="Amount" value={qty} onChange={(e) => setQty(e.target.value)} />
+              <NumberField id="scan-pack" step={unitStep(unit)} min={0} label="pack amount" placeholder="Amount" value={qty} onChange={setQty} />
             </div>
             <UnitChips
               title="Pack unit"

@@ -6,6 +6,7 @@ import { canListen, listen, voiceCommand } from './lib/voice.js'
 import { toast } from './lib/toast.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
 import Icon from './Icon.jsx'
+import NumberField from './NumberField.jsx'
 
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
@@ -318,7 +319,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
           }}
         >
           <input className="cook-custom-name" placeholder="Name (optional)" value={customName} onChange={(e) => setCustomName(e.target.value)} aria-label="Timer name" />
-          <input type="number" inputMode="decimal" min="0.1" step="any" value={custom} onChange={(e) => setCustom(e.target.value)} aria-label="Minutes" autoFocus />
+          <NumberField min={1} max={999} label="minutes" value={custom} onChange={setCustom} aria-label="Minutes" autoFocus />
           <span>min</span>
           {[1, 3, 5, 10, 15].map((m) => (
             <button key={m} type="button" className="secondary" onClick={() => setCustom(String(m))}>

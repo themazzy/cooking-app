@@ -6,6 +6,7 @@ import { renamePantryItems } from './lib/pantry.js'
 import { NUTRITION } from './lib/calories.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
+import NumberField from './NumberField.jsx'
 
 const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null, kcal: '', piece_g: '' }
 
@@ -20,11 +21,11 @@ function KcalFields({ kcal, piece, fallback, onChange }) {
     <div className="kcal-fields">
       <label className="field">
         kcal per 100 g
-        <input inputMode="decimal" placeholder={fallback?.kcal != null ? String(fallback.kcal) : 'unknown'} value={kcal} onChange={(e) => onChange({ kcal: e.target.value })} />
+        <NumberField step={10} min={0} label="kcal" placeholder={fallback?.kcal != null ? String(fallback.kcal) : 'unknown'} value={kcal} onChange={(v) => onChange({ kcal: v })} />
       </label>
       <label className="field">
         grams per piece
-        <input inputMode="decimal" placeholder={fallback?.piece_g != null ? String(fallback.piece_g) : 'optional'} value={piece} onChange={(e) => onChange({ piece_g: e.target.value })} />
+        <NumberField step={5} min={0} label="grams" placeholder={fallback?.piece_g != null ? String(fallback.piece_g) : 'optional'} value={piece} onChange={(v) => onChange({ piece_g: v })} />
       </label>
     </div>
   )

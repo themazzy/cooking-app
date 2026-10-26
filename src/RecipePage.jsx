@@ -28,6 +28,7 @@ import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { formatGrams, formatKcal, recipeCalories, recipeMacros } from './lib/calories.js'
 import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
 import Icon from './Icon.jsx'
+import NumberField from './NumberField.jsx'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -328,14 +329,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           <div className="servings">
             <label>
               Recipe makes
-              <input
-                type="number"
+              <NumberField
                 inputMode="numeric"
-                min="1"
-                max="99"
+                min={1}
+                max={99}
+                label="portions"
                 value={recipe.servings ?? ''}
                 placeholder="?"
-                onChange={(e) => set({ servings: e.target.value ? Math.max(1, Number(e.target.value)) : null })}
+                onChange={(v) => set({ servings: v ? Math.max(1, Number(v) || 1) : null })}
               />
               portions
             </label>
