@@ -32,7 +32,7 @@ export function applyTheme({ theme = 'system', accent = 'herb' } = {}) {
   root.dataset.theme = resolved
   root.dataset.accent = ACCENTS[accent] ? accent : 'herb'
   const bar = document.querySelector('meta[name="theme-color"]')
-  if (bar) bar.content = resolved === 'dark' ? '#141412' : '#f7f5f0'
+  if (bar) bar.content = resolved === 'dark' ? '#141412' : '#faf1e3'
   // Status bar icons: light on the dark theme, dark on the light one
   if (Capacitor.isNativePlatform()) SystemBars.setStyle({ style: resolved === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => {})
 }
