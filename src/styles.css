@@ -655,6 +655,10 @@ label.field input { color: var(--text); }
 .amount-row .select { flex: 0 0 6.5em; font-size: 1rem; }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 button.link.more { margin-top: 10px; }
+.scan-ingredient { display: flex; width: 100%; align-items: center; gap: 8px; margin: 4px 0 10px; text-align: left; font-weight: 600; }
+.scan-ingredient .grow { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scan-packs { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 4px; }
+.scan-packs .field { margin: 0; }
 .receipt-list { flex: 1 1 auto; overflow-y: auto; }
 .receipt-list ul.shopping li { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; }
 .receipt-list ul.shopping li label { flex: 1 1 0; }

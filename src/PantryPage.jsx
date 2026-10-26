@@ -6,6 +6,8 @@ import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
 import { readReceiptPhotos } from './lib/ocr.js'
 import { readReceipt } from './lib/receipt.js'
 import ReceiptSheet from './ReceiptSheet.jsx'
+import ScanSheet from './ScanSheet.jsx'
+import { rememberBarcode } from './lib/barcode.js'
 import { RowsSkeleton } from './Skeleton.jsx'
 import { toast } from './lib/toast.js'
 import { defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
@@ -192,6 +194,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
   const [picking, setPicking] = useState(false)
   const [added, setAdded] = useState(null)
   const [editing, setEditing] = useState(null) // { item, entry }
+  const [scanning, setScanning] = useState(false)
 
   const run = async (fn) => {
     setMessage(null)
@@ -277,6 +280,25 @@ export default function PantryPage({ items, loading = false, onChanged }) {
     setReceipt(null)
   }
 
+  // A scanned product: its amount added to what is at home, and the barcode remembered.
+  // Returns true, or what went wrong for the scan sheet to show.
+  const addScanned = async ({ code, ingredient, product, pack, amount }) => {
+    let remembered = true
+    try {
+      const key = ingredient.toLowerCase()
+      const have = items.find((i) => (match(i.name)?.name ?? i.name).toLowerCase() === key)
+      if (have) await updatePantryItem(have.id, { amount: amount ? addTo(have.amount, ...amount.match(/^(\S+)\s*(.*)$/).slice(1)) : have.amount })
+      else await addToPantry(ingredient, amount)
+      remembered = await rememberBarcode(code, { ingredient, product, pack })
+      await onChanged()
+    } catch (e) {
+      return pantryError(e)
+    }
+    toast(`${ingredient}${amount ? `, ${amount}` : ''} put at home`)
+    if (!remembered) toast('Scanned products are not remembered yet: run supabase-product-barcodes.sql in Supabase', { kind: 'error', id: 'barcodes-table' })
+    return true
+  }
+
   const aisleOf = (i) => match(i.name)?.aisle ?? 'Other'
   const days = (i) => daysLeft(i.expires_on)
   const q = query.trim().toLowerCase()
@@ -302,6 +324,9 @@ export default function PantryPage({ items, loading = false, onChanged }) {
       <header className="main-header">
         <h1>At home</h1>
         <div className="actions">
+          <button className="small secondary" onClick={() => (setMessage(null), setScanning(true))}>
+            <Icon name="barcode" /> Scan
+          </button>
           <button className="small secondary" disabled={!!receipt && !receipt.found} onClick={() => setShots([])}>
             <Icon name="camera" /> Receipt
           </button>
@@ -424,6 +449,13 @@ export default function PantryPage({ items, loading = false, onChanged }) {
         </div>
       )}
       {receipt?.found && <ReceiptSheet found={receipt.found} onAdd={addFromReceipt} onClose={() => setReceipt(null)} />}
+      {scanning && (
+        <ScanSheet
+          onAdd={addScanned}
+          onClose={() => setScanning(false)}
+          renderPicker={(onPick, onClose) => <Picker items={items} onPick={onPick} onClose={onClose} />}
+        />
+      )}
       {picking && !editing && <Picker items={items} added={added} onPick={open} onClose={() => setPicking(false)} />}
       {editing && (
         <ItemSheet

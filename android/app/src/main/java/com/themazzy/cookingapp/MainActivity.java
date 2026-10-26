@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(TranslatorPlugin.class);
         registerPlugin(TimerAlarmPlugin.class);
         registerPlugin(VoiceCommandsPlugin.class);
+        registerPlugin(BarcodeScannerPlugin.class);
         super.onCreate(savedInstanceState);
         // Shrinking a video for saving plays it without a tap
         getBridge().getWebView().getSettings().setMediaPlaybackRequiresUserGesture(false);
