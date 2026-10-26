@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseIngredientLine, parseQuantity, parseRecipeText } from './ingredients.js'
+import { groupHeading, parseIngredientLine, parseQuantity, parseRecipeText, tidyIngredient } from './ingredients.js'
 
 describe('parseQuantity', () => {
   it.each([
@@ -201,4 +201,54 @@ it('gives "each" amounts to every ingredient', () => {
     [1, 'tsp', 'pepper'],
     [1, 'tsp', 'oregano'],
   ])
+})
+
+describe('ingredient groups', () => {
+  const groups = (text) => parseRecipeText(text).ingredients.map((i) => [i.group ?? '', i.name])
+
+  it('reads "For the …" headings in English, Czech and Bulgarian', () => {
+    expect(groups('For the meatballs:\n720 g minced meat\n1 egg\nFor the sauce\n500 ml beef stock\nMethod:\n1. Mix.')).toEqual([
+      ['For the meatballs', 'minced meat'],
+      ['For the meatballs', 'egg'],
+      ['For the sauce', 'beef stock'],
+    ])
+    expect(groups('Suroviny na těsto:\n250 g mouky\nNa náplň\n200 g tvarohu')).toEqual([
+      ['Na těsto', 'mouky'],
+      ['Na náplň', 'tvarohu'],
+    ])
+    expect(groups('Продукти:\nЗА ТЕСТОТО\n500 г брашно\nЗа соса:\n200 мл сметана')).toEqual([
+      ['За тестото', 'брашно'],
+      ['За соса', 'сметана'],
+    ])
+  })
+
+  it('reads headings in capitals inside an ingredient list', () => {
+    expect(groups('Ingredients\nSAUCE\n2 tbsp soy sauce\nDOUGH\n300 g flour')).toEqual([
+      ['Sauce', 'soy sauce'],
+      ['Dough', 'flour'],
+    ])
+  })
+
+  it('does not take times, servings or notes for headings', () => {
+    expect(groupHeading('For 4 people:', true)).toBeNull()
+    expect(groupHeading('Prep time: 15 min', true)).toBeNull()
+    expect(groupHeading('Notes:', true)).toBeNull()
+    expect(groupHeading('Ingredients:', true)).toBeNull()
+    expect(groupHeading('For more recipes follow me', false)).toBeNull()
+  })
+})
+
+describe('tidyIngredient', () => {
+  it('moves a unit left in a translated name into the unit', () => {
+    expect(tidyIngredient({ qty: '1', unit: '', name: 'tablespoon of cornstarch' })).toEqual({ qty: '1', unit: 'tbsp', name: 'cornstarch' })
+    expect(tidyIngredient({ qty: '2', unit: '', name: 'tablespoons of water' })).toEqual({ qty: '2', unit: 'tbsp', name: 'water' })
+    expect(tidyIngredient({ qty: '50', unit: 'ml', name: 'of cream' })).toEqual({ qty: '50', unit: 'ml', name: 'cream' })
+    expect(tidyIngredient({ qty: '1', unit: '', name: 'glass noodles' }).name).toBe('glass noodles')
+  })
+
+  it('reads Czech spoon names', () => {
+    expect(parseIngredientLine('2 polévkové lžíce cukru')).toMatchObject({ quantity: 2, unit: 'tbsp', name: 'cukru' })
+    expect(parseIngredientLine('1 kávová lžička vanilky')).toMatchObject({ quantity: 1, unit: 'tsp', name: 'vanilky' })
+    expect(parseIngredientLine('50 ml / 2 oz of cream')).toMatchObject({ quantity: 50, unit: 'ml', name: 'cream' })
+  })
 })

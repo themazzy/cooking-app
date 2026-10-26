@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
 import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
@@ -353,9 +353,14 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
       {showList && (
         <div className="cook-all">
           <ul className="cook-ingredients all">
-            {ingredients.filter((i) => i.name?.trim()).map((i, n) => (
-              <Ingredient key={n} ing={i} match={match} />
-            ))}
+            {ingredients
+              .filter((i) => i.name?.trim())
+              .map((i, n, shown) => (
+                <Fragment key={n}>
+                  {i.group && i.group !== shown[n - 1]?.group && <li className="group-title">{i.group}</li>}
+                  <Ingredient ing={i} match={match} />
+                </Fragment>
+              ))}
           </ul>
           <button className="secondary" onClick={() => setShowAll(false)}>
             Go to the steps

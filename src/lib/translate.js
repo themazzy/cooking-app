@@ -1,4 +1,5 @@
 import { registerPlugin } from '@capacitor/core'
+import { tidyIngredient } from './ingredients.js'
 import { canFetchCrossSite, getText, postForm } from './http.js'
 
 // Recipes in other languages translated into English, Czech or Bulgarian, for
@@ -45,7 +46,8 @@ export function applyTranslation(recipe, map) {
   return {
     ...recipe,
     title: tr(recipe.title),
-    ingredients: (recipe.ingredients ?? []).map((i) => ({ ...i, name: tr(i.name), group: tr(i.group) })),
+    // A unit the parser didn't know can come back in the name: "tablespoon of cornstarch"
+    ingredients: (recipe.ingredients ?? []).map((i) => tidyIngredient({ ...i, name: tr(i.name), group: tr(i.group) })),
     steps: (recipe.steps ?? '')
       .split('\n')
       .map((line) => tr(line))

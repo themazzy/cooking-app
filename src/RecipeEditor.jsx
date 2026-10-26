@@ -42,7 +42,32 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
   }
   const removeStep = (n) => setSteps(withBlank(list.filter((_, k) => k !== n)))
 
-  const renameGroup = (from, to) => setIngredients(ingredients.map((i) => (i.group === from ? { ...i, group: to } : i)))
+  // Groups ("For the sauce") are a heading above a run of rows that share the same `group`
+  const sectionEnd = (start) => {
+    let end = start
+    while (end + 1 < ingredients.length && ingredients[end + 1].group === ingredients[start].group) end++
+    return end
+  }
+  const setSectionGroup = (start, group) => {
+    const end = sectionEnd(start)
+    setIngredients(ingredients.map((i, k) => (k >= start && k <= end ? { ...i, group } : i)))
+  }
+  const removeHeading = (start) => setSectionGroup(start, ingredients[start - 1]?.group ?? '')
+  // Up pulls the row above into the group, down hands its first row to the group above
+  const moveHeading = (start, by) =>
+    setIngredients(
+      ingredients.map((i, k) =>
+        by < 0 && k === start - 1 ? { ...i, group: ingredients[start].group } : by > 0 && k === start ? { ...i, group: ingredients[start - 1]?.group ?? '' } : i,
+      ),
+    )
+  const [focusGroup, setFocusGroup] = useState(null)
+  const addGroup = () => {
+    const taken = new Set(ingredients.map((i) => i.group))
+    let n = taken.size + (taken.has('') ? 0 : 1)
+    while (taken.has(`Group ${n}`)) n++
+    setFocusGroup(ingredients.length)
+    setIngredients([...ingredients, emptyIngredient(`Group ${n}`)])
+  }
 
   return (
     <div className="editor">
@@ -61,14 +86,23 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
           {ingredients.map((i, n) => (
             <div key={n}>
               {i.group && i.group !== ingredients[n - 1]?.group && (
-                <input className="group" aria-label="Ingredient group" value={i.group} onChange={(e) => renameGroup(i.group, e.target.value)} />
+                <GroupHeading
+                  name={i.group}
+                  autoFocus={focusGroup === n}
+                  onFocused={() => setFocusGroup(null)}
+                  onRename={(to) => setSectionGroup(n, to)}
+                  onAdd={() => insertAfter(sectionEnd(n))}
+                  onUp={n > 0 ? () => moveHeading(n, -1) : null}
+                  onDown={sectionEnd(n) > n ? () => moveHeading(n, 1) : null}
+                  onRemove={() => removeHeading(n)}
+                />
               )}
               <div className="ing-row">
                 <span className="pic">
                   <IngredientIcon entry={match(i.name)} size={22} />
                 </span>
                 <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
-                <button type="button" className={`unit unit-btn${i.unit ? '' : ' empty'}`} aria-label={`Unit: ${i.unit || 'none'}`} onClick={() => setUnitFor(n)}>
+                <button type="button" className={`unit unit-btn${i.unit ? '' : ' no-unit'}`} aria-label={`Unit: ${i.unit || 'none'}`} onClick={() => setUnitFor(n)}>
                   {i.unit || (i.qty.trim() ? 'pcs' : '–')}
                 </button>
                 <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
@@ -83,7 +117,11 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
           <button className="secondary" onClick={() => insertAfter(ingredients.length - 1)}>
             Add ingredient
           </button>
+          <button className="secondary" onClick={addGroup}>
+            <Icon name="plus" /> Add group
+          </button>
         </div>
+        {ingredients.length > 1 && !ingredients.some((i) => i.group) && <p className="hint">Groups split the list, e.g. “For the meat” and “For the sauce”.</p>}
       </>
 
       {unitFor != null && ingredients[unitFor] && (
@@ -130,6 +168,62 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
           Re-read from source
         </button>
       </div>
+    </div>
+  )
+}
+
+/**
+ * A group's name above its rows, with buttons to add a row, move the heading
+ * up or down a row, or remove it (its rows join the group above).
+ */
+function GroupHeading({ name, autoFocus, onFocused, onRename, onAdd, onUp, onDown, onRemove }) {
+  // Kept here while the box is emptied to type a new name; a blank name on leaving removes the heading
+  const [text, setText] = useState(name)
+  const [was, setWas] = useState(name)
+  if (name !== was) {
+    // Changed from outside (the heading moved)
+    setWas(name)
+    setText(name)
+  }
+  return (
+    <div className="group-edit">
+      <input
+        className="group"
+        aria-label="Group name"
+        placeholder="Group, e.g. For the sauce"
+        value={text}
+        autoFocus={autoFocus}
+        onFocus={
+          autoFocus
+            ? (e) => {
+                e.target.select()
+                onFocused()
+              }
+            : undefined
+        }
+        onChange={(e) => {
+          setText(e.target.value)
+          if (e.target.value.trim()) {
+            setWas(e.target.value)
+            onRename(e.target.value)
+          }
+        }}
+        onBlur={() => {
+          if (!text.trim()) onRemove()
+        }}
+      />
+      <button className="icon" aria-label={`Add ingredient to ${name}`} onClick={onAdd}>
+        <Icon name="plus" />
+      </button>
+      <button className="icon" aria-label="Move group heading up" disabled={!onUp} onClick={onUp ?? undefined}>
+        <Icon name="up" />
+      </button>
+      <button className="icon" aria-label="Move group heading down" disabled={!onDown} onClick={onDown ?? undefined}>
+        <Icon name="down" />
+      </button>
+      <button className="icon" aria-label={`Remove group ${name}`} onClick={onRemove}>
+        <Icon name="close" />
+      </button>
     </div>
   )
 }
