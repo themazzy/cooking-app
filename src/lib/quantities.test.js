@@ -107,6 +107,10 @@ describe('ingredient lines', () => {
     expect(line('2 x 400g cans chickpeas')).toEqual({ qty: '2', unit: 'can', name: 'chickpeas' })
     expect(line('2 x 200 g chicken breasts')).toEqual({ qty: '400', unit: 'g', name: 'chicken breasts' })
   })
+  it('adds "1 cup plus 2 tbsp" into one amount', () => {
+    expect(line('1 cup plus 2 tbsp milk')).toEqual({ qty: '1.125', unit: 'cup', name: 'milk' })
+    expect(line('1 lb + 4 oz ground beef')).toEqual({ qty: '1.25', unit: 'lb', name: 'ground beef' })
+  })
   it('reads heaping spoons, cubes of yeast and tubs of yogurt', () => {
     expect(line('2 heaping tablespoons cocoa')).toEqual({ qty: '2', unit: 'tbsp', name: 'cocoa' })
     expect(line('1 kostka droždí')).toEqual({ qty: '1', unit: 'pack', name: 'droždí' })
