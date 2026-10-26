@@ -37,6 +37,57 @@ Lamb kidney|95|||16|1|3
 Chicken liver|120|||17|1|5
 Pork ribs|280|||16|0|24
 Pork tenderloin|120|400||21|0|4
+Ribeye steak|290|300||24|0|22
+Rump steak|170|250||27|0|7
+Flank steak|165|||21|0|8
+Skirt steak|200|||20|0|13
+T-bone steak|250|450||22|0|18
+Beef short ribs|390|||16|0|36
+Beef cheeks|150|||20|0|7
+Stewing beef|190|||20|0|12
+Beef round|140|||22|0|5
+Roast beef|175|20||27|0|7
+Corned beef|250|||19|0|19
+Beef liver|135|||20|4|4
+Calf liver|140|||20|3|5
+Beef tongue|225|||15|0|16
+Tripe|85|||12|0|4
+Bone marrow|780|||7|0|84
+Veal shank|130|350||20|0|5
+Pork chops|200|200||20|0|13
+Pork loin|180|||21|0|10
+Pork leg|165|||21|0|9
+Pork cheeks|200|||18|0|14
+Pork liver|135|||21|2.5|4
+Gammon|140|200||20|0.5|6
+Pig trotters|230|250||23|0|15
+Chicken wings|190|90||18|0|13
+Chicken drumsticks|160|110||18|0|9
+Chicken legs|190|300||17|0|13
+Chicken hearts|150|||16|0|9
+Chicken gizzards|95|||18|0|2
+Turkey breast|110|||24|0|1.5
+Turkey legs|145|500||19|0|7
+Ground turkey|150|||19|0|8
+Duck legs|240|250||17|0|19
+Lamb chops|280|80||17|0|23
+Lamb leg|230|||18|0|17
+Lamb shoulder|260|||17|0|21
+Ground lamb|280|||17|0|23
+Rack of lamb|280|||16|0|24
+Lamb shanks|200|400||19|0|13
+Pheasant|180|||23|0|9
+Hare|115|||22|0|2.5
+Wild boar|120|||22|0|3.5
+Pancetta|440|||14|0|42
+Lardons|330|||15|0|30
+Pepperoni|500|3||20|1|46
+Serrano ham|240|15||31|0|13
+Speck|300|15||28|0|21
+Bresaola|150|8||33|0|2
+Mortadella|310|20||15|1|27
+Kielbasa|300|||13|2|26
+Merguez|300|50||15|1|26
 Pork knuckle|230|1000||18|0|17
 Salami|410|8||22|2|35
 Black pudding|300|||11|15|21
