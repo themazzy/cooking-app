@@ -9,7 +9,7 @@ import Icon from './Icon.jsx'
 export const UNIT_GROUPS = [
   ['Weight', ['g', 'kg', 'oz', 'lb']],
   ['Volume', ['ml', 'dl', 'l', 'tsp', 'tbsp', 'cup']],
-  ['Pieces', ['pcs', 'clove', 'slice', 'head', 'bunch', 'pack', 'can']],
+  ['Pieces', ['pcs', 'clove', 'slice', 'head', 'bunch', 'pack', 'can', 'stick']],
   ['A little', ['pinch', 'handful']],
 ]
 

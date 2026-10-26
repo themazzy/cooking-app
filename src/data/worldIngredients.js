@@ -4,7 +4,7 @@
 // or Bulgarian recipes and receipts find them too.
 
 export const WORLD_LINES = `
-Quark | Dairy & eggs |  | tvaroh, měkký tvaroh, tučný tvaroh, polotučný tvaroh, tvrdý tvaroh, curd cheese, izvara, извара, twaróg
+Quark | Dairy & eggs |  | tvaroh, tvarohu, tvarohem, měkký tvaroh, tučný tvaroh, polotučný tvaroh, tvrdý tvaroh, curd cheese, izvara, извара, twaróg
 Blue cheese | Dairy & eggs |  | niva, gorgonzola, roquefort, danish blue | Cheese
 Hermelín | Dairy & eggs |  | hermelin | Camembert
 Olomoucké tvarůžky | Dairy & eggs |  | tvarůžky, olomoucke tvaruzky, aged soft cheese | Cheese
@@ -78,7 +78,7 @@ Konjac | Vegetables |  | konnyaku, 蒟蒻
 Bulgarian peppers | Vegetables |  | шипка, shipka, chushki, чушки | Bell pepper
 Green tomatoes | Vegetables |  | zelená rajčata, зелени домати | Tomatoes
 Kohlrabi | Vegetables |  | kedluben, kedlubna, алабаш
-Savoy cabbage | Vegetables |  | kapusta, kel, savoy | Cabbage
+Savoy cabbage | Vegetables |  | kapusta, kapustu, kapusty, kel, savoy | Cabbage
 Root parsley | Vegetables |  | petržel kořen, kořenová petržel, hamburg parsley
 Potato dumplings | Pasta & grains |  | bramborové knedlíky, bramborove knedliky, bramborový knedlík
 Bread dumplings | Bakery |  | houskové knedlíky, houskove knedliky, knedlík, knedlíky, knedlik
@@ -181,12 +181,12 @@ export const CZECH_ALIASES = `
 Beef | hovězí, hovězí maso, hovezi maso
 Ground beef | mleté hovězí, mleté hovězí maso, hovězí mleté maso, mleté maso, mletého masa
 Veal | telecí, telecí maso
-Pork | vepřové, vepřové maso, veprove maso, vepřová kýta, vepřová panenka
+Pork | vepřové, vepřové maso, veprove maso, vepřová kýta, vepřová panenka, vepřového masa, vepřové maso
 Ground pork | mleté vepřové, mleté vepřové maso
-Bacon | slaninu, anglickou slaninu
+Bacon | slaninu, anglickou slaninu, slaniny
 Ham | šunka, šunku, sunka, šunky
 Sausages | uzenina, uzeniny
-Chicken | kuře, kuřecí maso, kureci maso, kuřete
+Chicken | kuře, kuřecí maso, kureci maso, kuřete, kuřecího masa, kuřecí maso
 Chicken breast | kuřecí prsa, kureci prsa, kuřecí prsní řízky, kuřecí řízky, kuřecí prsíčka
 Chicken thighs | kuřecí stehna, kuřecí stehýnka, kureci stehna
 Chicken liver | kuřecí játra, kureci jatra, játra
@@ -211,7 +211,7 @@ Milk | mléko, mléka, mleko, plnotučné mléko, polotučné mléko
 Butter | máslo, másla, maslo, máslem
 Cream | smetana, smetanu, smetany, smetana ke šlehání, smetanu ke šlehání, šlehačka, šlehačku, smetana na vaření
 Sour cream | zakysaná smetana, zakysanou smetanu, kysaná smetana, kyselá smetana
-Yogurt | jogurt, bílý jogurt, bily jogurt
+Yogurt | jogurt, bílý jogurt, bily jogurt, jogurtu, jogurt
 Greek yogurt | řecký jogurt, recky jogurt
 Cream cheese | krémový sýr, cream sýr
 Mascarpone | mascarpone
@@ -232,7 +232,7 @@ Shallots | šalotka, šalotky, šalotku
 Leek | pórek, pórku, porek
 Garlic | česnek, česneku, stroužky česneku, cesnek
 Ginger | zázvor, zázvoru, zazvor
-Potatoes | brambory, bramboru, brambor, bramborami
+Potatoes | brambory, bramboru, brambor, bramborami, bramborů
 Sweet potatoes | batáty, batát, sladké brambory
 Carrots | mrkev, mrkve, mrkví, mrkvi
 Celery | řapíkatý celer, řapíkový celer
@@ -289,14 +289,14 @@ Almonds | mandle, mandlí
 Poppy seeds | mák celý
 Sunflower seeds | slunečnicová semínka
 Pumpkin seeds | dýňová semínka
-Parsley | petržel, petrželka, petrželku, petrželová nať, petrželovou nať
-Dill | kopr, kopru
-Chives | pažitka, pažitku, pazitka
+Parsley | petržel, petrželka, petrželku, petrželová nať, petrželovou nať, petrželky, petrželka, petrželku
+Dill | kopr, kopru, koprem, kopru
+Chives | pažitka, pažitku, pazitka, pažitky, pažitku, pažitkou
 Basil | bazalka, bazalku
 Thyme | tymián, tymiánu
 Rosemary | rozmarýn, rozmarýnu
 Oregano | oregáno
-Marjoram | majoránka, majoránku, majoranka
+Marjoram | majoránka, majoránku, majoranka, majoránky, majoránku
 Bay leaves | bobkový list, bobkové listy, bobkového listu
 Lovage | libeček, libečku
 Mint | máta, mátu
@@ -313,23 +313,23 @@ Cloves | hřebíček, hřebíčky, hrebicek
 Cinnamon | skořice, skořici, skorice
 Nutmeg | muškátový oříšek, muškátový květ
 Star anise | badyán, badyan
-Vanilla | vanilka, vanilkový lusk
+Vanilla | vanilka, vanilkový lusk, vanilky
 Flour | mouka, mouky, mouku
 Wholemeal flour | celozrnná mouka, celozrnnou mouku
 Rye flour | žitná mouka, žitnou mouku
 Spelt flour | špaldová mouka
 Cornstarch | kukuřičný škrob, solamyl, maizena
 Potato starch | bramborový škrob, holandský škrob
-Sugar | cukr, cukru, krystal, krystalový cukr, krupicový cukr, krupicák
-Icing sugar | moučkový cukr, moučkového cukru, moučka
+Sugar | cukr, cukru, krystal, krystalový cukr, krupicový cukr, krupicák, cukr krupice, cukru krupice, cukr krystal
+Icing sugar | moučkový cukr, moučkového cukru, moučka, cukr moučka, cukru moučky
 Brown sugar | třtinový cukr, trtinovy cukr
 Vanilla sugar | vanilkový cukr, vanilinový cukr, vanilinový
 Honey | med, medu
-Baking powder | kypřicí prášek, prášek do pečiva, kypřící prášek
+Baking powder | kypřicí prášek, prášek do pečiva, kypřící prášek, prášku do pečiva, prášek do pečiva
 Baking soda | jedlá soda, jedlou sodu
 Yeast | droždí, kvasnice, sušené droždí
 Cocoa | kakao, kakaa
-Dark chocolate | hořká čokoláda, hořkou čokoládu, čokoláda na vaření
+Dark chocolate | hořká čokoláda, hořkou čokoládu, čokoláda na vaření, čokolády, čokoláda, čokoládu
 Gelatine | želatina, želatinu
 Puff pastry | listové těsto, listového těsta
 Semolina | krupice, krupici, dětská krupička, krupička
@@ -347,7 +347,7 @@ Buckwheat | pohanka, pohanku
 Millet | jáhly, jáhel
 Bread | chlebíček, toustový chléb
 Olive oil | olivový olej, olivovým olejem
-Vegetable oil | olej, rostlinný olej, slunečnicový olej
+Vegetable oil | olej, rostlinný olej, slunečnicový olej, oleje, olejem
 Vinegar | ocet, octa, octem, kvasný ocet
 Mustard | hořčice, hořčici, plnotučná hořčice
 Ketchup | kečup
@@ -363,4 +363,15 @@ White wine | bílé víno, bílého vína
 Red wine | červené víno, červeného vína
 Beer | pivo, piva
 Rum | rum, tuzemský rum
+Coconut milk | kokosové mléko, kokosového mléka, kokosovým mlékem
+Plant milk | rostlinné mléko, mandlové mléko, ovesné mléko, sójové mléko, rýžové mléko
+Beef stock | hovězí vývar, hovězího vývaru, hovězí bujón
+Chicken stock | kuřecí vývar, kuřecího vývaru, slepičí vývar, slepičího vývaru
+Vegetable stock | zeleninový vývar, zeleninového vývaru
+Cream of tartar | vinný kámen
+Chickpea flour | cizrnová mouka, cizrnové mouky
+Fine flour | hladké mouky, hladkou mouku
+Medium-coarse flour | polohrubé mouky, polohrubou mouku
+Coarse flour | hrubé mouky, hrubou mouku
+Salt and pepper | sůl a pepř, sůl a pepře
 `

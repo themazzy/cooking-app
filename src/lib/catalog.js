@@ -51,16 +51,39 @@ export function buildCatalogIndex(entries) {
   return { exact, phrases, cache: new Map() }
 }
 
+// Bulgarian puts "the" on the end of a word: доматите, солта, лукът, брашното
+const BG_ARTICLE = /(?<=\p{L}{3})(?:ът|ят|та|то|те)$/u
+const withoutArticles = (normalized) =>
+  normalized
+    .split(' ')
+    .map((w) => (/^\p{Script=Cyrillic}+$/u.test(w) ? w.replace(BG_ARTICLE, '') : w))
+    .join(' ')
+
+/** A phrase inside a longer name, but not the first part of "cream of tartar" or "cream of mushroom soup". */
+function phraseIn(index, text) {
+  const padded = ` ${text} `
+  return index.phrases.find((p) => padded.includes(` ${p} `) && !padded.includes(` ${p} of `)) ?? null
+}
+
 /** The catalog entry for an ingredient name, or null. */
 export function matchIngredient(index, name) {
   if (!index || !name) return null
   if (index.cache.has(name)) return index.cache.get(name)
+  // "butter or margarine", "med nebo javorový sirup": the first one is what the recipe means
+  const [first, other] = String(name).split(/\s+(?:or|nebo|или|oder)\s+/i)
+  if (other) {
+    const found = matchIngredient(index, first) ?? matchIngredient(index, other)
+    index.cache.set(name, found)
+    return found
+  }
   const full = normalizeName(name)
   const bare = stripDescriptors(full)
-  let found = index.exact.get(full) ?? index.exact.get(bare) ?? null
+  const plain = withoutArticles(bare)
+  // "pepper" alone is ground black pepper; "peppers" are the vegetable
+  const pepper = bare === 'pepper' && !/peppers/i.test(name) ? index.exact.get('black pepper') : null
+  let found = pepper ?? index.exact.get(full) ?? index.exact.get(bare) ?? index.exact.get(plain) ?? null
   if (!found) {
-    const padded = ` ${bare} `
-    const phrase = index.phrases.find((p) => padded.includes(` ${p} `))
+    const phrase = phraseIn(index, bare) ?? (plain !== bare ? phraseIn(index, plain) : null)
     found = phrase ? index.exact.get(phrase) : null
   }
   index.cache.set(name, found)

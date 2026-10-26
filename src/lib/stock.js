@@ -3,11 +3,14 @@ import { BASE, canonicalUnit, display, parseAmount } from './scale.js'
 // Amounts kept at home ("1,5 kg", "3", "1 bottle"), what cooking takes out of
 // them, staples that run low, and expiry dates.
 
+// The amount at the start of "1,5 kg", "1 000 g", "1 1/2 kg", "2–3 ks"
+const AMOUNT = /^(\d{1,3} \d{3}(?![\d/])|\d+\s+\d+\/\d+|\d+\s*[½¼¾⅓⅔⅛]|[\d.,½¼¾⅓⅔⅛/]+(?:\s*[–-]\s*[\d.,]+)?)\s*(.*)$/
+
 /** "1,5 kg" → { value: 1500, base: 'g' }, "3" → { value: 3, base: 'pcs' }, "" or "some" → null */
 export function parseStock(text) {
   const m = String(text ?? '')
     .trim()
-    .match(/^([\d.,½¼¾⅓⅔/]+(?:\s*[–-]\s*[\d.,]+)?)\s*(.*)$/)
+    .match(AMOUNT)
   if (!m) return null
   const a = parseAmount(m[1])
   if (!a) return null
@@ -87,7 +90,7 @@ export function expiryLabel(days) {
 
 /** "200 g" (or "2 tbsp + 1 tsp") → { qty, unit } for takeFrom; null without a number. */
 const splitAmount = (text) => {
-  const m = String(text ?? '').trim().match(/^([\d.,½¼¾⅓⅔/]+(?:\s*[–-]\s*[\d.,]+)?)\s*(.*)$/)
+  const m = String(text ?? '').trim().match(AMOUNT)
   return m ? { qty: m[1], unit: m[2] } : null
 }
 

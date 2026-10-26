@@ -276,6 +276,8 @@ Cardamom|310|0.2|0.45|11|50|7
 Star anise|340|1||18|35|16
 Caraway seeds|335||0.45|20|30|15
 Garlic powder|330||0.65|17|73|0.7
+Garlic salt|80||1.1|4|17|0.2
+Lemon pepper|200||0.6|6|40|2
 Onion powder|340||0.5|10|79|1
 Ground ginger|335||0.4|9|72|4
 Italian seasoning|265||0.25|11|44|5
@@ -337,6 +339,8 @@ Rye flour|325||0.45|9|69|1.7
 Spelt flour|340||0.5|14|65|2.4
 Almond flour|570||0.4|21|20|50
 Potato starch|330||0.65|0.1|83|0.1
+Cream of tartar|260||0.85|0|62|0
+Chickpea flour|390||0.5|22|58|6.7
 Semolina|360||0.7|13|73|1
 Custard powder|360|40|0.6|0.5|88|0.7
 Chocolate chips|500||0.7|5|62|27
@@ -445,6 +449,8 @@ Coconut milk|200|400|1|2|3|21
 Curry paste|150||1|3|15|9
 Tahini|595||1|17|21|54
 Peanut butter|590||1.05|25|20|50
+Nut butter|615||1.05|21|19|55
+Condensed soup|60|300|1.05|1.5|6|3.5
 Stock|8||1|0.5|1|0.3
 Capers|23||0.6|2.4|4.9|0.9
 Olives|145|4|0.6|1|4|15
@@ -535,6 +541,7 @@ Coffee|2||1|0.1|0|0
 Tea|1||1|0|0.2|0
 Ginger cordial|200||1.2|0|50|0
 Cola|42||1.04|0|10.6|0
+Ginger ale|35||1.04|0|9|0
 Ice cream|210||0.55|3.5|24|11
 Frozen peas|81||0.6|5.4|14|0.4
 Stir-fry vegetables|35||0.4|2|6|0.3

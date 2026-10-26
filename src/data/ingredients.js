@@ -8,7 +8,7 @@
 // supabase/seed-ingredients.sql is generated from this file
 // (npm run seed:ingredients), and the app uses it until the shared catalog loads.
 
-import { BULGARIAN } from './bulgarian.js'
+import { BULGARIAN, BULGARIAN_ALIASES, SEARCH_ONLY } from './bulgarian.js'
 import { CZECH_ALIASES, WORLD_LINES } from './worldIngredients.js'
 
 const LINES = `
@@ -76,7 +76,7 @@ Octopus | Fish |  |
 Crab | Fish |  | crab meat
 Lobster | Fish |  |
 Surimi | Fish |  | crab sticks
-Eggs | Dairy & eggs | Eggs | egg, large eggs, free-range eggs
+Eggs | Dairy & eggs | Eggs | egg, large eggs, free-range eggs, quail eggs, duck eggs
 Egg yolks | Dairy & eggs | Egg Yolks | egg yolk, yolks
 Egg whites | Dairy & eggs | Egg White | egg white
 Milk | Dairy & eggs | Milk | whole milk, semi-skimmed milk, skim milk
@@ -100,7 +100,7 @@ Gruyère | Dairy & eggs | Gruyère | gruyere
 Paneer | Dairy & eggs | Paneer |
 Condensed milk | Dairy & eggs | Condensed Milk | sweetened condensed milk
 Double cream | Dairy & eggs | Double Cream | heavy cream, whipping cream, heavy whipping cream | Cream
-Single cream | Dairy & eggs | Single Cream | light cream | Cream
+Single cream | Dairy & eggs | Single Cream | light cream, half and half, half-and-half | Cream
 Crème fraîche | Dairy & eggs | Creme Fraiche | creme fraiche | Sour cream
 Clotted cream | Dairy & eggs | Clotted Cream |  | Cream
 Fromage frais | Dairy & eggs | Fromage Frais |
@@ -108,7 +108,7 @@ Cottage cheese | Dairy & eggs |  |
 Buttermilk | Dairy & eggs |  |
 Kefir | Dairy & eggs |  |
 Ayran | Dairy & eggs |  |
-Plant milk | Dairy & eggs | Soya Milk | soya milk, soy milk, oat milk, almond milk
+Plant milk | Dairy & eggs | Soya Milk | soya milk, soy milk, oat milk, almond milk, nut milk, rice milk, cashew milk
 Ghee | Dairy & eggs | Ghee | clarified butter
 Vegan butter | Dairy & eggs | Vegan Butter | margarine
 Kashkaval | Dairy & eggs |  | kaskaval
@@ -265,7 +265,7 @@ Black pepper | Spices | Black Pepper | pepper, ground pepper, ground black peppe
 Salt and pepper | Spices | Salt | salt & pepper
 Paprika | Spices | Paprika | sweet paprika, ground paprika
 Smoked paprika | Spices | Smoked Paprika |
-Chilli powder | Spices | Chilli Powder | chili powder, chili flakes
+Chilli powder | Spices | Chilli Powder | chili powder
 Cumin | Spices | Cumin | ground cumin
 Coriander seeds | Spices | Coriander Seeds | ground coriander
 Turmeric | Spices | Turmeric | ground turmeric
@@ -278,13 +278,15 @@ Cardamom | Spices | Cardamom | cardamom pods
 Star anise | Spices | Star Anise |
 Caraway seeds | Spices |  | caraway
 Garlic powder | Spices | Garlic Powder | dried garlic, granulated garlic
+Garlic salt | Spices |  |
+Lemon pepper | Spices |  | lemon pepper seasoning
 Onion powder | Spices | Onion Salt | dried onion
 Ground ginger | Spices | Ground Ginger |
 Italian seasoning | Spices | Italian Seasoning | mixed herbs, herbes de provence
 Mustard seeds | Spices | Mustard Seeds |
 Mustard powder | Spices | Mustard Powder | dry mustard
 Cayenne pepper | Spices | Cayenne Pepper | cayenne | Chilli powder
-Chilli flakes | Spices | Red Chilli Flakes | red pepper flakes, crushed chilli, red chilli flakes | Chilli powder
+Chilli flakes | Spices | Red Chilli Flakes | red pepper flakes, crushed chilli, red chilli flakes, chili flakes, chilli flakes, crushed red pepper, crushed red pepper flakes | Chilli powder
 Cumin seeds | Spices | Cumin Seeds |  | Cumin
 Fennel seeds | Spices | Fennel Seeds |
 Fenugreek | Spices | Fenugreek | sominka
@@ -310,7 +312,7 @@ Self-raising flour | Baking | Self-raising Flour | self rising flour
 Wholemeal flour | Baking | Whole Wheat | whole wheat flour
 Cornstarch | Baking | Cornstarch | cornflour, corn flour, corn starch
 Sugar | Baking | Sugar | white sugar, granulated sugar
-Brown sugar | Baking | Brown Sugar | light brown sugar, cane sugar
+Brown sugar | Baking | Brown Sugar | light brown sugar, cane sugar, demerara, demerara sugar
 Icing sugar | Baking | Icing Sugar | powdered sugar, confectioners sugar
 Honey | Baking | Honey |
 Maple syrup | Baking | Maple Syrup |
@@ -324,7 +326,7 @@ White chocolate | Baking | White Chocolate | white chocolate chips
 Gelatine | Baking | Gelatine Leafs | gelatin
 Puff pastry | Baking | Puff Pastry |
 Shortcrust pastry | Baking | Shortcrust Pastry | pie crust
-Golden syrup | Baking | Golden Syrup | light corn syrup
+Golden syrup | Baking | Golden Syrup | light corn syrup, corn syrup, glucose syrup
 Treacle | Baking | Black Treacle | black treacle, molasses
 Agave syrup | Baking |  | agave
 Caster sugar | Baking | Caster Sugar | superfine sugar | Sugar
@@ -339,6 +341,8 @@ Rye flour | Baking |  |
 Spelt flour | Baking |  |
 Almond flour | Baking | Ground Almonds | ground almonds, almond meal | Almonds
 Potato starch | Baking | Potato Starch |
+Cream of tartar | Baking |  | tartaric acid
+Chickpea flour | Baking |  | gram flour, besan, garbanzo flour
 Semolina | Baking |  | cream of wheat, farina, semolina flour, durum semolina
 Custard powder | Baking | Custard Powder | pudding powder
 Chocolate chips | Baking | Chocolate Chips |
@@ -411,7 +415,7 @@ Baguette | Bakery | Baguette | french bread
 Breadcrumbs | Bakery | Breadcrumbs | panko, bread crumbs
 Tortillas | Bakery | Tortillas | flour tortillas, wraps, tortilla wraps
 Flatbread | Bakery | Naan Bread | flatbreads, lavash
-Burger buns | Bakery | Bread | buns, brioche buns
+Burger buns | Bakery | Bread | buns, brioche buns, hot dog buns, hot dog rolls
 Digestive biscuits | Bakery | Digestive Biscuits | graham crackers, biscuits
 Ladyfingers | Bakery |  | savoiardi, sponge fingers
 Crusty bread | Bakery | Crusty Bread | sourdough, sourdough bread | Bread
@@ -447,6 +451,8 @@ Coconut milk | Oils & sauces | Coconut Milk |
 Curry paste | Oils & sauces | Thai Red Curry Paste | red curry paste
 Tahini | Oils & sauces | Tahini |
 Peanut butter | Oils & sauces | Peanut Butter |
+Nut butter | Oils & sauces |  | almond butter, cashew butter, hazelnut butter, nut butter
+Condensed soup | Oils & sauces |  | cream of mushroom soup, cream of chicken soup, cream of celery soup, condensed mushroom soup
 Stock | Oils & sauces | Chicken Stock | broth, bouillon
 Capers | Oils & sauces | Capers |
 Olives | Oils & sauces | Black Olives | black olives, kalamata olives
@@ -498,7 +504,7 @@ Rapeseed oil | Oils & sauces | Rapeseed Oil | canola oil | Vegetable oil
 Peanut oil | Oils & sauces | Peanut Oil | groundnut oil
 Coconut oil | Oils & sauces |  |
 Truffle oil | Oils & sauces | Truffle Oil |
-Lard | Oils & sauces | Lard |
+Lard | Oils & sauces | Lard | shortening, vegetable shortening
 Duck fat | Oils & sauces | Duck Fat | goose fat
 Suet | Oils & sauces | Suet |
 Cooking spray | Oils & sauces |  | oil spray
@@ -532,11 +538,12 @@ Rum | Drinks |  |
 Vodka | Drinks |  |
 Rakia | Drinks |  |
 Port | Drinks |  |
-Sparkling water | Drinks |  | soda water
+Sparkling water | Drinks |  | soda water, club soda
 Coffee | Drinks |  | espresso, instant coffee
 Tea | Drinks |  |
 Ginger cordial | Drinks | Ginger Cordial |
 Cola | Drinks |  |
+Ginger ale | Drinks |  | ginger beer
 Ice cream | Frozen | Ice Cream | vanilla ice cream
 Frozen peas | Frozen | Frozen Peas |  | Peas
 Stir-fry vegetables | Frozen | Stir-fry Vegetables | wok vegetables
@@ -591,7 +598,8 @@ const aliasLines = (text) =>
       .map(([name, list = '']) => [name.toLowerCase(), words(list)]),
   )
 export const EXTRA_ALIASES = aliasLines(CZECH_ALIASES)
-for (const [name, bg] of BULGARIAN) if (bg) EXTRA_ALIASES.set(name, [...(EXTRA_ALIASES.get(name) ?? []), bg.toLowerCase()])
+for (const [name, bg] of BULGARIAN) if (bg && !SEARCH_ONLY.has(name)) EXTRA_ALIASES.set(name, [...(EXTRA_ALIASES.get(name) ?? []), bg.toLowerCase()])
+for (const [name, list] of aliasLines(BULGARIAN_ALIASES)) EXTRA_ALIASES.set(name, [...(EXTRA_ALIASES.get(name) ?? []), ...list])
 
 export const SEED_INGREDIENTS = `${LINES.trim()}\n${WORLD_LINES.trim()}`
   .split('\n')

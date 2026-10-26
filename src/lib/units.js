@@ -1,4 +1,4 @@
-import { canonicalUnit, formatAmount, parseAmount } from './scale.js'
+import { canonicalUnit, formatAmount, parseAmount, poured, stickGrams, weighed } from './scale.js'
 
 // Showing recipes in metric or US units. Amounts are converted for display
 // only; the saved recipe keeps the units it was written in.
@@ -32,24 +32,20 @@ const label = (unit, text) => (unit === 'cup' ? (/^(1|½|⅓|⅔|¼|¾|0,\d+)$/.
 // Ounces and pounds round to a quarter so they read like a recipe
 const quarter = (n) => (n >= 10 ? Math.round(n) : Math.round(n * 4) / 4)
 
-// Solid ingredients are weighed in metric kitchens, so cups and millilitres
-// of flour, sugar, rice, oats, nuts, grated cheese, chopped vegetables or
-// berries become grams; liquids stay in ml. Anything lighter than water by
-// volume is solid; in the dry aisles heavier things too (salt, baking soda,
-// brown sugar), except flavourings. Spoons stay spoons: half a spoon of
-// starch reads better than 7 g.
-const DRY_AISLES = new Set(['Baking', 'Pasta & grains', 'Nuts & seeds', 'Spices', 'Bakery'])
-const KEEP_VOLUME = new Set(['vanilla', 'food colouring', 'rum flavouring', 'ice cream', 'whipped cream'])
+// Weighed ingredients (flour, sugar, butter, grated cheese, nuts) are weighed in
+// metric kitchens, so cups and millilitres of them become grams, and so does a
+// stick of butter. Spoons stay spoons: half a spoon of starch reads better than 7 g.
 const ML = { ml: 1, dl: 100, l: 1000, floz: 29.57, pint: 473.2, quart: 946.4, cup: 240 }
-const isDry = (entry) => {
-  const d = entry?.density
-  if (d == null || KEEP_VOLUME.has(entry.name?.toLowerCase())) return false
-  return d < 0.9 || (d < 1.3 && DRY_AISLES.has(entry.aisle))
+
+function toGrams(n, unit, entry) {
+  const v = unit === 'stick' ? n * stickGrams(entry) : n * ML[unit] * entry.density
+  return v >= 1000 ? [v / 1000, 'kg'] : [v, 'g']
 }
 
-function toGrams(n, unit, density) {
-  const v = n * ML[unit] * density
-  return v >= 1000 ? [v / 1000, 'kg'] : [v, 'g']
+// Ounces of milk or stock are fluid ounces
+function fluidOunces(n) {
+  const v = n * 29.57
+  return v >= 1000 ? [v / 1000, 'l'] : [v, 'ml']
 }
 
 /**
@@ -59,13 +55,14 @@ function toGrams(n, unit, density) {
  */
 export function convertIngredient(ing, system, match) {
   const unit = canonicalUnit(ing.unit)
-  const entry = system === 'metric' && unit && ML[unit] ? match?.(ing.name) : null
-  const dry = isDry(entry)
+  const entry = system === 'metric' && (ML[unit] || unit === 'stick' || unit === 'oz') ? match?.(ing.name) : null
+  const dry = unit === 'stick' ? stickGrams(entry) != null : !!ML[unit] && weighed(entry)
+  const fluid = unit === 'oz' && poured(entry)
   const table = system === 'metric' ? TO_METRIC : system === 'imperial' ? FROM_METRIC : null
   if (!table || !unit || (!table[unit] && !dry)) return ing
   const a = parseAmount(ing.qty)
   if (!a) return ing
-  const conv = dry ? (n, u) => toGrams(n, u, entry.density) : system === 'metric' ? toMetric : toImperial
+  const conv = dry ? (n, u) => toGrams(n, u, entry) : fluid ? fluidOunces : system === 'metric' ? toMetric : toImperial
   const [min, u] = conv(a.min, unit)
   const max = a.max != null ? conv(a.max, unit)[0] : null
   const fmt = (n) => (['oz', 'lb', 'quart'].includes(u) ? formatAmount(quarter(n), 'cup') : formatAmount(n, u))
