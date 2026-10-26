@@ -9,6 +9,7 @@ import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
+import { ALARM_SOUNDS, ring } from './lib/alarm.js'
 import RecipeList from './RecipeList.jsx'
 import Account from './Account.jsx'
 import LoginPage from './LoginPage.jsx'
@@ -88,6 +89,8 @@ export default function App() {
     translateTo: 'en',
     keepOwnLanguages: true,
     ebagSearch: EBAG_SEARCH,
+    alarmSound: 'beep',
+    alarmVibrate: true,
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
@@ -668,6 +671,7 @@ export default function App() {
           onAddToList={(entry) => updateShopping(addToList(shopping, entry, recipes, catalog.match))}
           onUseStock={useStock}
           units={settings.units}
+          alarm={{ sound: settings.alarmSound, vibrate: settings.alarmVibrate }}
           onUnits={(units) => setSettings((s) => ({ ...s, units }))}
           translateTo={settings.translateTo !== 'off' ? settings.translateTo : null}
           categories={allCategories(recipes)}
@@ -821,6 +825,34 @@ export default function App() {
             </label>
           </div>
           <p className="hint">Recipes keep their own units; this changes how amounts and oven temperatures are shown. You can also switch on any recipe.</p>
+        </section>
+        <section className="card">
+          <h3>Cooking timers</h3>
+          <div className="settings">
+            <label>
+              Alarm sound{' '}
+              <select
+                value={settings.alarmSound}
+                onChange={(e) => {
+                  setSettings({ ...settings, alarmSound: e.target.value })
+                  ring({ sound: e.target.value, vibrate: false })
+                }}
+              >
+                {Object.entries(ALARM_SOUNDS).map(([k, label]) => (
+                  <option key={k} value={k}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <input type="checkbox" checked={settings.alarmVibrate} onChange={(e) => setSettings({ ...settings, alarmVibrate: e.target.checked })} /> Vibrate when a timer is done
+            </label>
+            <button className="secondary" onClick={() => ring({ sound: settings.alarmSound, vibrate: settings.alarmVibrate })}>
+              ▶ Try it
+            </button>
+          </div>
+          <p className="hint">A finished timer rings every few seconds until you stop it, for up to two minutes.</p>
         </section>
         <section className="card">
           <h3>Shopping on eBag.bg</h3>
