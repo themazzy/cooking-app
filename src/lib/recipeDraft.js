@@ -7,7 +7,7 @@ export { detectServings }
 
 // Languages the parser has words for (units, headings). Recipes in any other
 // language are translated to English line by line first, then read.
-export const PARSER_LANGS = new Set(['en', 'cs', 'sk', 'bg', 'de', 'es', 'it', 'fr', 'pl', 'ru'])
+export const PARSER_LANGS = new Set(['en', 'cs', 'sk', 'bg', 'de', 'es', 'it', 'fr', 'pl', 'ru', 'ja', 'zh', 'ko'])
 
 /** The lines of the text a draft was read from, as pickRecipe split it, to translate before reading. */
 export function sourceLines(result) {
