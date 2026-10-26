@@ -6,7 +6,7 @@ insert into public.ingredients (name, aisle, image, base, aliases) values
   ('Beef fillet', 'Meat', 'Beef Fillet', null, array['beef tenderloin', 'fillet steak', 'телешко филе']::text[]),
   ('Steak', 'Meat', 'Beef Fillet', null, array['sirloin', 'ribeye', 'rib eye', 'flank steak', 'rump steak', 'телешки стек']::text[]),
   ('Beef shin', 'Meat', 'Beef Shin', null, array['shin of beef', 'телешки джолан']::text[]),
-  ('Veal', 'Meat', 'Veal', null, array['veal cutlet', 'telecí', 'telecí maso', 'телешко']::text[]),
+  ('Veal', 'Meat', 'Veal', null, array['veal cutlet', 'veal mince', 'minced veal', 'ground veal', 'telecí', 'telecí maso', 'телешко']::text[]),
   ('Pork', 'Meat', 'Pork', null, array['pork loin', 'pork chops', 'vepřové', 'vepřové maso', 'veprove maso', 'vepřová kýta', 'vepřová panenka', 'vepřového masa', 'свинско месо']::text[]),
   ('Ground pork', 'Meat', 'Minced Pork', null, array['minced pork', 'pork mince', 'mleté vepřové', 'mleté vepřové maso', 'свинска кайма']::text[]),
   ('Bacon', 'Meat', 'Bacon', null, array['streaky bacon', 'bacon strips', 'pancetta', 'lardons', 'slaninu', 'anglickou slaninu', 'slaniny', 'бекон']::text[]),

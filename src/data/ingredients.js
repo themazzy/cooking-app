@@ -18,7 +18,7 @@ Beef brisket | Meat | Beef Brisket | brisket
 Beef fillet | Meat | Beef Fillet | beef tenderloin, fillet steak
 Steak | Meat | Beef Fillet | sirloin, ribeye, rib eye, flank steak, rump steak
 Beef shin | Meat | Beef Shin | shin of beef
-Veal | Meat | Veal | veal cutlet
+Veal | Meat | Veal | veal cutlet, veal mince, minced veal, ground veal
 Pork | Meat | Pork | pork loin, pork chops
 Ground pork | Meat | Minced Pork | minced pork, pork mince
 Bacon | Meat | Bacon | streaky bacon, bacon strips, pancetta, lardons
