@@ -129,7 +129,7 @@ export function durationMinutes(value) {
 }
 
 const NUM = '(\\d+(?:[.,]\\d+)?|½|půl|pul|half an?|an?)'
-const HOURS = 'h|hrs?|hours?|hod(?:in[ay]?|iny)?\\.?|hodin[auy]?|час(?:а|ове)?|ч\\.?'
+const HOURS = 'h|hrs?|hours?|hod(?:in[ay]?|iny)?\\.?|hodin[auy]?|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
 const MINS = 'm|min(?:s|ut[ay]?|utes?|uty)?\\.?|minut[ay]?|мин(?:ути?)?\\.?'
 const value = (s) => {
   const v = s.toLowerCase()

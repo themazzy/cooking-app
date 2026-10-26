@@ -216,6 +216,7 @@ const STEP_NUM = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+[½⅓⅔¼¾⅛]|\\d+(
 const STEP_UNITS = [...UNIT_LOOKUP.keys()]
   .sort((a, b) => b.length - a.length)
   .map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+const INTO = /(?:^|[^\p{L}])(?:into|na|на)\s+$/iu
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
@@ -233,8 +234,10 @@ export function scaleSteps(text, factor, ingredients = []) {
   const unit = `(?:${STEP_UNITS.join('|')})(?![\\p{L}])`
   const thing = things.length ? `|(?:[\\p{L}-]+\\s+)?(?:${things.join('|')})\\p{L}*` : ''
   const re = new RegExp(`(?<![\\d.,/\\p{L}])(${STEP_NUM}(?:\\s*(?:–|-|to|až)\\s*${STEP_NUM})?)(\\s*)(?=(${unit}${thing}))`, 'giu')
-  return text.replace(re, (all, amount, space, after) => {
+  return text.replace(re, (all, amount, space, after, at, whole) => {
     const u = after.match(new RegExp(`^${unit}`, 'iu'))?.[0] ?? ''
+    // "Cut the breasts into 4 pieces": how many pieces each one makes, not how many there are
+    if (INTO.test(whole.slice(Math.max(0, at - 12), at)) && ['pcs', 'slice'].includes(UNIT_LOOKUP.get(u) ?? UNIT_LOOKUP.get(u.toLowerCase()))) return all
     const scaled = scaleAmount(amount.replace(/\s*(?:–|-|to|až)\s*/, '–'), factor, u)
     return scaled === amount ? all : `${scaled}${space}`
   })

@@ -59,22 +59,61 @@ export function splitSteps(steps) {
   return out
 }
 
-const UNIT_SECONDS = { s: 1, sec: 1, secs: 1, second: 1, seconds: 1, m: 60, min: 60, mins: 60, minute: 60, minutes: 60, h: 3600, hr: 3600, hrs: 3600, hour: 3600, hours: 3600 }
-const TIME = /(\d+(?:[.,]\d+)?)(?:\s*(?:-|–|to)\s*(\d+(?:[.,]\d+)?))?\s*(seconds?|secs?|minutes?|mins?|hours?|hrs?|[hms])\b/gi
+// Numbers a time can be written with: "1 1/2", "1½", "1,5", "½", "half an", "an", Czech "půl", Bulgarian "половин"
+const T_NUM = '(\\d+\\s+\\d\\/\\d|\\d+\\/\\d|\\d+[½¼¾]|\\d+(?:[.,]\\d+)?|[½¼¾]|half\\s+an?|an?|půl|pul|половин)'
+// "ч." is hours, but "ч.л." is a teaspoon
+const T_HOURS = 'hours?|hrs?|h|hodin[auy]?|hod\\.?|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
+const T_MINS = 'minutes?|mins?|minut[ay]?|min\\.?|m|минут[аи]?|мин\\.?'
+const T_SECS = 'seconds?|secs?|s|sekund[ay]?|sek\\.?|секунд[аи]?|сек\\.?'
+const T_RANGE = '\\s*(?:-|–|to|až|do|до)\\s*'
+const TIME = new RegExp(
+  `(?<![\\p{L}\\d/])${T_NUM}(?:${T_RANGE}${T_NUM})?\\s*(${T_HOURS}|${T_MINS}|${T_SECS})(?![\\p{L}])` +
+    // "1 hour 30 minutes", "1 hodinu a 20 minut", "1 час и 15 минути"
+    `(?:\\s*,?\\s*(?:and|a|и)?\\s*(\\d+)\\s*(${T_MINS})(?![\\p{L}]))?`,
+  'giu',
+)
+const isUnit = (pattern, s) => new RegExp(`^(?:${pattern})$`, 'iu').test(s)
+const FRACTIONS = { '½': 0.5, '¼': 0.25, '¾': 0.75 }
 
-/** "Bake for 25–30 minutes" → [{ label: '25–30 min', seconds: 1800 }]. A range counts at its upper end. */
+function timeNumber(s) {
+  const v = s.toLowerCase().replace(/\s+/g, ' ')
+  if (/^(?:half|půl|pul|половин)/.test(v)) return 0.5
+  if (v === 'a' || v === 'an') return 1
+  const mixed = v.match(/^(\d+) (\d)\/(\d)$/)
+  if (mixed) return Number(mixed[1]) + Number(mixed[2]) / Number(mixed[3])
+  const frac = v.match(/^(\d+)\/(\d)$/)
+  if (frac) return Number(frac[1]) / Number(frac[2])
+  const glyph = v.match(/^(\d*)([½¼¾])$/)
+  if (glyph) return Number(glyph[1] || 0) + FRACTIONS[glyph[2]]
+  return Number(v.replace(',', '.'))
+}
+
+const clockLabel = (seconds) => {
+  if (seconds < 60) return `${seconds} s`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.round((seconds % 3600) / 60)
+  return h ? (m ? `${h} h ${m} min` : `${h} h`) : `${m} min`
+}
+
+/**
+ * "Bake for 25–30 minutes" → [{ label: '25–30 min', seconds: 1800 }]. A range counts at its upper end.
+ * Reads English, Czech and Bulgarian units, fractions ("1 1/2 hours", "½ hr", "half an hour")
+ * and hours with minutes after them ("1 hour 30 minutes") as one timer.
+ */
 export function findTimers(text) {
   const out = []
   for (const m of String(text ?? '').matchAll(TIME)) {
-    const unit = m[3].toLowerCase()
-    const per = UNIT_SECONDS[unit]
-    if (!per) continue
-    const lo = Number(m[1].replace(',', '.'))
-    const hi = m[2] ? Number(m[2].replace(',', '.')) : null
-    const seconds = Math.round((hi ?? lo) * per)
+    const [, lo, hi, unit, more, moreUnit] = m
+    const per = isUnit(T_HOURS, unit) ? 3600 : isUnit(T_MINS, unit) ? 60 : 1
+    // "a"/"an" only before a whole word: "an hour", not "a m"
+    if (/^an?$/i.test(lo) && unit.length < 3) continue
+    let seconds = Math.round(timeNumber(hi ?? lo) * per)
+    if (more && per === 3600) seconds += Number(more) * 60
     if (!seconds || seconds > 24 * 3600) continue
+    const plain = (s) => /^\d+(?:[.,]\d+)?$/.test(s)
     const short = per === 1 ? 's' : per === 60 ? 'min' : 'h'
-    out.push({ label: `${m[2] ? `${m[1]}–${m[2]}` : m[1]} ${short}`, seconds })
+    const label = plain(lo) && (!hi || plain(hi)) && !(more && per === 3600) && (per !== 3600 || Number.isInteger(timeNumber(hi ?? lo))) ? `${hi ? `${lo}–${hi}` : lo} ${short}` : clockLabel(seconds)
+    out.push({ label, seconds })
   }
   return out
 }
