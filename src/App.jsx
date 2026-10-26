@@ -81,6 +81,7 @@ export default function App() {
     videoQuality: 'small',
     ebagLinks: true,
     units: 'original',
+    photoLanguage: 'latin',
     ebagSearch: EBAG_SEARCH,
     ...readStore(SETTINGS_KEY, {}),
   }))
@@ -559,7 +560,7 @@ export default function App() {
       const text = await readRecipePhotos(files, (p) => {
         if (p.status === 'loading language traineddata' || p.status === 'loading tesseract core') setDownload({ file: 'text reader', pct: Math.round((p.progress ?? 0) * 100) })
         else setDownload(null)
-      })
+      }, settings.photoLanguage)
       if (!text.trim()) throw new Error('No text found in the photo. Try a sharper, closer photo in good light.')
       step(`Read ${text.split('\n').filter(Boolean).length} lines.`, 'ok')
       const r = { url: null, platform: 'photo', description: text, at: Date.now() }
@@ -812,7 +813,19 @@ export default function App() {
 
         <section className="card">
           <label>From photos</label>
-          <p className="hint top">A cookbook page, a recipe card or a screenshot. Pick several photos for a recipe over more pages. Neat handwriting may work too.</p>
+          <p className="hint top">
+            A cookbook page, a recipe card or a screenshot. Pick several photos for a recipe over more pages, in order; where they overlap, the repeated lines are kept once. Neat handwriting may work too.
+          </p>
+          <div className="segmented" role="group" aria-label="Text in the photos">
+            {[
+              ['latin', 'Czech / English'],
+              ['bulgarian', 'Bulgarian'],
+            ].map(([k, label]) => (
+              <button key={k} className={settings.photoLanguage === k ? 'on' : ''} aria-pressed={settings.photoLanguage === k} onClick={() => setSettings({ ...settings, photoLanguage: k })}>
+                {label}
+              </button>
+            ))}
+          </div>
           <label className="button">
             📷 Take or pick photos
             <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={onPhotos} />

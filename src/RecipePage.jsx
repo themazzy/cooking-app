@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import RecipeEditor from './RecipeEditor.jsx'
 import RecipeTags from './RecipeTags.jsx'
+import Stars from './Stars.jsx'
 import CookMode from './CookMode.jsx'
 import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
@@ -232,6 +233,14 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
             </label>
           </div>
           <RecipeTags recipe={recipe} categories={categories} cuisines={cuisines} onChange={set} />
+          <div className="rating-row">
+            <span className="note">Rating</span>
+            <Stars value={recipe.rating} onChange={(rating) => set({ rating })} />
+          </div>
+          <label className="recipe-note">
+            Note
+            <textarea rows="3" placeholder="What worked, what to change next time…" value={recipe.note ?? ''} onChange={(e) => set({ note: e.target.value })} />
+          </label>
           {video}
           {photoButtons}
           <RecipeEditor
@@ -303,6 +312,13 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
 
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>
+        <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
+        {recipe.note?.trim() && (
+          <div className="recipe-note-view">
+            <strong>📝 Note</strong>
+            <p>{recipe.note.trim()}</p>
+          </div>
+        )}
         <div className="meta">
           {recipe.sourceUrl ? (
             <button className="meta-chip" onClick={() => openExternal(recipe.sourceUrl)}>
