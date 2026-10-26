@@ -2,12 +2,31 @@ import { useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
 import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
+import { canListen, listen, voiceCommand } from './lib/voice.js'
+import { toast } from './lib/toast.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
 import Icon from './Icon.jsx'
 
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
 const RING_FOR = 2 * 60 * 1000 // then it stays red but quiet
+const VOICE_KEY = 'cooking-app:voice' // listening was on last time, so it starts again
+const SAID = { next: 'Next step', back: 'Back', timer: 'Timer', ingredients: 'Ingredients', steps: 'Steps' }
+
+const voiceWanted = () => {
+  try {
+    return localStorage.getItem(VOICE_KEY) === 'on'
+  } catch {
+    return false
+  }
+}
+const rememberVoice = (on) => {
+  try {
+    localStorage.setItem(VOICE_KEY, on ? 'on' : 'off')
+  } catch {
+    // not remembered; fine
+  }
+}
 
 function Ingredient({ ing, match }) {
   return (
@@ -21,14 +40,17 @@ function Ingredient({ ing, match }) {
   )
 }
 
-function Timer({ t, now, onChange, onRemove }) {
+function Timer({ t, now, onChange, onRemove, onShow }) {
   const running = t.endsAt != null && !t.done
   return (
     <div className={`cook-timer${t.done ? ' done' : running ? '' : ' paused'}`} role="group" aria-label={`${t.label} timer`}>
-      <div className="cook-timer-time">
+      <button className="cook-timer-time" onClick={onShow} disabled={t.step == null} aria-label={t.step != null ? `Go to step ${t.step + 1}` : undefined}>
         <span className="cook-timer-clock">{t.done ? 'Done' : formatClock(timeLeft(t, now))}</span>
-        <span className="cook-timer-label">{t.label}</span>
-      </div>
+        <span className="cook-timer-label">
+          {t.label}
+          {t.step != null && <span className="cook-timer-step">Step {t.step + 1}</span>}
+        </span>
+      </button>
       <button className="secondary" aria-label="One minute less" disabled={t.done} onClick={() => onChange(adjustTimer(t, -60))}>
         −1
       </button>
@@ -60,6 +82,8 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
   const [timers, setTimers] = useState([])
   const [now, setNow] = useState(Date.now())
   const [custom, setCustom] = useState(null) // minutes typed for a new timer, while the form is open
+  const [customName, setCustomName] = useState('')
+  const [voice, setVoice] = useState(false) // listening for "next", "back"…
   const [cookedNote, setCookedNote] = useState('')
   const [logged, setLogged] = useState(false)
   const track = useRef(null)
@@ -78,7 +102,8 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
       if (t.done) {
         if (was[t.id]) next[t.id] = was[t.id] // ringing until stopped
       } else if (t.endsAt != null) {
-        if (was[t.id] !== t.endsAt) scheduleAlarm(t.id, t.endsAt, { title: `${t.label} timer is done`, text: title || 'Cooking', ...alarmRef.current })
+        if (was[t.id] !== t.endsAt)
+          scheduleAlarm(t.id, t.endsAt, { title: `${t.label} timer is done`, text: [title || 'Cooking', t.step != null ? `step ${t.step + 1}` : null].filter(Boolean).join(', '), ...alarmRef.current })
         next[t.id] = t.endsAt
       }
     }
@@ -177,10 +202,10 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
     if (best !== at) setAt(best)
   }
 
-  const addTimer = (label, seconds) => {
+  const addTimer = (label, seconds, step = null) => {
     audio() // a tap lets the alarm play later
     allowAlarms()
-    setTimers((list) => [...list, newTimer(label, seconds)])
+    setTimers((list) => [...list, { ...newTimer(label, seconds), step }])
     setNow(Date.now())
   }
   const setTimer = (t) => {
@@ -193,9 +218,66 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
   }
   const startCustom = () => {
     const min = Number(String(custom).replace(',', '.'))
-    if (min > 0) addTimer(`${custom} min`, Math.round(min * 60))
+    const name = customName.trim()
+    if (min > 0) addTimer(name ? `${name} · ${custom} min` : `${custom} min`, Math.round(min * 60))
     setCustom(null)
+    setCustomName('')
   }
+
+  // Voice commands: what was heard acts on the step showing now
+  const onCommandRef = useRef(null)
+  onCommandRef.current = (command) => {
+    if (command === 'next' || command === 'back') {
+      setShowAll(false)
+      goTo(at + (command === 'next' ? 1 : -1))
+    } else if (command === 'ingredients') setShowAll(true)
+    else if (command === 'steps') setShowAll(false)
+    else if (command === 'timer') {
+      const t = at < steps.length ? findTimers(steps[at])[0] : null
+      if (!t) return toast('This step has no time to time', { kind: 'info' })
+      addTimer(t.label, t.seconds, at)
+    }
+    toast(SAID[command], { kind: 'info', ms: 1200 })
+  }
+  const open = useRef(true)
+  useEffect(() => {
+    open.current = true
+    return () => void (open.current = false)
+  }, [])
+  const startVoice = async () => {
+    try {
+      const stop = await listen(
+        (text) => {
+          const command = voiceCommand(text)
+          if (command) onCommandRef.current(command)
+        },
+        (message) => {
+          setVoice(false)
+          if (message) toast(message, { kind: 'error' })
+        },
+      )
+      if (!open.current) return stop() // closed while the microphone was being asked for
+      setVoice(() => stop)
+      rememberVoice(true)
+    } catch (e) {
+      setVoice(false)
+      rememberVoice(false)
+      toast(e?.code === 'denied' ? 'Allow the microphone to use voice commands' : (e?.message ?? 'Voice commands did not start'), { kind: 'error' })
+    }
+  }
+  const stopVoice = () => {
+    if (typeof voice === 'function') voice()
+    setVoice(false)
+    rememberVoice(false)
+  }
+  // Listening starts again if it was on last time, and stops when cooking mode closes
+  const voiceRef = useRef(voice)
+  voiceRef.current = voice
+  useEffect(() => {
+    if (canListen && voiceWanted()) startVoice()
+    return () => typeof voiceRef.current === 'function' && voiceRef.current()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="cook" role="dialog" aria-label={`Cooking ${title}`}>
@@ -204,6 +286,16 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
           <Icon name="close" />
         </button>
         <div className="cook-title">{title || 'Recipe'}</div>
+        {canListen && (
+          <button
+            className={`icon-button voice${voice ? ' on' : ''}`}
+            aria-label={voice ? 'Stop voice commands' : 'Voice commands'}
+            aria-pressed={!!voice}
+            onClick={() => (voice ? stopVoice() : startVoice())}
+          >
+            <Icon name={voice ? 'mic' : 'micOff'} />
+          </button>
+        )}
         <button className="link" onClick={() => setCustom((c) => (c == null ? '5' : null))}>
           <Icon name="timer" /> Timer
         </button>
@@ -215,6 +307,8 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
         <div style={{ width: `${steps.length ? (Math.min(at + 1, steps.length) / steps.length) * 100 : 0}%` }} />
       </div>
 
+      {voice && <p className="cook-voice">Listening. Say “next”, “back”, “timer” or “ingredients”.</p>}
+
       {custom != null && (
         <form
           className="cook-custom"
@@ -223,6 +317,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
             startCustom()
           }}
         >
+          <input className="cook-custom-name" placeholder="Name (optional)" value={customName} onChange={(e) => setCustomName(e.target.value)} aria-label="Timer name" />
           <input type="number" inputMode="decimal" min="0.1" step="any" value={custom} onChange={(e) => setCustom(e.target.value)} aria-label="Minutes" autoFocus />
           <span>min</span>
           {[1, 3, 5, 10, 15].map((m) => (
@@ -236,9 +331,22 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
 
       {timers.length > 0 && (
         <div className="cook-timers">
-          {timers.map((t) => (
-            <Timer key={t.id} t={t} now={now} onChange={setTimer} onRemove={() => removeTimer(t.id)} />
-          ))}
+          {/* Ringing first, then the one that ends soonest */}
+          {[...timers]
+            .sort((a, b) => (b.done ? 1 : 0) - (a.done ? 1 : 0) || timeLeft(a, now) - timeLeft(b, now))
+            .map((t) => (
+              <Timer
+                key={t.id}
+                t={t}
+                now={now}
+                onChange={setTimer}
+                onRemove={() => removeTimer(t.id)}
+                onShow={() => {
+                  setShowAll(false)
+                  goTo(t.step)
+                }}
+              />
+            ))}
         </div>
       )}
 
@@ -273,7 +381,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
                 {found.length > 0 && (
                   <div className="row">
                     {found.map((t, k) => (
-                      <button key={k} className="secondary" onClick={() => addTimer(t.label, t.seconds)}>
+                      <button key={k} className="secondary" onClick={() => addTimer(t.label, t.seconds, n)}>
                         <Icon name="timer" /> Start {t.label} timer
                       </button>
                     ))}

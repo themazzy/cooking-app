@@ -1043,3 +1043,12 @@ ul.ingredient-list .ing-name .from { display: block; font-size: 0.8rem; color: v
 .swap-list .grow { flex: 1 1 auto; min-width: 0; }
 .swap-list .note { margin-top: 2px; }
 .swap-restore { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 8px; }
+
+/* Cooking mode: voice commands and named timers */
+.cook-top .voice.on { color: var(--accent); }
+.cook-voice { margin: 8px auto 0; padding: 0 16px; max-width: 720px; width: 100%; color: var(--muted); font-size: 0.85rem; }
+button.cook-timer-time { background: transparent; color: inherit; padding: 0; min-height: 0; min-width: 0; text-align: left; justify-content: flex-start; align-items: baseline; border-radius: 0; font-weight: inherit; }
+button.cook-timer-time:disabled { opacity: 1; }
+.cook-timer-step { margin-left: 6px; opacity: 0.8; }
+.cook-timer-step::before { content: '· '; }
+.cook-custom .cook-custom-name { width: auto; flex: 1 1 100%; font-size: 1rem; }
