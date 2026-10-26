@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
-import { audio, ring } from './lib/alarm.js'
+import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
 
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -65,6 +65,27 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
   const rang = useRef({}) // timer id → { first, last } alarm times
   const alarmRef = useRef(alarm)
   alarmRef.current = alarm
+  const scheduled = useRef({}) // timer id → the time Android is set to ring it
+
+  // Android rings each running timer at its end, even with the phone locked or
+  // another app open; pausing or removing a timer takes its alarm off
+  useEffect(() => {
+    if (!nativeAlarms) return
+    const was = scheduled.current
+    const next = {}
+    for (const t of timers) {
+      if (t.done) {
+        if (was[t.id]) next[t.id] = was[t.id] // ringing until stopped
+      } else if (t.endsAt != null) {
+        if (was[t.id] !== t.endsAt) scheduleAlarm(t.id, t.endsAt, { title: `${t.label} timer is done`, text: title || 'Cooking', ...alarmRef.current })
+        next[t.id] = t.endsAt
+      }
+    }
+    for (const id of Object.keys(was)) if (!next[id]) cancelAlarm(id)
+    scheduled.current = next
+  }, [timers, title])
+  // Closing cooking mode removes its timers, and their alarms with them
+  useEffect(() => () => Object.keys(scheduled.current).forEach(cancelAlarm), [])
 
   // Screen stays on while cooking
   useEffect(() => {
@@ -108,7 +129,8 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
             ringNow = true
           }
         }
-        if (ringNow) ring(alarmRef.current)
+        // The Android app rings from its own notification instead
+        if (ringNow && !nativeAlarms) ring(alarmRef.current)
         return next.some((x, n) => x !== list[n]) ? next : list
       })
     }, 500)
@@ -156,6 +178,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
 
   const addTimer = (label, seconds) => {
     audio() // a tap lets the alarm play later
+    allowAlarms()
     setTimers((list) => [...list, newTimer(label, seconds)])
     setNow(Date.now())
   }
