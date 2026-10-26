@@ -14,7 +14,7 @@ const UNITS = {
   l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра', 'litro', 'litri', 'litros', 'литр'],
   tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек', 'c. à soupe', 'c.à.s', 'c. a soupe', 'cuil. à soupe', 'cuchara', 'cucharadas soperas', 'cucchiai rasi', 'столовой ложки', 'ст. ложка', 'ст. ложки', 'ст.ложки', 'polievková lyžica', 'polievkové lyžice', 'polievkovú lyžicu', 'lyžica', 'lyžice', 'lyžicu', 'lyžíc', 'cda', 'cdas', 'cucharada sopera', 'cucharadas soperas', 'c.s', 'cs'],
   tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек', 'c. à café', 'c. à thé', 'c.à.c', 'c. a café', 'cuil. à café', 'cucharaditas rasas', 'cucchiaini rasi', 'ч. ложка', 'ч. ложки', 'ч.ложки', 'чайной ложки', 'kávová lyžička', 'kávové lyžičky', 'kávovú lyžičku', 'čajová lyžička', 'čajové lyžičky', 'lyžička', 'lyžičky', 'lyžičku', 'lyžičiek', 'cdta', 'cdtas', 'cdita', 'cditas', 'c.c'],
-  cup: ['mug', 'mugs', 'hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши', 'tasse', 'tasses', 'taza', 'tazas', 'tazza', 'tazze', 'szklanka', 'szklanki', 'szklanek', 'стакан', 'стакана', 'стаканов', 'vaso', 'vasos', 'bicchiere', 'bicchieri', 'verre', 'verres', 'Tasse', 'Tassen'],
+  cup: ['mug', 'mugs', 'glass', 'glasses', 'hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши', 'tasse', 'tasses', 'taza', 'tazas', 'tazza', 'tazze', 'szklanka', 'szklanki', 'szklanek', 'стакан', 'стакана', 'стаканов', 'vaso', 'vasos', 'bicchiere', 'bicchieri', 'verre', 'verres', 'Tasse', 'Tassen'],
   pcs: ['stalk', 'stalks', 'sprig', 'sprigs', 'ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт', 'pezzo', 'pezzi', 'pieza', 'piezas', 'pièce', 'pièces', 'sztuka', 'sztuki', 'штука', 'штуки', 'штук'],
   clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката', 'Zehe', 'Zehen', 'spicchio', 'spicchi', 'diente', 'dientes', 'gousse', 'gousses', 'ząbek', 'ząbki', 'ząbków', 'зубчик', 'зубчика', 'зубчиков'],
   pinch: ['špetka', 'špetku', 'špetky', 'pinch', 'щипка', 'щипки', 'Prise', 'Prisen', 'Messerspitze', 'pizzico', 'pizzichi', 'pizca', 'pizcas', 'pincée', 'pincées', 'szczypta', 'szczypty', 'щепотка', 'щепотки'],
@@ -162,14 +162,29 @@ const cleanName = (s) =>
 // A unit left at the start of a name, as a translation leaves it: "tablespoon of cornstarch", "heaped teaspoon salt"
 const UNIT_IN_NAME = new RegExp(`^(?:(?:heaped|heaping|level|rounded|scant|full|large|small)\\s+)?(${UNIT_RE})\\.?\\s+(?:of\\s+)?(?=\\p{L})`, 'iu')
 
+// "glass noodles" are noodles, not a glass of noodles
+const NOT_A_UNIT = /^glass(?:es)?\s+noodles?\b/i
+
+// Peppers measured in spoons are the ground spice: "1 tbsp sweet peppers" (from Bulgarian
+// "сладък червен пипер") is sweet paprika, "1 tsp hot red pepper" hot paprika
+const SPICE_UNITS = new Set(['tsp', 'tbsp', 'pinch'])
+const PEPPER_SPICE = /^(sweet|hot|smoked)?\s*(?:red\s+)?peppers?(\s*[,(].*)?$/i
+function pepperSpice(i, unit) {
+  if (!SPICE_UNITS.has(unit)) return i
+  const m = String(i.name ?? '').match(PEPPER_SPICE)
+  // Plain "pepper" in spoons is black pepper, which the catalog already reads
+  if (!m || (!m[1] && !/red/i.test(i.name))) return i
+  return { ...i, name: `${m[1] ? `${m[1].toLowerCase()} ` : ''}paprika${m[2] ?? ''}` }
+}
+
 /** An editable ingredient ({ qty, unit, name }) with a unit or "of" moved out of its name. */
 export function tidyIngredient(i) {
   const name = i.name ?? ''
-  const m = i.unit ? null : name.match(UNIT_IN_NAME)
+  const m = i.unit || NOT_A_UNIT.test(name) ? null : name.match(UNIT_IN_NAME)
   const unit = m && m[1].length > 1 ? unitOf(m[1]) : null
-  if (unit) return { ...i, unit: unit === 'pcs' ? '' : unit, name: name.slice(m[0].length) }
+  if (unit) return pepperSpice({ ...i, unit: unit === 'pcs' ? '' : unit, name: name.slice(m[0].length) }, unit)
   const rest = name.replace(/^of\s+(?=\p{L})/iu, '')
-  return rest === name ? i : { ...i, name: rest }
+  return pepperSpice(rest === name ? i : { ...i, name: rest }, unitOf(String(i.unit ?? '')) ?? i.unit)
 }
 
 // Amounts written as words at the start of a line: "половин чаша", "půl lžičky", "две яйца"
@@ -321,6 +336,7 @@ export function parseIngredientLine(line) {
     if (cjk) return cjk
   }
   let m = text.match(QTY_FIRST)
+  if (m && m[3] && NOT_A_UNIT.test(`${m[3]} ${m[4]}`)) m = [m[0], m[1], m[2], undefined, `${m[3]} ${m[4]}`]
   if (m) {
     const name = cleanName(m[4])
     if (name)

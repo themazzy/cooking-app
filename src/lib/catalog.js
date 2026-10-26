@@ -76,6 +76,17 @@ export function matchIngredient(index, name) {
     index.cache.set(name, found)
     return found
   }
+  // "Pork (17.6oz. Mince)", as recipe sites write a note: "pork mince" is minced pork
+  const inside = String(name).match(/^([^(]+)\(([^)]*)\)/)
+  if (inside) {
+    const words = normalizeName(inside[2].replace(/\S*\d\S*/g, ' '))
+    const both = words && stripDescriptors(`${normalizeName(inside[1])} ${words}`)
+    const found = both ? index.exact.get(both) : null
+    if (found) {
+      index.cache.set(name, found)
+      return found
+    }
+  }
   const full = normalizeName(name)
   const bare = stripDescriptors(full)
   const plain = withoutArticles(bare)
