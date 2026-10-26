@@ -17,6 +17,10 @@ function query(table) {
       return { data: [op.row], error: null }
     }
     if (op.kind === 'update') {
+      // The other phone uploading in between this phone's read and write
+      const between = db.beforeUpdate
+      db.beforeUpdate = null
+      between?.()
       const hit = rows()
       hit.forEach((r) => Object.assign(r, op.fields))
       return { data: hit, error: null }
@@ -76,6 +80,7 @@ const iso = (ms) => new Date(ms).toISOString()
 beforeEach(() => {
   db.recipes = []
   db.shopping_lists = []
+  db.beforeUpdate = null
   local.clear()
   photos.clear()
   bucket.clear()
@@ -107,6 +112,68 @@ describe('syncRecipes', () => {
     db.recipes.push({ id: 'a', household_id: 'h1', data: {}, deleted: true, updated_at: iso(2000), video_path: null })
     await syncRecipes()
     expect(local.has('a')).toBe(false)
+  })
+})
+
+describe('two phones changing one recipe', () => {
+  const row = (data, at) => ({ id: 'a', household_id: 'h1', data, deleted: false, updated_at: iso(at), video_path: null })
+  const base = { title: 'Soup', note: 'Salt' }
+
+  it('keeps a rating made here and a cooked entry and note made on the other phone', async () => {
+    local.set('a', { id: 'a', ...base, ratings: { u1: 4 }, updatedAt: 2000, syncedAt: 1000, syncBase: base })
+    db.recipes.push(row({ ...base, note: 'Less salt', cooked: [{ at: 1500, note: 'Good' }] }, 1800))
+    await syncRecipes()
+    const here = local.get('a')
+    expect(here.ratings).toEqual({ u1: 4 })
+    expect(here.cooked).toEqual([{ at: 1500, note: 'Good' }])
+    expect(here.note).toBe('Less salt')
+    expect(here.syncedAt).toBe(here.updatedAt)
+    expect(db.recipes[0].data.ratings).toEqual({ u1: 4 })
+    expect(db.recipes[0].data.cooked).toHaveLength(1)
+  })
+
+  it('joins cooked entries added on both phones, also with a newer clock here', async () => {
+    const one = { at: 100, note: 'first' }
+    local.set('a', { id: 'a', ...base, cooked: [one, { at: 300 }], updatedAt: 9000, syncedAt: 1000, syncBase: { ...base, cooked: [one] } })
+    db.recipes.push(row({ ...base, cooked: [one, { at: 200, note: 'theirs' }] }, 1200))
+    await syncRecipes()
+    expect(local.get('a').cooked.map((c) => c.at)).toEqual([100, 200, 300])
+    expect(db.recipes[0].data.cooked.map((c) => c.at)).toEqual([100, 200, 300])
+  })
+
+  it('keeps an edited note on one phone and a removed entry on the other', async () => {
+    const before = { ...base, cooked: [{ at: 100, note: 'ok' }, { at: 200 }] }
+    local.set('a', { id: 'a', ...before, cooked: [{ at: 100, note: 'great' }, { at: 200 }], updatedAt: 2000, syncedAt: 1000, syncBase: before })
+    db.recipes.push(row({ ...before, cooked: [{ at: 100, note: 'ok' }] }, 1500))
+    await syncRecipes()
+    expect(local.get('a').cooked).toEqual([{ at: 100, note: 'great' }])
+  })
+
+  it('keeps both ratings when two people rate at once', async () => {
+    local.set('a', { id: 'a', ...base, ratings: { u1: 5 }, updatedAt: 2000, syncedAt: 1000, syncBase: base })
+    db.recipes.push(row({ ...base, ratings: { u2: 3 } }, 1500))
+    await syncRecipes()
+    expect(local.get('a').ratings).toEqual({ u1: 5, u2: 3 })
+    expect(db.recipes[0].data.ratings).toEqual({ u1: 5, u2: 3 })
+  })
+
+  it('does not overwrite a change the other phone uploads while this one syncs', async () => {
+    db.recipes.push(row(base, 1000))
+    local.set('a', { id: 'a', ...base, ratings: { u1: 4 }, updatedAt: 2000, syncedAt: 1000, syncBase: base })
+    db.beforeUpdate = () => Object.assign(db.recipes[0], { data: { ...base, cooked: [{ at: 1700 }] }, updated_at: iso(1700) })
+    await syncRecipes()
+    expect(db.recipes[0].data.cooked).toEqual([{ at: 1700 }])
+    expect(db.recipes[0].data.ratings).toEqual({ u1: 4 })
+    expect(local.get('a').cooked).toEqual([{ at: 1700 }])
+  })
+
+  it('takes the shared copy whole when nothing changed here', async () => {
+    local.set('a', { id: 'a', ...base, updatedAt: 1000, syncedAt: 1000, syncBase: base })
+    db.recipes.push(row({ ...base, ratings: { u2: 2 } }, 1500))
+    const { pushed } = await syncRecipes()
+    expect(pushed).toBe(0)
+    expect(local.get('a').ratings).toEqual({ u2: 2 })
+    expect(local.get('a').syncBase.ratings).toEqual({ u2: 2 })
   })
 })
 

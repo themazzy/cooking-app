@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { dayKey } from './lib/plan.js'
-import { addCooked, cookedAgo, removeCooked } from './lib/history.js'
+import { addCooked, cookedAgo, editCooked, removeCooked } from './lib/history.js'
+import { raterName } from './lib/ratings.js'
 
-/** When the recipe was cooked, with a note each time, and a button to add today. */
-export default function CookedLog({ cooked = [], onChange }) {
+/** When the recipe was cooked, with a note each time (editable), and a button to add today. */
+export default function CookedLog({ cooked = [], by = null, onChange }) {
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState(null) // { at, note }
+  const saveEdit = () => {
+    onChange(editCooked({ cooked }, editing.at, editing.note))
+    setEditing(null)
+  }
   const [day, setDay] = useState(() => dayKey(new Date()))
   const [note, setNote] = useState('')
   const save = () => {
@@ -12,7 +18,7 @@ export default function CookedLog({ cooked = [], onChange }) {
     const now = new Date()
     // A past day keeps the time of day so two on one day stay in order
     const at = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).getTime()
-    onChange(addCooked({ cooked }, at, note))
+    onChange(addCooked({ cooked }, at, note, by))
     setAdding(false)
     setNote('')
     setDay(dayKey(new Date()))
@@ -48,11 +54,31 @@ export default function CookedLog({ cooked = [], onChange }) {
           <li key={c.at}>
             <div>
               <strong>{new Date(c.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</strong> <span className="note">{cookedAgo(c.at)}</span>
-              {c.note && <p>{c.note}</p>}
+              {c.by && raterName(c.by) && <span className="note cooked-by"> · {raterName(c.by)}</span>}
+              {editing?.at === c.at ? (
+                <div className="cooked-edit">
+                  <textarea rows="2" autoFocus placeholder="How did it go? (empty removes the note)" value={editing.note} onChange={(e) => setEditing({ ...editing, note: e.target.value })} />
+                  <div className="row">
+                    <button className="secondary" onClick={() => setEditing(null)}>
+                      Cancel
+                    </button>
+                    <button onClick={saveEdit}>Save</button>
+                  </div>
+                </div>
+              ) : (
+                c.note && <p>{c.note}</p>
+              )}
             </div>
-            <button className="link remove" aria-label="Remove this entry" onClick={() => onChange(removeCooked({ cooked }, c.at))}>
-              ×
-            </button>
+            {editing?.at !== c.at && (
+              <span className="row-actions">
+                <button className="link" aria-label={c.note ? 'Edit the note' : 'Add a note'} onClick={() => setEditing({ at: c.at, note: c.note ?? '' })}>
+                  ✎
+                </button>
+                <button className="link remove" aria-label="Remove this entry" onClick={() => onChange(removeCooked({ cooked }, c.at))}>
+                  ×
+                </button>
+              </span>
+            )}
           </li>
         ))}
       </ul>

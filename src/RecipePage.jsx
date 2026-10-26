@@ -4,6 +4,7 @@ import RecipeTags from './RecipeTags.jsx'
 import Stars from './Stars.jsx'
 import CookedLog from './CookedLog.jsx'
 import { addCooked, cookedAgo, lastCooked } from './lib/history.js'
+import { myRating, otherRatings, ratePatch } from './lib/ratings.js'
 import CookMode from './CookMode.jsx'
 import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
@@ -36,7 +37,22 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [] }) {
+/** What the others in the household gave the recipe, next to your own stars. */
+function OtherRatings({ recipe, me }) {
+  const others = otherRatings(recipe, me)
+  if (!others.length) return null
+  return (
+    <span className="other-ratings note">
+      {others.map((o) => (
+        <span key={o.who}>
+          {o.name ?? (others.length > 1 ? 'Other' : 'Other person')} {'★'.repeat(o.stars)}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -287,7 +303,8 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           <RecipeTags recipe={recipe} categories={categories} cuisines={cuisines} onChange={set} />
           <div className="rating-row">
             <span className="note">Rating</span>
-            <Stars value={recipe.rating} onChange={(rating) => set({ rating })} />
+            <Stars value={myRating(recipe, me)} onChange={(stars) => set(ratePatch(recipe, me, stars))} />
+            <OtherRatings recipe={recipe} me={me} />
           </div>
           <label className="recipe-note">
             Note
@@ -365,7 +382,10 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>
         <div className="head-line">
-          <Stars value={recipe.rating} onChange={(rating) => onSavePatch({ rating })} />
+          <span className="my-rating">
+            <Stars value={myRating(recipe, me)} onChange={(stars) => onSavePatch(ratePatch(recipe, me, stars))} />
+            <OtherRatings recipe={recipe} me={me} />
+          </span>
         </div>
         {(recipe.cuisine || recipe.categories?.length > 0) && (
           <div className="tag-scroll">
@@ -508,7 +528,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         </div>
       </section>
 
-      {recipe.id && <CookedLog cooked={recipe.cooked} onChange={(cooked) => onSavePatch({ cooked })} />}
+      {recipe.id && <CookedLog cooked={recipe.cooked} by={me} onChange={(cooked) => onSavePatch({ cooked })} />}
 
       {sources}
 
@@ -520,7 +540,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           alarm={alarm}
           stockPlan={stockReview(scaled, pantry, canonical)}
           onUseStock={onUseStock}
-          onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note) }) : null}
+          onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note, me) }) : null}
           onClose={() => setCooking(false)}
         />
       )}

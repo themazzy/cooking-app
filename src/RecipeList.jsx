@@ -4,6 +4,7 @@ import Stars from './Stars.jsx'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
+import { averageRating } from './lib/ratings.js'
 
 const matches = (r, q) =>
   !q ||
@@ -50,7 +51,7 @@ function CardFacts({ recipe: r, home }) {
         🏠 {home.have}/{home.total}
       </span>
     ) : null,
-    r.rating ? <Stars key="r" value={r.rating} size="small" /> : null,
+    averageRating(r) ? <Stars key="r" value={Math.round(averageRating(r))} size="small" /> : null,
     r.note?.trim() ? <span key="n" title="Has a note">📝</span> : null,
   ].filter(Boolean)
   return facts.length ? <span className="card-facts">{facts}</span> : null
@@ -73,7 +74,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
   const timed = recipes.some((r) => totalMinutes(r))
-  const rated = recipes.some((r) => r.rating)
+  const rated = recipes.some((r) => averageRating(r))
   const cooked = recipes.some((r) => r.cooked?.length)
   // What can be cooked from what is at home: recipes missing at most this many ingredients
   const home = new Map(pantry.length ? recipes.map((r) => [r.id, homeMatch(r, pantry, canonical)]) : [])
@@ -94,7 +95,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
         : sort === 'quick'
           ? (totalMinutes(a) ?? 1e9) - (totalMinutes(b) ?? 1e9)
           : sort === 'rated'
-            ? (b.rating ?? 0) - (a.rating ?? 0)
+            ? (averageRating(b) ?? 0) - (averageRating(a) ?? 0)
             : sort === 'home'
               ? (home.get(a.id)?.missing.length ?? 1e9) - (home.get(b.id)?.missing.length ?? 1e9) || (home.get(b.id)?.have ?? 0) - (home.get(a.id)?.have ?? 0)
               : sort === 'lately'
