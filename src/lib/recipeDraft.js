@@ -2,6 +2,7 @@ import { pickRecipe } from './recipeSource.js'
 import { toEditable } from './recipeEdit.js'
 import { parseRecipeText } from './ingredients.js'
 import { detectServings, tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
+import { mergeTags, tagsFromHashtags as styleHashtags } from './recipeTags.js'
 
 export { detectServings }
 
@@ -68,7 +69,8 @@ export function detectTimes(result, picked, steps) {
 export function draftFromImport(result) {
   const picked = pickRecipe(result)
   const editable = toEditable(picked)
-  const tags = tagsFromHashtags([result.description, picked?.text].filter(Boolean).join('\n'))
+  const caption = [result.description, picked?.text].filter(Boolean).join('\n')
+  const tags = tagsFromHashtags(caption)
   return {
     id: null,
     title: titleFrom(result.description, result.author ? `Recipe from ${result.author}` : 'New recipe'),
@@ -80,6 +82,8 @@ export function draftFromImport(result) {
     steps: editable.steps,
     categories: result.meta?.categories?.length ? result.meta.categories : tags.categories,
     cuisine: result.meta?.cuisine ?? tags.cuisine,
+    // Diet and style tags the source names; App adds the ones the recipe looks like
+    tags: mergeTags(result.meta?.tags ?? [], styleHashtags(caption)),
     ...detectTimes(result, picked, editable.steps),
     source: picked?.source ?? null,
     raw: { description: result.description ?? null, transcript: result.transcript ?? null, comments: result.comments ?? [] },

@@ -60,7 +60,7 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -341,7 +341,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
               portions
             </label>
           </div>
-          <RecipeTags recipe={recipe} categories={categories} cuisines={cuisines} onChange={set} />
+          <RecipeTags recipe={recipe} categories={categories} cuisines={cuisines} tags={tags} onChange={set} />
           <div className="rating-row">
             <span className="note">Rating</span>
             <Stars value={myRating(recipe, me)} onChange={(stars) => set(ratePatch(recipe, me, stars))} />
@@ -445,6 +445,11 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           {(recipe.categories ?? []).map((c) => (
             <span key={c} className="meta-chip plain">
               {c}
+            </span>
+          ))}
+          {(recipe.tags ?? []).map((t) => (
+            <span key={`t-${t}`} className="meta-chip plain">
+              {t}
             </span>
           ))}
           {recipe.id && !recipe.collections?.length && (

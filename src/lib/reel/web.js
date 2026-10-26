@@ -2,6 +2,7 @@ import { DESKTOP_UA, FetchError, getText } from '../http.js'
 import { runInPage } from '../pageReader.js'
 import { decodeEntities, htmlToText, metaContent } from './html.js'
 import { categoriesFrom, cuisineFrom, detectServings, durationMinutes, servingsFrom } from '../recipeMeta.js'
+import { tagsFromSchema } from '../recipeTags.js'
 
 const isType = (node, type) => [].concat(node?.['@type'] ?? []).some((t) => String(t).toLowerCase() === type)
 
@@ -127,6 +128,7 @@ export function recipeJsonLdMeta(recipe) {
     totalMin: durationMinutes(recipe.totalTime),
     categories: categoriesFrom(recipe.recipeCategory),
     cuisine: cuisineFrom(recipe.recipeCuisine),
+    tags: tagsFromSchema(recipe),
   }
 }
 
