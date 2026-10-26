@@ -7,15 +7,17 @@ import { canonicalUnit, parseAmount } from './scale.js'
 
 const num = (s) => (String(s ?? '').trim() === '' ? null : Number(s))
 
-/** Catalog name (lowercase) → { kcal, piece_g, density } from data/nutrition.js. */
+/** Catalog name (lowercase) → { kcal, piece_g, density, protein, carbs, fat } from data/nutrition.js. */
 export const NUTRITION = new Map(
   NUTRITION_LINES.trim()
     .split('\n')
     .map((line) => {
-      const [name, kcal, piece, density] = line.split('|').map((s) => s.trim())
-      return [name.toLowerCase(), { kcal: num(kcal), piece_g: num(piece), density: num(density) }]
+      const [name, kcal, piece, density, protein, carbs, fat] = line.split('|').map((s) => s.trim())
+      return [name.toLowerCase(), { kcal: num(kcal), piece_g: num(piece), density: num(density), protein: num(protein), carbs: num(carbs), fat: num(fat) }]
     }),
 )
+
+export const MACROS = ['protein', 'carbs', 'fat']
 
 const MASS = { g: 1, kg: 1000, oz: 28.35, lb: 453.6 }
 const VOLUME = { ml: 1, dl: 100, l: 1000, tsp: 4.93, tbsp: 14.79, cup: 240, floz: 29.57, pint: 473.2, quart: 946.4 }
@@ -65,6 +67,30 @@ export function recipeCalories(ingredients, match) {
   }
   return { total: rows.reduce((s, r) => s + r.kcal, 0), rows, missing }
 }
+
+/**
+ * Protein, carbs and fat (grams) of a list of ingredients, counted like
+ * calories: { protein, carbs, fat, missing: [name] }. Ingredients without
+ * calories count as nothing here too (salt, water).
+ */
+export function recipeMacros(ingredients, match) {
+  const out = { protein: 0, carbs: 0, fat: 0, missing: [] }
+  for (const i of ingredients ?? []) {
+    if (!i.name?.trim()) continue
+    const entry = match(i.name)
+    if (entry?.kcal === 0) continue
+    const g = entry && MACROS.every((m) => entry[m] != null) ? gramsOf(i, entry) : null
+    if (g == null) {
+      out.missing.push(i.name.trim())
+      continue
+    }
+    for (const m of MACROS) out[m] += (g * entry[m]) / 100
+  }
+  return out
+}
+
+/** Grams for display: one decimal under 10 g, whole grams above. */
+export const formatGrams = (n) => (n < 10 ? Math.round(n * 10) / 10 : Math.round(n)).toLocaleString('cs-CZ')
 
 /** "2 080" style rounding: to 10 above 100 kcal. */
 export const formatKcal = (n) => (n >= 100 ? Math.round(n / 10) * 10 : Math.round(n)).toLocaleString('cs-CZ')
