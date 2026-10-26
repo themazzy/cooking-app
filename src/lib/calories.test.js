@@ -33,7 +33,7 @@ describe('gramsOf', () => {
   it('reads weights, volumes with density, and pieces', () => {
     expect(gramsOf({ qty: '200', unit: 'g' }, flour)).toBe(200)
     expect(gramsOf({ qty: '0,5', unit: 'kg' }, flour)).toBe(500)
-    expect(gramsOf({ qty: '1', unit: 'cup' }, flour)).toBeCloseTo(127, 0)
+    expect(gramsOf({ qty: '1', unit: 'cup' }, flour)).toBeCloseTo(129.6, 0)
     expect(gramsOf({ qty: '2', unit: '' }, egg)).toBe(100)
     expect(gramsOf({ qty: '3', unit: 'ks' }, egg)).toBe(150)
     expect(gramsOf({ qty: '2', unit: 'lžíce' }, { density: 1 })).toBeCloseTo(29.6, 1)

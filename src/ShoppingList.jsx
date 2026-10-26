@@ -94,7 +94,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const copy = async () => {
     const lines = items
       .filter((i) => !i.checked)
-      .map((i) => `• ${[amountText(convertIngredient(i, units)), i.name].filter(Boolean).join(' ')}${i.extra.length ? ` (+ ${i.extra.join(', ')})` : ''}`)
+      .map((i) => `• ${[amountText(convertIngredient(i, units, match)), i.name].filter(Boolean).join(' ')}${i.extra.length ? ` (+ ${i.extra.join(', ')})` : ''}`)
     try {
       await navigator.clipboard.writeText(lines.join('\n'))
       setCopied(true)
@@ -154,7 +154,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
                     aria-expanded={open === i.key}
                     onClick={() => (i.uses?.length ? setOpen(open === i.key ? null : i.key) : toggle(i.key))}
                   >
-                      {amountText(convertIngredient(i, units)) && <strong>{amountText(convertIngredient(i, units))} </strong>}
+                      {amountText(convertIngredient(i, units, match)) && <strong>{amountText(convertIngredient(i, units, match))} </strong>}
                       {i.name}
                       {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
@@ -168,7 +168,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
                         <li key={k}>
                           <span className="uses-for">{[list.recipes.length > 1 || !u.group ? u.recipe : null, u.group].filter(Boolean).join(' · ')}</span>
                           <span>
-                            <strong>{amountText(convertIngredient(u, units)) || 'some'}</strong> {u.name}
+                            <strong>{amountText(convertIngredient(u, units, match)) || 'some'}</strong> {u.name}
                           </span>
                         </li>
                       ))}

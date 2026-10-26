@@ -303,7 +303,7 @@ Jerk seasoning|280||0.5|8|58|6
 Sharena sol|200||0.6|5|35|5
 Cinnamon sticks|250|3||4|55|1.2
 Vanilla|290||1|0.1|13|0.1
-Flour|364||0.53|10|76|1
+Flour|364||0.54|10|76|1
 Self-raising flour|350||0.53|9|74|1.2
 Wholemeal flour|340||0.5|13|65|2.5
 Cornstarch|380||0.55|0.3|91|0.1
@@ -330,7 +330,7 @@ Muscovado sugar|380||0.9|0.1|95|0
 Coconut sugar|375||0.75|1|92|0.5
 Vanilla sugar|400|8|0.85|0|99|0
 Sweetener|0||0.5|0|0|0
-Plain flour|364||0.53|10|76|1
+Plain flour|364||0.54|10|76|1
 Bread flour|360||0.55|12|72|1.5
 Cornmeal|365||0.65|7|77|3.9
 Rye flour|325||0.45|9|69|1.7

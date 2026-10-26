@@ -85,9 +85,9 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const factor = recipe.servings ? cookFor / recipe.servings : cookFor
   const scaled = factor !== 1 ? scaleIngredients(recipe.ingredients, factor) : recipe.ingredients
   // Metric or US amounts for reading and cooking; stock maths uses `scaled`
-  const shown = convertIngredients(scaled, units)
+  const shown = convertIngredients(scaled, units, match)
   const stepsText = convertTemperatures(scaleSteps(recipe.steps, factor, recipe.ingredients), units)
-  const convertible = hasUnits(recipe.ingredients, 'metric') || hasUnits(recipe.ingredients, 'imperial') || /\d\s*°/.test(recipe.steps)
+  const convertible = hasUnits(recipe.ingredients, 'metric', match) || hasUnits(recipe.ingredients, 'imperial') || /\d\s*°/.test(recipe.steps)
   // Copies saved before the seek fix get their length and seek index added on the fly
   const [videoSrc, setVideoSrc] = useState(null)
   useEffect(() => {
