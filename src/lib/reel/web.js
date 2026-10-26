@@ -1,6 +1,6 @@
 import { DESKTOP_UA, getText } from '../http.js'
 import { decodeEntities, htmlToText, metaContent } from './html.js'
-import { categoriesFrom, cuisineFrom, durationMinutes } from '../recipeMeta.js'
+import { categoriesFrom, cuisineFrom, detectServings, durationMinutes, servingsFrom } from '../recipeMeta.js'
 
 const isType = (node, type) => [].concat(node?.['@type'] ?? []).some((t) => String(t).toLowerCase() === type)
 
@@ -117,9 +117,10 @@ export function ingredientGroups(html) {
   return []
 }
 
-/** Times (minutes), categories and cuisine of a schema.org Recipe. */
+/** Portions, times (minutes), categories and cuisine of a schema.org Recipe. */
 export function recipeJsonLdMeta(recipe) {
   return {
+    servings: servingsFrom(recipe.recipeYield ?? recipe.yield ?? recipe.servings),
     prepMin: durationMinutes(recipe.prepTime),
     cookMin: durationMinutes(recipe.cookTime ?? recipe.performTime),
     totalMin: durationMinutes(recipe.totalTime),
@@ -128,15 +129,31 @@ export function recipeJsonLdMeta(recipe) {
   }
 }
 
+/** Portions from microdata (itemprop="recipeYield") or a recipe plugin's servings box, or null. */
+export function microdataServings(html) {
+  const tag = html.match(/<[^>]+itemprop=["']recipeYield["'][^>]*>/i)?.[0]
+  if (tag) {
+    const content = tag.match(/content=(["'])([\s\S]*?)\1/i)?.[2]
+    const inner = html.slice(html.indexOf(tag) + tag.length).match(/^([\s\S]{0,200}?)<\//)?.[1]
+    const n = servingsFrom(content ? decodeEntities(content) : clean(inner))
+    if (n) return n
+  }
+  // WP Recipe Maker, Tasty, Create
+  const box = html.match(/class=["'][^"']*(?:wprm-recipe-servings|tasty-recipes-yield|mv-create-yield)[^"']*["'][^>]*>([\s\S]{0,200}?)<\/(?:span|div|li)/i)?.[1]
+  return box ? servingsFrom(clean(box)) : null
+}
+
 export function parseRecipePage(html) {
   const recipe = findRecipeJsonLd(html)
   if (recipe) {
     const author = [].concat(recipe.author ?? [])[0]
+    const meta = recipeJsonLdMeta(recipe)
+    meta.servings ??= microdataServings(html)
     return {
       description: recipeJsonLdToText(recipe, ingredientGroups(html)),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
       image: jsonLdImage(recipe.image) ?? metaContent(html, 'og:image'),
-      meta: recipeJsonLdMeta(recipe),
+      meta,
       structured: true,
     }
   }
@@ -147,6 +164,7 @@ export function parseRecipePage(html) {
     description: text ? text.slice(0, 20000) : metaContent(html, 'og:description'),
     author: metaContent(html, 'og:site_name'),
     image: metaContent(html, 'og:image'),
+    meta: { servings: microdataServings(html) ?? detectServings(text) },
     structured: false,
   }
 }

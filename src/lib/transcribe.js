@@ -1,6 +1,6 @@
 export const MODELS = {
   base: { id: 'onnx-community/whisper-base', label: 'Base (faster, ~80 MB)' },
-  small: { id: 'onnx-community/whisper-small', label: 'Small (better Czech, ~250 MB)' },
+  small: { id: 'onnx-community/whisper-small', label: 'Small (better Czech and Bulgarian, ~250 MB)' },
 }
 
 let worker

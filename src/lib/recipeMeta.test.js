@@ -67,7 +67,7 @@ describe('categories and cuisine', () => {
 
   it('fills a website draft', () => {
     const meta = recipeJsonLdMeta({ prepTime: 'PT15M', cookTime: 'PT2H', recipeCategory: 'Hlavní jídla', recipeCuisine: 'Česká' })
-    expect(meta).toEqual({ prepMin: 15, cookMin: 120, totalMin: null, categories: ['Main'], cuisine: 'Czech' })
+    expect(meta).toEqual({ servings: null, prepMin: 15, cookMin: 120, totalMin: null, categories: ['Main'], cuisine: 'Czech' })
     const d = draftFromImport({ platform: 'web', description: 'Svíčková\n\nIngredients:\n- 500 g hovězí', meta })
     expect([d.prepMin, d.cookMin, d.cuisine, d.categories, d.timesEstimated]).toEqual([15, 120, 'Czech', ['Main'], false])
   })

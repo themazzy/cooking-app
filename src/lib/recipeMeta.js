@@ -228,3 +228,55 @@ export function allCuisines(recipes = []) {
   const used = recipes.map((r) => r.cuisine).filter((c) => c && !CUISINES.includes(c))
   return [...new Set([...CUISINES, ...used])].sort((a, b) => a.localeCompare(b))
 }
+
+// Portions: "Serves 4", "4–6 servings", "Porce: 4", "pro 6 osob", "Порции: 4", "за 4 човека"
+const NUM_WORDS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8,
+  dva: 2, dvě: 2, tři: 3, čtyři: 4, pět: 5, šest: 6,
+  две: 2, два: 2, три: 3, четири: 4, пет: 5, шест: 6, осем: 8,
+}
+// "4-6", and Bulgarian "4-ма" / "4-ри"
+const COUNT = `(\\d{1,2}|${Object.keys(NUM_WORDS).join('|')})(?:-?(?:ма|ри))?(?:\\s*(?:-|–|to|až|до)\\s*\\d{1,2})?`
+// \b only knows ASCII letters, so Czech and Bulgarian words need these
+const START = '(?<![\\p{L}\\d])'
+const END = '(?![\\p{L}\\d])'
+const LABEL = 'serves|servings?|portions?|yields?|makes|počet porcí|porce|porcí|porcie|брой порции|порции|порция'
+const PEOPLE = 'servings?|portions?|people|persons|porc[eíi]|porcie|porciu|osob[ya]?|osôb|lidi|порции|порция|човека|човек|души'
+const SERVINGS = [
+  new RegExp(`${START}(?:${LABEL})\\s*[:\\-–]?\\s*(?:about\\s+|cca\\.?\\s+|около\\s+)?${COUNT}${END}`, 'iu'),
+  new RegExp(`${START}${COUNT}\\s*(?:${PEOPLE})${END}`, 'iu'),
+  // "for 4" only at the end of a phrase, so "за 10 минути" (for 10 minutes) is not a portion count
+  new RegExp(`${START}(?:for|pro|na|za|за)\\s+${COUNT}(?:\\s*(?:${PEOPLE})${END}|(?=[ \\t]*(?:[:.,)\\n]|$)))`, 'iu'),
+]
+
+/** Number of portions mentioned in a recipe text, or null. */
+export function detectServings(text) {
+  if (!text) return null
+  for (const re of SERVINGS) {
+    const m = String(text).match(re)
+    if (m) {
+      const v = m[1].toLowerCase()
+      const n = NUM_WORDS[v] ?? Number(v)
+      if (n > 0 && n <= 30) return n
+    }
+  }
+  return null
+}
+
+/**
+ * Portions from schema.org recipeYield: a number, "4", "4 servings", "4-6",
+ * "Porce: 4", "12 cookies", or a list of those. Null when there is none.
+ */
+export function servingsFrom(value) {
+  const items = [].concat(value ?? []).filter((v) => v != null && v !== '')
+  for (const v of items) {
+    const n = typeof v === 'number' ? Math.round(v) : detectServings(String(v))
+    if (n > 0 && n <= 100) return n
+  }
+  // No portion word: the first number counts ("4", "12 cookies", "1 cake")
+  for (const v of items) {
+    const n = Number(String(v).match(/\d+(?:[.,]\d+)?/)?.[0].replace(',', '.'))
+    if (n >= 1 && n <= 100) return Math.round(n)
+  }
+  return null
+}
