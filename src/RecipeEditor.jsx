@@ -41,8 +41,7 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
                 </span>
                 <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
                 <input className="unit" aria-label="Unit" value={i.unit} onChange={(e) => update(n, 'unit', e.target.value)} />
-                {/* Grows to a second line for a long name instead of hiding its end */}
-                <textarea className="name" rows={1} aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value.replace(/\n/g, ' '))} />
+                <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
                 <button className="icon del" aria-label="Remove ingredient" onClick={() => remove(n)}>
                   ×
                 </button>

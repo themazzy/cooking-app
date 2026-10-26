@@ -435,7 +435,6 @@ ol.steps p { margin: 3px 0 0; line-height: 1.55; }
 .ing-row .qty { flex: 0 0 2.7em; width: 2.7em; text-align: right; padding-left: 4px; padding-right: 4px; }
 .ing-row .unit { flex: 0 0 3.7em; width: 3.7em; padding-left: 4px; padding-right: 4px; }
 .ing-row .name { flex: 1 1 auto; padding-left: 8px; padding-right: 8px; }
-.ing-row textarea.name { width: auto; min-height: 40px; padding-top: 8px; padding-bottom: 8px; resize: none; line-height: 1.35; field-sizing: content; }
 .ing-row .del { flex: 0 0 30px; width: 30px; min-height: 40px; padding: 0; }
 .ing-head { font-size: 0.72rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: -2px; }
 .ing-head .qty, .ing-head .unit { white-space: nowrap; overflow: visible; }
