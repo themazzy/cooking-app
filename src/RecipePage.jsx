@@ -14,6 +14,9 @@ import { pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients, scaleSteps } from './lib/scale.js'
+import { swapIngredient, swapsFor } from './lib/swaps.js'
+import SwapSheet from './SwapSheet.jsx'
+import { toast } from './lib/toast.js'
 import { seekableBlob } from './lib/webmFix.js'
 import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
@@ -63,6 +66,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [shopping, setShopping] = useState(false)
   const [added, setAdded] = useState(false)
   const [photoNote, setPhotoNote] = useState(null)
+  const [swapFor, setSwapFor] = useState(null) // index of the ingredient showing its swaps
   const [imageBroken, setImageBroken] = useState(false)
   useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
@@ -97,6 +101,21 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   }, [videoBlob])
 
   const set = (patch) => onChange({ ...recipe, ...patch })
+  // Saved recipes change at once; a recipe being edited or not saved yet changes in the form
+  const patchRecipe = (patch) => (edit || !recipe.id ? set(patch) : onSavePatch(patch))
+  const canSwap = (i) => !!i.swappedFrom || swapsFor(match(i.name)).length > 0
+  const useSwap = (n, swap) => {
+    const was = recipe.ingredients[n]
+    const next = { ...swapIngredient(was, swap), swappedFrom: was.swappedFrom ?? { qty: was.qty, unit: was.unit, name: was.name } }
+    patchRecipe({ ingredients: recipe.ingredients.map((i, k) => (k === n ? next : i)) })
+    setSwapFor(null)
+    toast(`Using ${swap.name} instead of ${next.swappedFrom.name}`)
+  }
+  const restoreSwap = (n) => {
+    const { swappedFrom, ...rest } = recipe.ingredients[n]
+    patchRecipe({ ingredients: recipe.ingredients.map((i, k) => (k === n ? { ...rest, ...swappedFrom } : i)) })
+    setSwapFor(null)
+  }
   const raw = recipe.raw ?? {}
   const comments = raw.comments ?? []
   const steps = splitSteps(stepsText)
@@ -507,13 +526,19 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
               i.name?.trim() ? (
                 <Fragment key={n}>
                   {i.group && i.group !== shown[n - 1]?.group && <li className="group-title">{i.group}</li>}
-                  <li>
+                  <li className={canSwap(i) ? 'swappable' : ''} onClick={canSwap(i) ? () => setSwapFor(n) : undefined}>
                     <IngredientIcon entry={match(i.name)} size={36} />
                     <span className="ing-name">
                       {i.name}
                       {atHome.has(canonical(i.name)) && <span className="badge">at home</span>}
+                      {i.swappedFrom && <span className="from">instead of {i.swappedFrom.name}</span>}
                     </span>
                     <span className="ing-qty">{amount(i)}</span>
+                    {canSwap(i) && (
+                      <button className="icon swap-btn" aria-label={`Swaps for ${i.name}`}>
+                        <Icon name="swap" size={16} />
+                      </button>
+                    )}
                   </li>
                 </Fragment>
               ) : null,
@@ -582,6 +607,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           onUseStock={onUseStock}
           onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note, me) }) : null}
           onClose={() => setCooking(false)}
+        />
+      )}
+      {swapFor != null && shown[swapFor] && (
+        <SwapSheet
+          ingredient={shown[swapFor]}
+          onUse={(swap) => useSwap(swapFor, swap)}
+          onRestore={() => restoreSwap(swapFor)}
+          onClose={() => setSwapFor(null)}
         />
       )}
       {shopping && (
