@@ -125,7 +125,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   ) : translateTo ? (
     <div className="language-bar">
       <button className="link" disabled={translating === 'busy'} onClick={translate}>
-        🌐 {translating === 'busy' ? 'Translating… (the first time downloads the language)' : `Translate to ${languageName(translateTo)}`}
+        🌐 {translating === 'busy' ? 'Translating…' : `Translate to ${languageName(translateTo)}`}
       </button>
       {translating && translating !== 'busy' && <span className="note"> {translating}</span>}
     </div>

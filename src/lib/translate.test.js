@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyTranslation, languageName, recipeTexts, swapOriginal } from './translate.js'
+import { applyTranslation, batches, googleLines, languageName, nanoLines, nanoPrompt, recipeTexts, swapOriginal } from './translate.js'
 
 const recipe = {
   title: 'Apfelkuchen',
@@ -44,5 +44,25 @@ describe('translate', () => {
   it('names languages', () => {
     expect(languageName('de')).toBe('German')
     expect(languageName('cs')).toBe('Czech')
+  })
+})
+
+describe('translation engines', () => {
+  it('batches texts by size', () => {
+    expect(batches(['aaaa', 'bbbb', 'cccc'], 12)).toEqual([[0], [1], [2]])
+    expect(batches(['a', 'b', 'c'], 100)).toEqual([[0, 1, 2]])
+  })
+
+  it('reads Google Translate lines', () => {
+    const data = [[['Chicken paprikash\n', 'Kuře na paprice\n'], ['plain flour\n', 'hladká mouka\n'], ['salt', 'sůl']], null, 'cs']
+    expect(googleLines(data)).toEqual(['Chicken paprikash', 'plain flour', 'salt'])
+  })
+
+  it('numbers lines for Gemini Nano and reads them back', () => {
+    const prompt = nanoPrompt(['hladká mouka', 'sůl'], 'cs', 'en')
+    expect(prompt).toContain('from Czech to English')
+    expect(prompt).toContain('1| hladká mouka\n2| sůl')
+    expect(nanoLines('Here you go:\n1| plain flour\n2| salt', 2)).toEqual(['plain flour', 'salt'])
+    expect(nanoLines('1| plain flour', 3)).toBe(null)
   })
 })
