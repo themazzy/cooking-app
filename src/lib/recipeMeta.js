@@ -246,6 +246,8 @@ const PEOPLE =
 const SERVINGS = [
   new RegExp(`${START}(?:${LABEL})\\s*[:\\-–]?\\s*(?:about\\s+|cca\\.?\\s+|около\\s+)?${COUNT}${END}`, 'iu'),
   new RegExp(`${START}${COUNT}\\s*(?:${PEOPLE})${END}`, 'iu'),
+  // "2人分", "2人前", "4人份", "2인분": no space and a word may follow
+  new RegExp(`${START}(\\d{1,2})\\s*(?:人分|人前|人份|人用|인분)`, 'u'),
   // "for 4" only at the end of a phrase, so "за 10 минути" (for 10 minutes) is not a portion count
   new RegExp(`${START}(?:for|pro|na|za|за|für|para|per|pour|dla|на)\\s+${COUNT}(?:\\s*(?:${PEOPLE})${END}|(?=[ \\t]*(?:[:.,)\\n]|$)))`, 'iu'),
 ]

@@ -2,13 +2,14 @@ import { detectServings, timesFromText } from './recipeMeta.js'
 
 // Rule-based reader for recipe captions and transcripts, in Czech, Bulgarian
 // and English, plus the units and headings of German, Spanish, Italian, French,
-// Polish and Russian (other languages are translated to English first, in App). It finds ingredient lines ("200 g hladké mouky", "2 с.л. олио", "Flour - 2 cups") and
+// Polish, Russian, Japanese, Chinese and Korean (other languages are translated
+// to English first, in App). It finds ingredient lines ("200 g hladké mouky", "2 с.л. олио", "Flour - 2 cups") and
 // method steps. Anything it can't place is left for the user to edit.
 
 const UNITS = {
   g: ['g', 'gr', 'gram', 'gramy', 'gramů', 'gramu', 'grams', 'gramm', 'г', 'гр', 'грам', 'грама', 'grammi', 'gramos', 'grammes', 'gramów', 'грамм', 'грамма', 'граммов'],
   kg: ['kg', 'kilo', 'kila', 'кг', 'килограм', 'килограма', 'кило', 'килограмм'],
-  ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра', 'millilitri', 'мл.'],
+  ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра', 'millilitri', 'мл.', 'cc'],
   dl: ['dl', 'decilitr', 'decilitry', 'decilitrů', 'дл'],
   l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра', 'litro', 'litri', 'litros', 'литр'],
   tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек', 'c. à soupe', 'c.à.s', 'c. a soupe', 'cuil. à soupe', 'cuchara', 'cucharadas soperas', 'cucchiai rasi', 'столовой ложки', 'ст. ложка', 'ст. ложки', 'ст.ложки', 'polievková lyžica', 'polievkové lyžice', 'polievkovú lyžicu', 'lyžica', 'lyžice', 'lyžicu', 'lyžíc', 'cda', 'cdas', 'cucharada sopera', 'cucharadas soperas', 'c.s', 'cs'],
@@ -37,6 +38,7 @@ const UNIT_RE = [...UNIT_LOOKUP.keys()].sort((a, b) => b.length - a.length).map(
 /** Canonical unit of a unit as written ("С. л." → tbsp), or undefined. */
 export const unitOf = (u) => UNIT_LOOKUP.get(u.toLowerCase().replace(/\.$/, '').replace(/\s+/g, ' ')) ?? UNIT_LOOKUP.get(u.toLowerCase().replace(/\.$/, '').replace(/\s+/g, ''))
 
+const CJK_CHAR = '[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}]'
 const FRACTIONS = { '½': 0.5, '⅓': 1 / 3, '⅔': 2 / 3, '¼': 0.25, '¾': 0.75, '⅛': 0.125 }
 const NUM = `(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+[½⅓⅔¼¾⅛]|\\d+(?:[.,]\\d+)?|[½⅓⅔¼¾⅛])`
 const QTY = `(${NUM})(?:\\s*(?:-|–|to|až|до)\\s*(${NUM}))?`
@@ -54,8 +56,8 @@ const TO_TASTE = new RegExp(`^(.+?)\\s*[:–—-]?\\s+(${TASTE})\\.?$`, 'iu')
 const TASTE_FIRST = new RegExp(`^(${TASTE})\\s+(.+)$`, 'iu')
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
-const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти)(?![\p{L}])/iu
-const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування|paso a paso|pasos|modo de preparación|procedimiento|passaggi|étapes)(?![\p{L}])/iu
+const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти|材料|食材|用料|主料|主材料|재료|필수\s?재료|주재료|기본\s?재료|준비물)(?![\p{L}])/iu
+const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування|paso a paso|pasos|modo de preparación|procedimiento|passaggi|étapes|作り方|手順|做法|作法|步骤|步驟|制作方法|製作方法|制作步骤|만드는\s?법|조리\s?순서|조리\s?과정|조리\s?방법|조리법)(?![\p{L}])|(?:做法步骤|做法步驟|的做法|的作法)$/iu
 // A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", and the same in the languages
 // recipes often come in before they are translated: "Für die Soße", "Para la salsa", "Per il sugo", "Pour la sauce", "Do sosu", "Для соуса"
 const FOR = '(?:for|na|pro|за|für|para|per|pour|do|для)'
@@ -64,6 +66,19 @@ const FOR_HEADING = new RegExp(`^${FOR}\\s+\\p{L}`, 'iu')
 const INGREDIENTS_FOR = new RegExp(`^(?:ingredients?|ingredience|suroviny|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|zutaten|ingredientes|ingredienti|ingrédients|składniki|ингредиенты|продукты)\\s+(${FOR}\\s+.+)$`, 'iu')
 const capitalise = (s) => s.charAt(0).toLocaleUpperCase() + s.slice(1)
 const isShouted = (s) => s === s.toLocaleUpperCase() && /\p{Lu}/u.test(s)
+const BRACKETED = /^[【\[<＜〈《「(（]\s*([^【】\[\]<>＜＞〈〉《》「」()（）]{1,30}?)\s*[】\]>＞〉》」)）][\s:：]*$/u
+// Sub-lists in Japanese, Chinese and Korean recipes: 調味料 / 调料 (seasoning), タレ (sauce), 양념 (seasoning)
+const CJK_GROUP_WORDS = /^(?:合わせ調味料|調味料|调味料|调料|調料|配料|辅料|輔料|酱汁|醬汁|酱料|醬料|料汁|タレ|たれ|ソース|あん|ドレッシング|양념장|양념|소스|드레싱|육수)$/u
+// "あんの材料", "酱汁材料", "양념 재료", "[양념재료]": the ingredients of one part
+const CJK_PART_OF = /^(.+?)\s*(?:の材料|材料|用料|재료)$/u
+/** The group a CJK heading names, null when it names the whole list, undefined when it is not one. */
+function cjkGroup(header) {
+  if (!CJK.test(header) || /\d/.test(header)) return undefined
+  if (CJK_GROUP_WORDS.test(header)) return header
+  const m = header.match(CJK_PART_OF)
+  if (m && m[1].length <= 12) return /^(?:필수|主|主要|基本)$/.test(m[1]) ? null : m[1]
+  return undefined
+}
 // "ЗА ТЕСТОТО" → "За тестото"
 const headingCase = (s) => capitalise(isShouted(s) ? s.toLocaleLowerCase() : s)
 
@@ -72,7 +87,13 @@ const headingCase = (s) => capitalise(isShouted(s) ? s.toLocaleLowerCase() : s)
  * ending in ":" or written in capitals ("SAUCE") is one too.
  */
 export function groupHeading(line, inList) {
-  const header = line.replace(/[\s:–—-]+$/u, '').trim()
+  const bracketed = BRACKETED.exec(line.trim())
+  const header = (bracketed ? bracketed[1] : line).replace(/[\s:：–—-]+$/u, '').trim()
+  if (!header) return null
+  const cjk = cjkGroup(header)
+  if (cjk !== undefined) return cjk
+  // "[Sauce]", "【タレ】", "<양념장>": a line in brackets is a heading, unless it names the whole list
+  if (bracketed && !/\d/.test(header) && wordCount(header) <= 5 && !new RegExp(`^${TASTE}$`, 'iu').test(header)) return INGREDIENT_HEADER.test(header) || STEP_HEADER.test(header) ? null : headingCase(header)
   if (!header || /\d/.test(header) || /[.!?]$/.test(header)) return null
   if (STEP_HEADER.test(header) || /^(?:notes?|tips?|poznámk|tip|бележк|съвет)/iu.test(header)) return null
   const words = wordCount(header)
@@ -87,11 +108,11 @@ export function groupHeading(line, inList) {
   return null
 }
 
-const STEP_WORD = '(?:step|krok|стъпка|schritt|paso|passo|étape|etape|шаг)'
-const NUMBERED_STEP = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*[.):]\\s+(?=\\p{L})`, 'iu')
+const STEP_WORD = '(?:step|krok|стъпка|schritt|paso|passo|étape|etape|шаг|步骤|步驟|단계|ステップ)'
+const NUMBERED_STEP = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*(?:[.):]\\s+|[.)、．]\\s*(?=${CJK_CHAR}))(?=\\p{L})`, 'iu')
 // A step number on a line of its own ("1", "Стъпка 1", "Schritt 2"), as recipe sites lay them out
 const STEP_NUMBER_ONLY = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*[.):]?$`, 'iu')
-const DECORATION = /^[\s\-–—•*·>]+|^[\p{Extended_Pictographic}️‍\s]+/u
+const DECORATION = /^[\s\-–—•*·・>]+|^[\p{Extended_Pictographic}️‍\s]+/u
 
 export function parseQuantity(s) {
   if (!s) return null
@@ -107,8 +128,19 @@ export function parseQuantity(s) {
   return Number.isFinite(n) ? n : null
 }
 
+// Full-width letters and digits ("１２０ｇ"), the ideographic space, circled step numbers
+// ("①") and wave dashes ("10〜15分") as plain text, so Japanese, Chinese and Korean lines read like the rest
+const CIRCLED = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'
+export const plainWidth = (s) =>
+  s
+    // (，。！？ stay as they are: steps keep their own punctuation)
+    .replace(/[\uFF08-\uFF0B\uFF0D-\uFF1A\uFF1C-\uFF1E\uFF21-\uFF3A\uFF41-\uFF5A]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/\u3000/g, ' ')
+    .replace(/[〜～]/g, '-')
+    .replace(/[①-⑳]/g, (c) => `${CIRCLED.indexOf(c) + 1}. `)
+
 function cleanLine(line) {
-  return line
+  return plainWidth(line)
     .replace(DECORATION, '')
     .replace(/(\s#[\p{L}\d_]+)+\s*$/u, '') // trailing hashtags
     .trim()
@@ -167,10 +199,95 @@ const wordAmount = (s) => {
 const SPOON_LETTER = new RegExp(`^(${NUM}(?:\\s*(?:-|–|to)\\s*${NUM})?)\\s*([Tt])\\.?\\s+(?=\\p{L})`, 'u')
 const spoonLetter = (s) => s.replace(SPOON_LETTER, (all, qty, t) => `${qty} ${t === 'T' ? 'tbsp' : 'tsp'} `)
 
+// Japanese, Chinese and Korean. Words are not split by spaces, so these lines have their own reader.
+export const CJK = new RegExp(CJK_CHAR, 'u')
+const CJK_UNITS = {
+  g: ['g', 'gr', '克', 'グラム', '그램'],
+  kg: ['kg', '公斤', '千克', 'キロ', '킬로그램', '킬로'],
+  ml: ['ml', 'cc', '毫升', 'ミリリットル', '밀리리터', '미리'],
+  l: ['l', 'リットル', '리터'],
+  tbsp: ['大さじ', '大匙', '大匙子', '汤匙', '湯匙', '大勺', '큰술', '큰스푼', '밥숟가락', '숟가락', '숟갈', 'T', 'tbsp'],
+  tsp: ['小さじ', '小匙', '茶匙', '小勺', '작은술', '티스푼', '찻숟가락', 't', 'tsp'],
+  cup: ['カップ', '杯', '컵', '종이컵'],
+  pcs: ['個', '个', '개', '本', '根', '只', '隻', '颗', '顆', '粒', '마리', '대', '알', '丁'],
+  clove: ['瓣', '쪽', 'かけ', '片'],
+  slice: ['枚', '장', '조각'],
+  pinch: ['ひとつまみ', '一撮', '꼬집'],
+  pack: ['パック', '袋', '包', '봉지', '봉', '팩'],
+  can: ['缶', '罐', '캔'],
+  bunch: ['束', '把', '단'],
+  handful: ['줌', 'ひとつかみ'],
+  head: ['玉', '头', '頭', '통', '株'],
+  // Chinese weights, turned into grams
+  jin: ['斤'],
+  liang: ['两', '兩'],
+}
+const CJK_UNIT_LOOKUP = new Map(Object.entries(CJK_UNITS).flatMap(([canon, words]) => words.map((w) => [w, canon])))
+const CJK_UNIT = `(${[...CJK_UNIT_LOOKUP.keys()].sort((a, b) => b.length - a.length).map(escape).join('|')})`
+// 半 = ½, Chinese and Korean numerals
+const CJK_NUMBERS = { 半: '½', 半分: '½', 반: '½', 一: '1', 二: '2', 两: '2', 兩: '2', 三: '3', 四: '4', 五: '5', 六: '6', 七: '7', 八: '8', 九: '9', 十: '10', 한: '1', 두: '2', 세: '3', 네: '4' }
+const CJK_NUM = `(?:${NUM}|半分|[半반一二两兩三四五六七八九十한두세네])`
+const CJK_QTY = `(${CJK_NUM})(?:\\s*(?:-|~|〜|～)\\s*(${CJK_NUM}))?`
+const cjkNumber = (s) => (s == null ? null : parseQuantity(CJK_NUMBERS[s] ?? s))
+const SIZE = '(?:約|约|약|中|大|小|大きめ|小さめ)?'
+// 少々 (a little), 適量 / 适量 / 적당량 (as needed), お好みで (to your liking)
+const CJK_TASTE = '(?:お好みで\\s*)?(?:少々|少量|適量|適宜|适量|適量|少许|少許|若干|약간|적당량|적당히|조금|お好みで|お好み)'
+// "玉ねぎ 1/2個", "豚肉 150g", "猪肉300克", "じゃがいも 中3個", "姜片 4片"
+const CJK_NAME_QTY = new RegExp(`^(.+?)\\s*${SIZE}\\s*${CJK_QTY}\\s*${CJK_UNIT}?$`, 'u')
+// "醤油 大さじ2", "砂糖 小さじ1/2": the unit comes before the amount
+const CJK_UNIT_QTY = new RegExp(`^(.+?)\\s*${CJK_UNIT}\\s*${CJK_QTY}$`, 'u')
+// "300克猪肉", "2个鸡蛋", "半个洋葱"
+const CJK_QTY_NAME = new RegExp(`^${CJK_QTY}\\s*${CJK_UNIT}\\s*(.+)$`, 'u')
+const CJK_TASTE_LINE = new RegExp(`^(.+?)\\s*(${CJK_TASTE})$`, 'u')
+// "塩 ひとつまみ": a unit with no amount means one
+const CJK_UNIT_ONLY = new RegExp(`^(.+?)\\s*(ひとつまみ|一撮|꼬집|ひとつかみ|한\\s*줌|한\\s*꼬집)$`, 'u')
+
+function cjkIngredient(raw, name, qty, qtyMax, unitWord, note) {
+  let canon = unitWord ? (CJK_UNIT_LOOKUP.get(unitWord) ?? null) : null
+  // にんにく1片 is a clove, 姜片 4片 a slice
+  if (unitWord === '片' && !/にんにく|ニンニク|大蒜|蒜/.test(name)) canon = 'slice'
+  let quantity = cjkNumber(qty)
+  let quantityMax = cjkNumber(qtyMax)
+  if (canon === 'jin' || canon === 'liang') {
+    const g = canon === 'jin' ? 500 : 50
+    quantity = quantity == null ? null : quantity * g
+    quantityMax = quantityMax == null ? null : quantityMax * g
+    canon = 'g'
+  }
+  if (canon === 'pcs') canon = null
+  const clean = name.replace(/^[\s:：、,]+|[\s:：、,]+$/g, '').trim()
+  if (!clean) return null
+  return { raw, quantity, quantityMax, unit: canon, name: clean, ...(note ? { note } : {}) }
+}
+
+/** One Japanese, Chinese or Korean ingredient line, or null. */
+function parseCjkLine(text) {
+  // A note in brackets at the end: "八角 1-2个（可以不放）", "고추장 2큰술(봉긋하게)"
+  const noteMatch = text.match(/^(.*?\S)\s*[(（]([^()（）]*)[)）]$/u)
+  const body = noteMatch && !/^\s*\d/.test(noteMatch[2]) ? noteMatch[1] : text.replace(/[(（][^()（）]*[)）]/gu, ' ').trim()
+  const note = noteMatch && body === noteMatch[1] ? noteMatch[2].trim() : null
+  let m = body.match(CJK_UNIT_QTY)
+  if (m && CJK.test(m[1])) return cjkIngredient(text, m[1], m[3], m[4], m[2], note)
+  m = body.match(CJK_NAME_QTY)
+  // A number at the end needs a unit when it is written as a word ("三" in 三文鱼 is not an amount)
+  if (m && CJK.test(m[1]) && (m[4] || /\d|[½⅓⅔¼¾⅛]/.test(m[2]))) return cjkIngredient(text, m[1], m[2], m[3], m[4], note)
+  m = body.match(CJK_QTY_NAME)
+  if (m && CJK.test(m[4])) return cjkIngredient(text, m[4], m[1], m[2], m[3], note)
+  m = body.match(CJK_UNIT_ONLY)
+  if (m) return cjkIngredient(text, m[1], '1', null, m[2].replace(/^(한)\s*/, ''), note)
+  m = body.match(CJK_TASTE_LINE)
+  if (m && CJK.test(m[1])) return { raw: text, quantity: null, quantityMax: null, unit: null, name: m[1].trim(), note: [m[2], note].filter(Boolean).join(', ') }
+  return null
+}
+
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
   const text = spoonLetter(wordAmount(cleanLine(line)))
   if (!text) return null
+  if (CJK.test(text)) {
+    const cjk = parseCjkLine(text)
+    if (cjk) return cjk
+  }
   let m = text.match(QTY_FIRST)
   if (m) {
     const name = cleanName(m[4])
@@ -258,6 +375,8 @@ export function splitCombined(line, inList = false) {
   return null
 }
 
+const MARKER = new RegExp(`^\\s*(?:([★☆◎●○◯◆◇■□▲△])|[(]([A-D])[)]|([A-D])(?=\\s*${CJK_CHAR}))\\s*`, 'u')
+
 /**
  * Splits a caption or transcript into ingredients and steps.
  * Returns { ingredients: [{ raw, quantity, quantityMax, unit, name, note?, group? }], steps: [string] }.
@@ -270,10 +389,20 @@ export function parseRecipeText(text) {
   const add = (ing) => ingredients.push(group ? { ...ing, group } : ing)
 
   for (const rawLine of (text ?? '').split(/\r?\n/)) {
-    const line = cleanLine(rawLine)
+    // "★醤油 大さじ1", "A 酒 大さじ2": Japanese recipes mark what is mixed together; the mark is the group
+    const mark = MARKER.exec(plainWidth(rawLine))
+    const line = cleanLine(mark ? plainWidth(rawLine).slice(mark[0].length) : rawLine)
     if (!line || /^(#[\p{L}\d_]+\s*)+$/u.test(line)) continue
+    if (mark && section !== 'steps') {
+      const ing = parseIngredientLine(line)
+      if (ing) {
+        ingredients.push({ ...ing, group: mark[1] ?? mark[2] ?? mark[3] })
+        section ??= 'ingredients'
+        continue
+      }
+    }
 
-    const header = line.replace(/[:\s]+$/, '')
+    const header = (BRACKETED.exec(line)?.[1] ?? line).replace(/[:：\s]+$/u, '')
     // "Prep time: 15 min", "Приготвяне: 20 мин" are times (read elsewhere), not a section
     if (/^[^:–-]{1,30}[:–-]\s*\d/u.test(line) && wordCount(line) <= 6 && Object.values(timesFromText(line)).some((v) => v != null)) continue
     // "For the sauce", "Ingredients for the sauce", "Тесто:" start a sub-list of the ingredients
@@ -286,7 +415,7 @@ export function parseRecipeText(text) {
     }
     // "Ingredients", or "Необходими продукти за 4 порции"
     // A sentence ("Składniki przekładamy do miski.") is not a heading
-    const sentence = /[.!?]$/.test(line)
+    const sentence = /[.!?。！？]$/.test(line)
     if (!sentence && INGREDIENT_HEADER.test(header) && (wordCount(header) <= 4 || (wordCount(header) <= 7 && detectServings(header)))) {
       section = 'ingredients'
       group = null
@@ -325,9 +454,11 @@ export function parseRecipeText(text) {
     // sentences like "Bake for 25 minutes at 180 °C" don't become ingredients
     // "4 порции", "4 Personen" is the portion count, not an ingredient
     if (ing && !ing.unit && wordCount(line) <= 3 && detectServings(line)) continue
+    // "5分煮る" (simmer 5 minutes) has no spaces to count words by: outside a list it needs a unit
+    if (ing && section !== 'ingredients' && !ing.unit && CJK.test(line) && /^\d/.test(line)) continue
     if (ing && (section === 'ingredients' || ing.unit || wordCount(line) <= 5)) {
       add(ing)
-    } else if (section === 'ingredients' && !/[.!?]$/.test(line) && wordCount(line) <= 20) {
+    } else if (section === 'ingredients' && !/[.!?。！？]$/.test(line) && wordCount(line) <= 20) {
       add({ raw: line, quantity: null, quantityMax: null, unit: null, name: cleanName(line) })
     }
   }
