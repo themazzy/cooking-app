@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
-import { addToPantry, pantryError, removeFromPantry, updatePantryItem } from './lib/pantry.js'
+import { addToPantry, pantryError, removeFromPantry, renamePantryItems, updatePantryItem } from './lib/pantry.js'
 import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
 import { readReceiptPhotos } from './lib/ocr.js'
 import { readReceipt } from './lib/receipt.js'
@@ -20,7 +20,7 @@ const LINKED_KEY = 'cooking-app:linked-ingredients'
 const QUICK = { g: ['100', '250', '500', '1000'], kg: ['1', '2', '5'], ml: ['250', '500', '1000'], l: ['1', '2'], pcs: ['1', '2', '6', '10'] }
 
 /** Amount, unit, minimum and use-by date of one stock item, new or already at home. */
-function ItemSheet({ item, entry, onSave, onRemove, onClose, onPicture, message }) {
+function ItemSheet({ item, entry, own, onSave, onRemove, onClose, onPicture, onRename, message }) {
   const [initialQty, initialUnit] = splitAmount(item.amount)
   const unitDefault = defaultUnit(entry ?? { name: item.name, aisle: 'Other' })
   const [qty, setQty] = useState(initialQty)
@@ -47,11 +47,23 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, onPicture, message 
   )
   const save = () => onSave({ amount: joinAmount(qty, unit), min_amount: joinAmount(minQty, minUnit), expires_on: expires || null })
   const [savingPicture, setSavingPicture] = useState(false)
+  const [pictureMenu, setPictureMenu] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [newName, setNewName] = useState(own ? item.name : '')
+  const [savingName, setSavingName] = useState(false)
+  const rename = async () => {
+    if (!newName.trim() || newName.trim() === item.name) return setRenaming(false)
+    setSavingName(true)
+    const ok = await onRename(newName.trim())
+    setSavingName(false)
+    if (ok) setRenaming(false)
+  }
   const pickPicture = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
     setSavingPicture(true)
+    setPictureMenu(false)
     await onPicture(file)
     setSavingPicture(false)
   }
@@ -61,21 +73,58 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, onPicture, message 
       <div className="sheet" role="dialog" aria-label={item.name} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" aria-hidden="true" />
         <div className="item-head">
-          <label className="picture-edit" aria-label={`Change the picture of ${item.name}`}>
+          <button className="picture-edit" aria-label={`Change the picture of ${item.name}`} disabled={savingPicture} onClick={() => setPictureMenu(!pictureMenu)}>
             <IngredientIcon entry={entry ?? { name: item.name }} size={56} />
             <span className="picture-badge" aria-hidden="true">
               <Icon name={savingPicture ? 'clock' : 'camera'} size={14} />
             </span>
-            <input type="file" accept="image/*" hidden disabled={savingPicture} onChange={pickPicture} />
-          </label>
+          </button>
           <div>
             <h2>{item.name}</h2>
             <span className="note">
               {item.id ? 'At home' : 'Add to what you have at home'}
-              {entry?.household_id && entry?.base && entry.name !== entry.base ? ` · counts as ${entry.base}` : ''}
+              {own && entry?.base && entry.name !== entry.base ? ` · counts as ${entry.base}` : ''}
             </span>
           </div>
         </div>
+        {pictureMenu && (
+          <div className="row">
+            <label className="button">
+              <Icon name="camera" /> Take photo
+              <input type="file" accept="image/*" capture="environment" hidden onChange={pickPicture} />
+            </label>
+            <label className="button secondary">
+              <Icon name="image" /> Choose photo
+              <input type="file" accept="image/*" hidden onChange={pickPicture} />
+            </label>
+          </div>
+        )}
+        {item.id &&
+          (renaming ? (
+            <>
+              <label className="field" htmlFor="item-name">
+                {own ? 'Name' : 'Product name, e.g. the brand'}
+              </label>
+              <div className="amount-row">
+                <input
+                  id="item-name"
+                  autoFocus
+                  placeholder={`e.g. Coca-Cola Zero`}
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && rename()}
+                />
+                <button className="secondary" disabled={savingName || !newName.trim()} onClick={rename}>
+                  {savingName ? 'Saving…' : 'Save name'}
+                </button>
+              </div>
+              {!own && <p className="hint">It becomes one of your own ingredients, shown in Ingredients with its own picture and calories, and still counts as {item.name}.</p>}
+            </>
+          ) : (
+            <button className="link more" onClick={() => setRenaming(true)}>
+              {own ? 'Rename' : 'Keep as its own product (brand) in Ingredients'}
+            </button>
+          ))}
         <label className="field">How much is at home</label>
         <div className="amount-row">
           <input
@@ -207,7 +256,7 @@ function Picker({ items, onPick, onClose, added }) {
 
 /** The household's stock: amounts, staples to keep (with a minimum) and use-by dates. */
 export default function PantryPage({ items, loading = false, onChanged }) {
-  const { entries, loaded, match, named, ensure, setPicture } = useCatalog()
+  const { entries, loaded, match, named, ensure, setPicture, update } = useCatalog()
   const [receipt, setReceipt] = useState(null) // { reading: pct } or { found }
   const [message, setMessage] = useState(null)
   const [query, setQuery] = useState('')
@@ -266,6 +315,28 @@ export default function PantryPage({ items, loading = false, onChanged }) {
     } catch (e) {
       toast(e?.message ?? String(e), { kind: 'error' })
     }
+  }
+
+  // The household's own ingredient (not an everyday one, nor its picture override)
+  const ownEntry = (name) => {
+    const e = named(name)
+    return e?.household_id && !entries.some((x) => !x.household_id && x.name.toLowerCase() === e.name.toLowerCase()) ? e : null
+  }
+
+  // Renames what is at home; an everyday ingredient becomes the household's own product counting as it
+  const renameItem = async (newName) => {
+    const { item } = editing
+    const entry = named(item.name)
+    const own = ownEntry(item.name)
+    const ok = await run(async () => {
+      if (own) await update(own.id, { name: newName })
+      else await ensure(newName, { base: entry?.base ?? entry?.name ?? item.name, aisle: entry?.aisle })
+      await renamePantryItems(item.name, newName)
+    })
+    if (!ok) return false
+    toast(`${item.name} is now ${newName}`)
+    setEditing((ed) => ed && { ...ed, item: { ...ed.item, name: newName } })
+    return true
   }
 
   const open = (item, entry) => {
@@ -526,7 +597,9 @@ export default function PantryPage({ items, loading = false, onChanged }) {
           entry={named(editing.item.name) ?? editing.entry}
           message={message}
           onSave={save}
+          own={!!ownEntry(editing.item.name)}
           onPicture={(file) => changePicture(editing.item.name, file)}
+          onRename={renameItem}
           onRemove={async () => {
             if (await run(() => removeFromPantry(editing.item.id))) {
               toast(`${editing.item.name} removed`)
