@@ -69,6 +69,16 @@ export function recipeCalories(ingredients, match) {
 }
 
 /**
+ * kcal of one portion of a recipe as written, or null when the recipe has no
+ * portion count or no ingredient with known calories.
+ */
+export function portionKcal(recipe, match) {
+  if (!recipe.servings) return null
+  const c = recipeCalories(recipe.ingredients, match)
+  return c.rows.some((r) => r.kcal > 0) ? c.total / recipe.servings : null
+}
+
+/**
  * Protein, carbs and fat (grams) of a list of ingredients, counted like
  * calories: { protein, carbs, fat, missing: [name] }. Ingredients without
  * calories count as nothing here too (salt, water).

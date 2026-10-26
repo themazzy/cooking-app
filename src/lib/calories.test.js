@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MACROS, NUTRITION, formatGrams, formatKcal, gramsOf, ingredientKcal, recipeCalories, recipeMacros } from './calories.js'
+import { MACROS, NUTRITION, formatGrams, formatKcal, gramsOf, ingredientKcal, portionKcal, recipeCalories, recipeMacros } from './calories.js'
 import { SEED_INGREDIENTS } from '../data/ingredients.js'
 
 const egg = NUTRITION.get('eggs')
@@ -84,5 +84,17 @@ describe('recipeCalories', () => {
   it('formats with a space for thousands', () => {
     expect(formatKcal(2083).replace(/\s/g, ' ')).toBe('2 080')
     expect(formatKcal(47.4)).toBe('47')
+  })
+})
+
+describe('portionKcal', () => {
+  const match = (name) => NUTRITION.get(name.toLowerCase())
+  it('divides the recipe by its portions', () => {
+    const r = { servings: 4, ingredients: [{ name: 'flour', qty: '400', unit: 'g' }] }
+    expect(portionKcal(r, match)).toBeCloseTo(flour.kcal, 5)
+  })
+  it('is unknown without portions or calories', () => {
+    expect(portionKcal({ ingredients: [{ name: 'flour', qty: '400', unit: 'g' }] }, match)).toBeNull()
+    expect(portionKcal({ servings: 2, ingredients: [{ name: 'flour' }] }, match)).toBeNull()
   })
 })
