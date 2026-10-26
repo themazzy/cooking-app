@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   ArrowRight,
+  ArrowUpDown,
   BookOpen,
   CalendarDays,
   Camera,
@@ -42,6 +43,7 @@ import {
 const ICONS = {
   back: ArrowLeft,
   next: ArrowRight,
+  reorder: ArrowUpDown,
   book: BookOpen,
   calendar: CalendarDays,
   camera: Camera,

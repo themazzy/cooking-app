@@ -1,5 +1,5 @@
 import { Fragment, useState } from 'react'
-import { AISLES } from './data/ingredients.js'
+import { aisleOrder, isDefaultOrder, moveAisle } from './lib/aisles.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
@@ -10,6 +10,38 @@ import Icon from './Icon.jsx'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 
+/** Putting the shop's sections in the order you walk past them; both phones share it. */
+function AisleSheet({ order, inUse, onChange, onClose }) {
+  return (
+    <div className="sheet-backdrop" onClick={onClose}>
+      <div className="sheet" role="dialog" aria-label="Order of the shop" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-handle" aria-hidden="true" />
+        <h2>Order of the shop</h2>
+        <p className="hint">Move the sections into the order you walk through your shop. The list follows it on both phones.</p>
+        <ol className="aisle-order">
+          {order.map((a, n) => (
+            <li key={a} className={inUse.has(a) ? '' : 'unused'}>
+              <span className="grow">{a}</span>
+              <button className="icon" aria-label={`Move ${a} up`} disabled={n === 0} onClick={() => onChange(moveAisle(order, n, -1))}>
+                <Icon name="up" />
+              </button>
+              <button className="icon" aria-label={`Move ${a} down`} disabled={n === order.length - 1} onClick={() => onChange(moveAisle(order, n, 1))}>
+                <Icon name="down" />
+              </button>
+            </li>
+          ))}
+        </ol>
+        <div className="sheet-actions">
+          <button className="secondary" disabled={isDefaultOrder(order)} onClick={() => onChange(aisleOrder(null))}>
+            Reset
+          </button>
+          <button onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** The current shopping list by aisle: tick items off while shopping, add extras, copy it as text. */
 /** `ebag` is the eBag.bg search link template, or null when the links are off. */
 export default function ShoppingList({ list, pantry = [], ebag = null, units = 'original', onChange, onNew, onToPantry }) {
@@ -17,6 +49,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(null) // key of the item showing what it is for
   const [toPantry, setToPantry] = useState(null) // null, 'saving' or an error
+  const [ordering, setOrdering] = useState(false)
   const { match, canonical } = useCatalog()
   // A list object can exist only to carry the meal plan
   if (!list || (!list.items?.length && !list.recipes?.length)) {
@@ -41,7 +74,8 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const isAtHome = (i) => !String(i.key).startsWith('stock-') && atHome.has(canonical(i.name))
   const aisleOf = (i) => i.aisle ?? match(i.name)?.aisle ?? 'Other'
   // To buy by aisle, then what is probably at home, then the basket
-  const rank = (i) => (i.checked ? 2000 : isAtHome(i) ? 1000 : 0) + Math.max(0, AISLES.indexOf(aisleOf(i)))
+  const order = aisleOrder(list.aisles)
+  const rank = (i) => (i.checked ? 2000 : isAtHome(i) ? 1000 : 0) + Math.max(0, order.indexOf(aisleOf(i)))
   const items = [...list.items].sort((a, b) => rank(a) - rank(b))
   const toggle = (key) => onChange({ ...list, items: list.items.map((i) => (i.key === key ? { ...i, checked: !i.checked } : i)) })
   const add = () => {
@@ -73,8 +107,21 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
     <>
       <header className="main-header">
         <h1>Shopping list</h1>
-        <span className="note">{list.items.filter((i) => !i.checked).length} to buy</span>
+        <div className="actions">
+          <span className="note">{list.items.filter((i) => !i.checked).length} to buy</span>
+          <button className="secondary round" aria-label="Order of the shop" title="Order of the shop" onClick={() => setOrdering(true)}>
+            <Icon name="reorder" />
+          </button>
+        </div>
       </header>
+      {ordering && (
+        <AisleSheet
+          order={order}
+          inUse={new Set(list.items.map(aisleOf))}
+          onChange={(next) => onChange({ ...list, aisles: isDefaultOrder(next) ? null : next })}
+          onClose={() => setOrdering(false)}
+        />
+      )}
       <section className="card">
         {list.recipes.length > 0 && (
           <p className="note top">For {list.recipes.map((r) => `${r.title} (${r.servings ? `${r.portions} portions` : `×${r.portions}`})`).join(', ')}</p>
