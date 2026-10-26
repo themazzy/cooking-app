@@ -1,5 +1,6 @@
 const TABS = [
   { page: 'home', hash: '#/', label: 'Recipes', icon: '📖' },
+  { page: 'plan', hash: '#/plan', label: 'Plan', icon: '📅' },
   { page: 'shopping', hash: '#/shopping', label: 'Shopping', icon: '🛒' },
   { page: 'pantry', hash: '#/pantry', label: 'At home', icon: '🏠' },
   { page: 'ingredients', hash: '#/ingredients', label: 'Ingredients', icon: '🥕' },

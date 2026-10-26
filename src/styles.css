@@ -187,7 +187,7 @@ progress { width: 100%; accent-color: var(--accent); }
   position: relative;
   font-size: 1.3rem;
   line-height: 1;
-  padding: 4px 18px;
+  padding: 4px 14px;
   border-radius: 999px;
   filter: grayscale(1);
   opacity: 0.75;
@@ -679,3 +679,29 @@ input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; wi
 .photo-pages .page-no { position: absolute; left: 4px; bottom: 4px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 0.75rem; border-radius: 6px; padding: 1px 6px; }
 .photo-pages button.remove { position: absolute; top: 2px; right: 2px; min-height: 0; width: 26px; height: 26px; padding: 0; border-radius: 50%; background: rgb(0 0 0 / 60%); color: #fff; }
 button.read-pages { width: 100%; margin-top: 10px; }
+
+/* Meal plan */
+.week-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.week-nav .link { font-weight: 600; }
+.plan-days { list-style: none; padding: 0; margin: 0; }
+.plan-day { margin: 0 0 10px; padding-top: 10px; padding-bottom: 10px; }
+.plan-day h2 { font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.plan-day.today { outline: 2px solid var(--accent); }
+.plan-day.past { opacity: 0.6; }
+.plan-entry { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border); }
+.plan-entry .plan-title { flex: 1; min-width: 0; text-align: left; justify-content: flex-start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.plan-entry .remove { font-size: 1.3rem; min-width: 36px; }
+button.plan-shop { width: 100%; margin-top: 4px; }
+.pick-list { list-style: none; padding: 0; margin: 8px 0; max-height: 55vh; overflow-y: auto; }
+.pick-list li { margin: 0; border-bottom: 1px solid var(--border); }
+.pick-list button { width: 100%; flex-direction: column; align-items: flex-start; text-align: left; padding: 10px 0; }
+.pick-list .note { display: flex; gap: 8px; align-items: center; font-weight: 400; }
+.sort-select { width: auto; min-height: 36px; padding: 4px 10px; }
+
+/* Cooking history */
+.cooked-form { display: grid; gap: 8px; margin-bottom: 8px; }
+.cooked-form input[type='date'] { width: auto; margin-left: 6px; }
+.cooked-list { list-style: none; padding: 0; margin: 0; }
+.cooked-list li { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); margin: 0; }
+.cooked-list p { margin: 4px 0 0; white-space: pre-wrap; }
+.cooked-list .remove { font-size: 1.2rem; min-width: 36px; }

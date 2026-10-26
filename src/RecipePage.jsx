@@ -2,6 +2,8 @@ import { Fragment, useEffect, useState } from 'react'
 import RecipeEditor from './RecipeEditor.jsx'
 import RecipeTags from './RecipeTags.jsx'
 import Stars from './Stars.jsx'
+import CookedLog from './CookedLog.jsx'
+import { addCooked, cookedAgo, lastCooked } from './lib/history.js'
 import CookMode from './CookMode.jsx'
 import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
@@ -363,6 +365,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           {recipe.servings && <span className="meta-chip plain">{recipe.servings} portions</span>}
           <span className="meta-chip plain">{ingredientCount} ingredients</span>
           {steps.length > 0 && <span className="meta-chip plain">{steps.length} steps</span>}
+          {lastCooked(recipe) && <span className="meta-chip plain">Cooked {cookedAgo(lastCooked(recipe))}</span>}
         </div>
         <div className="recipe-actions">
           <button className="big" disabled={!steps.length} onClick={() => setCooking(true)}>
@@ -449,6 +452,8 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         </div>
       </section>
 
+      {recipe.id && <CookedLog cooked={recipe.cooked} onChange={(cooked) => onSavePatch({ cooked })} />}
+
       {sources}
 
       {cooking && (
@@ -458,6 +463,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           steps={stepsText}
           stockPlan={planCooking(scaled, pantry, canonical)}
           onUseStock={onUseStock}
+          onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note) }) : null}
           onClose={() => setCooking(false)}
         />
       )}

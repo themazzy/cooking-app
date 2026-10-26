@@ -15,7 +15,8 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(null) // key of the item showing what it is for
   const { match, canonical } = useCatalog()
-  if (!list) {
+  // A list object can exist only to carry the meal plan
+  if (!list || (!list.items?.length && !list.recipes?.length)) {
     return (
       <>
         <header className="main-header">

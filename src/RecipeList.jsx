@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import Stars from './Stars.jsx'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
+import { homeMatch } from './lib/stock.js'
+import { cookedAgo, lastCooked } from './lib/history.js'
 
 const matches = (r, q) =>
   !q ||
@@ -42,25 +44,32 @@ function Thumb({ recipe }) {
  * With `selection` ({ id: portions }) each recipe can be ticked for a
  * shopping list and given the number of portions to buy for.
  */
-export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
+export default function RecipeList({ recipes, pantry = [], onOpen, selection, onSelect }) {
+  const { canonical } = useCatalog()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState(null)
   const [cuisine, setCuisine] = useState(null)
   const [quick, setQuick] = useState(false)
+  const [fromHome, setFromHome] = useState(false)
   const [sort, setSort] = useState('new')
   const q = query.trim().toLowerCase()
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
   const timed = recipes.some((r) => totalMinutes(r))
   const rated = recipes.some((r) => r.rating)
-  const filtered = !!(category || cuisine || quick)
+  const cooked = recipes.some((r) => r.cooked?.length)
+  // What can be cooked from what is at home: recipes missing at most this many ingredients
+  const home = new Map(pantry.length ? recipes.map((r) => [r.id, homeMatch(r, pantry, canonical)]) : [])
+  const MISSING_OK = 2
+  const filtered = !!(category || cuisine || quick || fromHome)
   const shown = recipes
     .filter(
       (r) =>
         matches(r, q) &&
         (!category || r.categories?.includes(category)) &&
         (!cuisine || r.cuisine === cuisine) &&
-        (!quick || (totalMinutes(r) != null && totalMinutes(r) <= QUICK)),
+        (!quick || (totalMinutes(r) != null && totalMinutes(r) <= QUICK)) &&
+        (!fromHome || (home.get(r.id)?.total > 0 && home.get(r.id).missing.length <= MISSING_OK)),
     )
     .sort((a, b) =>
       sort === 'az'
@@ -69,9 +78,13 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
           ? (totalMinutes(a) ?? 1e9) - (totalMinutes(b) ?? 1e9)
           : sort === 'rated'
             ? (b.rating ?? 0) - (a.rating ?? 0)
-            : 0,
+            : sort === 'home'
+              ? (home.get(a.id)?.missing.length ?? 1e9) - (home.get(b.id)?.missing.length ?? 1e9) || (home.get(b.id)?.have ?? 0) - (home.get(a.id)?.have ?? 0)
+              : sort === 'lately'
+                ? (lastCooked(a) ?? 0) - (lastCooked(b) ?? 0)
+                : 0,
     )
-  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed)
+  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed || home.size)
   return (
     <>
       {recipes.length > 4 && (
@@ -80,9 +93,14 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
       {showFilters ? (
         <div className="recipe-filters">
           <div className="aisle-chips">
-            <button className={`chip-btn${!filtered ? ' on' : ''}`} onClick={() => (setCategory(null), setCuisine(null), setQuick(false))}>
+            <button className={`chip-btn${!filtered ? ' on' : ''}`} onClick={() => (setCategory(null), setCuisine(null), setQuick(false), setFromHome(false))}>
               All
             </button>
+            {home.size > 0 && (
+              <button className={`chip-btn${fromHome ? ' on' : ''}`} aria-pressed={fromHome} onClick={() => (setFromHome(!fromHome), !fromHome && setSort('home'))}>
+                🏠 Can cook now
+              </button>
+            )}
             {timed && (
               <button className={`chip-btn${quick ? ' on' : ''}`} aria-pressed={quick} onClick={() => setQuick(!quick)}>
                 ⏱ Under {QUICK} min
@@ -107,18 +125,20 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
             <span className="note">
               {shown.length} recipe{shown.length === 1 ? '' : 's'}
             </span>
-            <div className="segmented">
+            <select className="sort-select" aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value)}>
               {[
                 ['new', 'Newest'],
                 ['az', 'A–Z'],
                 ...(timed ? [['quick', 'Quickest']] : []),
                 ...(rated ? [['rated', 'Top rated']] : []),
+                ...(home.size ? [['home', 'Most at home']] : []),
+                ...(cooked ? [['lately', 'Not cooked lately']] : []),
               ].map(([k, label]) => (
-                <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>
+                <option key={k} value={k}>
                   {label}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
         </div>
       ) : null}
@@ -142,9 +162,10 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
                   <span className="note">
                     {[
                       totalMinutes(r) ? `⏱ ${r.timesEstimated ? '~' : ''}${formatMinutes(totalMinutes(r))}` : null,
+                      home.get(r.id)?.total ? `🏠 ${home.get(r.id).have}/${home.get(r.id).total}` : null,
                       r.servings ? `${r.servings} portions` : null,
                       r.cuisine ?? `${r.ingredients?.filter((i) => i.name?.trim()).length ?? 0} ingredients`,
-                      PLATFORM[r.platform],
+                      lastCooked(r) ? `cooked ${cookedAgo(lastCooked(r))}` : PLATFORM[r.platform],
                     ]
                       .filter(Boolean)
                       .join(' · ')}
