@@ -1,5 +1,6 @@
 import { Children, isValidElement, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import Icon from './Icon.jsx'
 
 const textOf = (node) =>
   Children.toArray(node)
@@ -49,7 +50,7 @@ export default function Select({ value, onChange, children, className = '', disa
     <>
       <button type="button" className={`select ${className}`} disabled={disabled} aria-haspopup="listbox" aria-expanded={open} aria-label={ariaLabel} title={title} onClick={() => setOpen(true)}>
         <span className="select-value">{current?.label ?? ''}</span>
-        <span className="select-caret" aria-hidden="true" />
+        <Icon name="down" size={18} className="select-caret" />
       </button>
       {open &&
         createPortal(
@@ -64,7 +65,7 @@ export default function Select({ value, onChange, children, className = '', disa
                     <li key={String(o.value)} role="option" aria-selected={on}>
                       <button type="button" className={on ? 'on' : ''} disabled={o.disabled} onClick={() => pick(o)}>
                         <span>{o.label}</span>
-                        {on && <span className="select-check" aria-hidden="true">✓</span>}
+                        {on && <Icon name="check" size={18} strokeWidth={2.5} />}
                       </button>
                     </li>
                   )

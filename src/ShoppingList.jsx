@@ -113,7 +113,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
                       {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
                       {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
-                    {i.uses?.length > 0 && <span className="caret" aria-hidden="true">{open === i.key ? '▴' : '▾'}</span>}
+                    {i.uses?.length > 0 && <Icon name={open === i.key ? 'up' : 'down'} size={16} className="caret" />}
                   </button>
                   {open === i.key && (
                     <ul className="uses">
@@ -129,7 +129,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
                   )}
                   {ebag && !i.checked && ebagQuery(i.name, match(i.name)) && (
                     <button className="ebag" aria-label={`Search ${i.name} on eBag`} onClick={() => openExternal(ebagUrl(ebagQuery(i.name, match(i.name)), ebag))}>
-                      eBag ↗
+                      eBag <Icon name="external" size={13} />
                     </button>
                   )}
                 </li>

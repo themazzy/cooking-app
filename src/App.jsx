@@ -793,7 +793,7 @@ export default function App() {
   const topbar = (
     <div className="topbar">
       <button className="link" onClick={back}>
-        ← Back
+        <Icon name="back" /> Back
       </button>
     </div>
   )
@@ -945,7 +945,7 @@ export default function App() {
                 title={a.label}
                 onClick={() => setSettings({ ...settings, accent: k })}
               >
-                {settings.accent === k ? '✓' : ''}
+                {settings.accent === k ? <Icon name="check" size={20} strokeWidth={3} /> : null}
               </button>
             ))}
           </div>
@@ -1053,7 +1053,7 @@ export default function App() {
               <input type="checkbox" checked={settings.alarmVibrate} onChange={(e) => setSettings({ ...settings, alarmVibrate: e.target.checked })} /> Vibrate when a timer is done
             </label>
             <button className="secondary" onClick={() => ring({ sound: settings.alarmSound, vibrate: settings.alarmVibrate })}>
-              ▶ Try it
+              <Icon name="play" /> Try it
             </button>
           </div>
           <p className="hint">A finished timer rings every few seconds until you stop it, for up to two minutes.</p>
@@ -1160,7 +1160,7 @@ export default function App() {
                   <img src={p.url} alt={`Page ${n + 1}`} />
                   <span className="page-no">{n + 1}</span>
                   <button className="remove" aria-label={`Remove page ${n + 1}`} disabled={busy} onClick={() => removePhotoPage(n)}>
-                    ×
+                    <Icon name="close" />
                   </button>
                 </li>
               ))}
@@ -1268,7 +1268,7 @@ export default function App() {
               Import
             </button>
             <button className="small secondary" onClick={addManually}>
-              + Add
+              <Icon name="plus" size={16} strokeWidth={2.5} /> Add
             </button>
             <button className="icon-button" aria-label="Settings" onClick={() => go('#/settings')}>
               <Icon name="settings" size={22} />
@@ -1283,7 +1283,7 @@ export default function App() {
             <strong>Unsaved recipe</strong>
             <span className="note">{editing.recipe.title || 'New recipe'}</span>
           </span>
-          <span aria-hidden="true">›</span>
+          <Icon name="right" size={24} />
         </button>
       )}
 

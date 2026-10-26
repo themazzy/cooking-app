@@ -76,13 +76,13 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
       </header>
       <div className="week-nav">
         <button className="secondary round" aria-label="Previous week" onClick={() => setOffset(offset - 1)}>
-          ‹
+          <Icon name="left" />
         </button>
         <button className="link" onClick={() => setOffset(0)} disabled={offset === 0}>
           {offset === 0 ? 'This week' : offset === 1 ? 'Next week' : offset === -1 ? 'Last week' : `${dayLabel(days[0])} – ${dayLabel(days[6])}`}
         </button>
         <button className="secondary round" aria-label="Next week" onClick={() => setOffset(offset + 1)}>
-          ›
+          <Icon name="right" />
         </button>
       </div>
 
@@ -95,7 +95,7 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
                 {day === today && <span className="badge">today</span>}
               </h2>
               <button className="small secondary" onClick={() => setPicking(day)}>
-                + Add
+                <Icon name="plus" size={16} strokeWidth={2.5} /> Add
               </button>
             </div>
             {(plan[day] ?? []).map((e, n) => {
@@ -107,18 +107,18 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
                   </button>
                   <div className="stepper small">
                     <button className="secondary round" aria-label="Fewer portions" disabled={e.portions <= 1} onClick={() => change(setPlanPortions(plan, day, n, e.portions - 1))}>
-                      −
+                      <Icon name="minus" />
                     </button>
                     <span className="count">
                       {r?.servings ? e.portions : `×${e.portions}`}
                       <span className="count-label">{r?.servings ? 'port.' : 'recipe'}</span>
                     </span>
                     <button className="secondary round" aria-label="More portions" onClick={() => change(setPlanPortions(plan, day, n, Math.min(99, e.portions + 1)))}>
-                      +
+                      <Icon name="plus" />
                     </button>
                   </div>
                   <button className="link remove" aria-label="Remove from the plan" onClick={() => change(removeFromPlan(plan, day, n))}>
-                    ×
+                    <Icon name="close" />
                   </button>
                 </div>
               )
@@ -129,7 +129,7 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
 
       {planned > 0 && (
         <button className="big plan-shop" disabled={!entries.length} onClick={() => (onShop(entries), setShopped(start))}>
-          {shopped === start ? '✓ On the shopping list' : <><Icon name="cart" /> {`Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}</>}
+          {shopped === start ? <><Icon name="check" /> On the shopping list</> : <><Icon name="cart" /> {`Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}</>}
         </button>
       )}
       {planned > 0 && <p className="hint">Recipes already on the list get this week&apos;s portions; the rest of the list stays.</p>}

@@ -180,18 +180,18 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
                     </span>
                   )}
                 </span>
-                {selection && <span className={`tick${picked ? ' on' : ''}`} aria-hidden="true">{picked ? '✓' : ''}</span>}
+                {selection && <span className={`tick${picked ? ' on' : ''}`} aria-hidden="true">{picked ? <Icon name="check" size={16} strokeWidth={3} /> : null}</span>}
               </button>
               {picked && (
                 <div className="card-portions">
                   <span className="note">Portions to buy for</span>
                   <div className="stepper small">
                     <button className="secondary round" aria-label="Fewer portions" disabled={portions <= 1} onClick={() => onSelect(r.id, portions - 1)}>
-                      −
+                      <Icon name="minus" />
                     </button>
                     <span className="count">{r.servings ? portions : `×${portions}`}</span>
                     <button className="secondary round" aria-label="More portions" onClick={() => onSelect(r.id, portions + 1)}>
-                      +
+                      <Icon name="plus" />
                     </button>
                   </div>
                 </div>

@@ -37,15 +37,15 @@ function Timer({ t, now, onChange, onRemove }) {
       </button>
       {t.done ? (
         <button className="secondary" aria-label="Start again" onClick={() => onChange(restartTimer(t))}>
-          ↻
+          <Icon name="redo" />
         </button>
       ) : (
         <button className="secondary" aria-label={running ? 'Pause' : 'Resume'} onClick={() => onChange(running ? pauseTimer(t) : resumeTimer(t))}>
-          {running ? '❚❚' : '▶'}
+          <Icon name={running ? 'pause' : 'play'} />
         </button>
       )}
       <button className={t.done ? 'stop' : 'secondary'} aria-label="Stop timer" onClick={onRemove}>
-        {t.done ? 'Stop' : '✕'}
+        {t.done ? 'Stop' : <Icon name="close" />}
       </button>
     </div>
   )
@@ -201,7 +201,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
     <div className="cook" role="dialog" aria-label={`Cooking ${title}`}>
       <div className="cook-top">
         <button className="icon-button" aria-label="Close cooking mode" onClick={onClose}>
-          ✕
+          <Icon name="close" />
         </button>
         <div className="cook-title">{title || 'Recipe'}</div>
         <button className="link" onClick={() => setCustom((c) => (c == null ? '5' : null))}>
@@ -309,7 +309,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
                         setLogged(true)
                       }}
                     >
-                      ✓ Cooked it today
+                      <Icon name="check" /> Cooked it today
                     </button>
                   </>
                 )}
@@ -324,9 +324,9 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
 
       <div className="cook-nav" style={showList ? { display: 'none' } : undefined}>
         <button className="secondary" disabled={at === 0} onClick={() => goTo(at - 1)}>
-          ← Back
+          <Icon name="back" /> Back
         </button>
-        {at < steps.length && <button onClick={() => goTo(at + 1)}>{at === steps.length - 1 ? 'Finish' : 'Next →'}</button>}
+        {at < steps.length && <button onClick={() => goTo(at + 1)}>{at === steps.length - 1 ? 'Finish' : <>Next <Icon name="next" /></>}</button>}
       </div>
     </div>
   )

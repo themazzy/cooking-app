@@ -148,7 +148,7 @@ export default function IngredientsPage() {
       <header className="main-header">
         <h1>Ingredients</h1>
         <button className="small" onClick={() => (setEditingId(null), setForm(EMPTY), setMessage(null), setFormOpen(true))}>
-          + Add your own
+          <Icon name="plus" size={16} strokeWidth={2.5} /> Add your own
         </button>
       </header>
       {message && !formOpen && <p className="hint">{message}</p>}

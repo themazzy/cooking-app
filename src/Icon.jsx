@@ -1,28 +1,87 @@
-// Line icons drawn in the text colour (24×24, 2px strokes), used instead of emoji.
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Camera,
+  Carrot,
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  CircleAlert,
+  Clock,
+  CookingPot,
+  ExternalLink,
+  Flame,
+  Globe,
+  House,
+  Image,
+  Info,
+  Maximize,
+  Minimize,
+  Minus,
+  Pause,
+  Pencil,
+  Play,
+  Repeat,
+  Plus,
+  RotateCcw,
+  RotateCw,
+  Settings,
+  ShoppingCart,
+  Star,
+  StickyNote,
+  Timer,
+  User,
+  X,
+} from 'lucide-react'
 
-const PATHS = {
-  book: 'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M9 7h6',
-  calendar: 'M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M3 10h18 M8 2v4 M16 2v4',
-  cart: 'M3 3h2l2.4 12.2a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6.2 M9 21h.01 M18 21h.01',
-  home: 'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
-  carrot: 'M14.5 9.5 4 20 M2.3 21.7 4 20 M14.5 9.5c2-2 2-4.5.5-6 M14.5 9.5c2 2 4.5 2 6 .5 M14.5 9.5c-1.5-1.5-4-1.2-5.5.3L4 20c3.6-1.7 7.8-3.6 10.2-6 1.5-1.5 1.8-3 .3-4.5z',
-  camera: 'M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
-  image: 'M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z M21 15l-5-5L5 21',
-  settings:
-    'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',
-  clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2',
-  timer: 'M10 2h4 M12 14l3-3 M12 22a8 8 0 1 0 0-16 8 8 0 0 0 0 16z',
-  user: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
-  note: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z M14 3v6h6 M8 13h8 M8 17h5',
-  globe: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M2 12h20 M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z',
-  flame: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4.1 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3.2.4 1.6 1.4 2.7 2.5 2.7z',
-  pot: 'M2 12h20 M4 12v6a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-6 M8 8c0-1.5 1-2 1-3.5 M12 8c0-1.5 1-2 1-3.5 M16 8c0-1.5 1-2 1-3.5',
+// Lucide icons by short name; only these end up in the app
+const ICONS = {
+  back: ArrowLeft,
+  next: ArrowRight,
+  book: BookOpen,
+  calendar: CalendarDays,
+  camera: Camera,
+  carrot: Carrot,
+  check: Check,
+  down: ChevronDown,
+  up: ChevronUp,
+  left: ChevronLeft,
+  right: ChevronRight,
+  alert: CircleAlert,
+  clock: Clock,
+  pot: CookingPot,
+  external: ExternalLink,
+  flame: Flame,
+  globe: Globe,
+  home: House,
+  image: Image,
+  info: Info,
+  maximize: Maximize,
+  minimize: Minimize,
+  minus: Minus,
+  pause: Pause,
+  pencil: Pencil,
+  play: Play,
+  plus: Plus,
+  undo: RotateCcw,
+  redo: RotateCw,
+  repeat: Repeat,
+  settings: Settings,
+  cart: ShoppingCart,
+  star: Star,
+  note: StickyNote,
+  timer: Timer,
+  user: User,
+  close: X,
 }
 
-export default function Icon({ name, size = 18, className = '' }) {
-  return (
-    <svg className={`icon-svg ${className}`} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={PATHS[name]} />
-    </svg>
-  )
+/** An icon in the text colour, sized to sit on the text line (styles: .icon-svg). */
+export default function Icon({ name, size = 18, fill = false, strokeWidth = 2, className = '' }) {
+  const Svg = ICONS[name]
+  if (!Svg) return null
+  return <Svg className={`icon-svg ${className}`} size={size} strokeWidth={strokeWidth} fill={fill ? 'currentColor' : 'none'} aria-hidden="true" />
 }
