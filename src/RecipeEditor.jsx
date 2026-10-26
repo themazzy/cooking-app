@@ -1,8 +1,10 @@
-import { emptyIngredient } from './lib/recipeEdit.js'
+import { useRef, useState } from 'react'
+import { emptyIngredient, joinSteps } from './lib/recipeEdit.js'
+import { splitSteps } from './lib/cook.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import Icon from './Icon.jsx'
 
-/** Ingredients as editable rows and the steps as one text box, one step per line. */
+/** Ingredients as editable rows and each step in its own box, in order. */
 export default function RecipeEditor({ recipe, source, onChange, onReset }) {
   const { match } = useCatalog()
   const { ingredients, steps } = recipe
@@ -15,6 +17,27 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
     next.splice(n + 1, 0, emptyIngredient(ingredients[n]?.group ?? ''))
     setIngredients(next)
   }
+  // The steps are kept as a list here and saved back as numbered text ("1. …\n2. …")
+  const [list, setList] = useState(() => withBlank(splitSteps(steps)))
+  const saved = useRef(steps)
+  if (steps !== saved.current) {
+    // Changed from outside (re-read from source)
+    saved.current = steps
+    setList(withBlank(splitSteps(steps)))
+  }
+  const setSteps = (next) => {
+    setList(next)
+    saved.current = joinSteps(next)
+    onChange({ ...recipe, steps: saved.current })
+  }
+  const setStep = (n, text) => setSteps(list.map((s, k) => (k === n ? text : s)))
+  const move = (n, by) => {
+    const next = [...list]
+    ;[next[n], next[n + by]] = [next[n + by], next[n]]
+    setSteps(next)
+  }
+  const removeStep = (n) => setSteps(withBlank(list.filter((_, k) => k !== n)))
+
   const renameGroup = (from, to) => setIngredients(ingredients.map((i) => (i.group === from ? { ...i, group: to } : i)))
 
   return (
@@ -58,12 +81,31 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
       </>
 
       <h3>Steps</h3>
-      <textarea
-        rows={Math.max(6, steps.split('\n').length + 1)}
-        placeholder="One step per line"
-        value={steps}
-        onChange={(e) => onChange({ ...recipe, steps: e.target.value })}
-      />
+      <ol className="step-edit">
+        {list.map((text, n) => (
+          <li key={n}>
+            <div className="step-edit-head">
+              <span className="step-no">{n + 1}</span>
+              <span className="grow" />
+              <button className="icon" aria-label="Move step up" disabled={n === 0} onClick={() => move(n, -1)}>
+                <Icon name="up" />
+              </button>
+              <button className="icon" aria-label="Move step down" disabled={n === list.length - 1} onClick={() => move(n, 1)}>
+                <Icon name="down" />
+              </button>
+              <button className="icon" aria-label="Remove step" onClick={() => removeStep(n)}>
+                <Icon name="close" />
+              </button>
+            </div>
+            <textarea rows={2} aria-label={`Step ${n + 1}`} placeholder={n === 0 ? 'What to do first' : 'Then…'} value={text} onChange={(e) => setStep(n, e.target.value)} />
+          </li>
+        ))}
+      </ol>
+      <div className="row">
+        <button className="secondary" onClick={() => setSteps([...list, ''])}>
+          <Icon name="plus" /> Add step
+        </button>
+      </div>
       <div className="row">
         <button className="secondary" onClick={onReset}>
           Re-read from source
@@ -72,3 +114,6 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
     </div>
   )
 }
+
+/** At least one (empty) box to type the first step in. */
+const withBlank = (list) => (list.length ? list : [''])

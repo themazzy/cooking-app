@@ -1,3 +1,5 @@
+import { splitSteps } from './cook.js'
+
 // Editable form of a parsed recipe. Quantities stay text while editing so
 // "1–2" or "½" can be typed; scaling and shopping lists parse them later.
 
@@ -23,6 +25,14 @@ export function toEditable(parsed) {
   }
 }
 
+/** Steps from the editor's boxes as stored text: "1. Chop.\n2. Fry." (empty boxes left out, line breaks inside a step kept). */
+export const joinSteps = (list) =>
+  list
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((s, n) => `${n + 1}. ${s}`)
+    .join('\n')
+
 /** Plain text for sharing or pasting elsewhere. */
 export function recipeToText(recipe, title) {
   const lines = []
@@ -36,7 +46,7 @@ export function recipeToText(recipe, title) {
     }
     lines.push(`• ${[i.qty, i.unit, i.name].map((s) => s.trim()).filter(Boolean).join(' ')}`)
   }
-  const steps = recipe.steps.split('\n').map((s) => s.trim()).filter(Boolean)
+  const steps = splitSteps(recipe.steps)
   if (steps.length) {
     lines.push('', 'Steps:')
     steps.forEach((s, n) => lines.push(`${n + 1}. ${s}`))
