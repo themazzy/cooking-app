@@ -124,7 +124,7 @@ export function IngredientIcon({ entry, size = 28 }) {
 }
 
 /** A photo from the camera or gallery as a small square WebP data URL for the catalog. */
-export async function photoToIcon(file, size = 96) {
+export async function photoToIcon(file, size = 128) {
   const url = URL.createObjectURL(file)
   try {
     const img = new Image()

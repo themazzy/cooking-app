@@ -16,11 +16,39 @@ export default function IngredientsPage() {
   const [message, setMessage] = useState(null)
   const q = query.trim().toLowerCase()
   const matches = (e) => !q || e.name.toLowerCase().includes(q) || e.base?.toLowerCase().includes(q) || e.aliases?.some((a) => a.includes(q))
-  const own = entries.filter((e) => e.household_id && matches(e)).sort((a, b) => a.name.localeCompare(b.name))
-  const shared = entries
-    .filter((e) => !e.household_id && matches(e))
-    .sort((a, b) => AISLES.indexOf(a.aisle) - AISLES.indexOf(b.aisle) || a.name.localeCompare(b.name))
   const sharedNames = entries.filter((e) => !e.household_id)
+  // An everyday ingredient with the household's own picture is a household entry of the same name
+  const sharedKeys = new Set(sharedNames.map((e) => e.name.toLowerCase()))
+  const overrides = new Map(entries.filter((e) => e.household_id && sharedKeys.has(e.name.toLowerCase())).map((e) => [e.name.toLowerCase(), e]))
+  const own = entries.filter((e) => e.household_id && !overrides.has(e.name.toLowerCase()) && matches(e)).sort((a, b) => a.name.localeCompare(b.name))
+  const shared = sharedNames.filter(matches).sort((a, b) => AISLES.indexOf(a.aisle) - AISLES.indexOf(b.aisle) || a.name.localeCompare(b.name))
+  // { entry, override } while changing an everyday ingredient's picture
+  const [picture, setPicture] = useState(null)
+  const [savingPicture, setSavingPicture] = useState(false)
+
+  const savePicture = async (image_data) => {
+    const { entry, override } = picture
+    setSavingPicture(true)
+    try {
+      if (override && !image_data) await remove(override.id)
+      else if (override) await update(override.id, { image_data })
+      else
+        await add({
+          name: entry.name,
+          base: entry.base ?? entry.name,
+          aisle: entry.aisle,
+          aliases: entry.aliases ?? [],
+          image: entry.image ?? null,
+          image_data,
+        })
+      toast(image_data ? `New picture for ${entry.name}` : `${entry.name} has its usual picture again`)
+      setPicture(null)
+    } catch (e) {
+      toast(e?.message ?? String(e), { kind: 'error' })
+    } finally {
+      setSavingPicture(false)
+    }
+  }
 
   const setBase = (base) => {
     const b = sharedNames.find((e) => e.name.toLowerCase() === base.trim().toLowerCase())
@@ -67,16 +95,20 @@ export default function IngredientsPage() {
     }
   }
 
-  const row = (e) => (
-    <li key={e.id ?? e.name} onClick={e.household_id ? () => startEdit(e) : undefined} className={e.household_id ? 'editable' : ''}>
-      <IngredientIcon entry={e} size={36} />
-      <span className="grow">
-        {e.name}
-        {e.base && <span className="from">counts as {e.base}</span>}
-        {!e.base && e.aliases?.length > 0 && <span className="from">{e.aliases.join(', ')}</span>}
-      </span>
-    </li>
-  )
+  const row = (e) => {
+    const override = !e.household_id ? overrides.get(e.name.toLowerCase()) : null
+    return (
+      <li key={e.id ?? e.name} onClick={() => (e.household_id ? startEdit(e) : setPicture({ entry: e, override }))} className="editable">
+        <IngredientIcon entry={override ?? e} size={36} />
+        <span className="grow">
+          {e.name}
+          {e.base && <span className="from">counts as {e.base}</span>}
+          {!e.base && e.aliases?.length > 0 && <span className="from">{e.aliases.join(', ')}</span>}
+        </span>
+        {override && <span className="badge muted">own picture</span>}
+      </li>
+    )
+  }
 
   return (
     <>
@@ -95,6 +127,7 @@ export default function IngredientsPage() {
         ) : (
           <p className="hint">Local brands and anything missing from the list. Tap + Add your own. Tap one of yours to change it.</p>
         )}
+        <p className="hint">Tap an everyday ingredient to give it your own picture, e.g. the local product you buy.</p>
         <h3>Everyday ingredients ({shared.length})</h3>
         <ul className="catalog">
           {shared.map((e, n) => (
@@ -105,6 +138,58 @@ export default function IngredientsPage() {
           ))}
         </ul>
       </section>
+
+      {picture && (
+        <div className="sheet-backdrop" onClick={() => !savingPicture && setPicture(null)}>
+          <div className="sheet" role="dialog" aria-label={`Picture for ${picture.entry.name}`} onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle" aria-hidden="true" />
+            <div className="item-head">
+              <IngredientIcon entry={picture.override ?? picture.entry} size={64} />
+              <div>
+                <h2>{picture.entry.name}</h2>
+                <p className="note">{picture.override ? 'Your own picture, shared with your household' : 'The usual picture'}</p>
+              </div>
+            </div>
+            <div className="row">
+              <label className={`button${savingPicture ? ' secondary' : ''}`}>
+                📷 Take photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  disabled={savingPicture}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (file) savePicture(await photoToIcon(file))
+                  }}
+                />
+              </label>
+              <label className="button secondary">
+                🖼 Choose photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  disabled={savingPicture}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    e.target.value = ''
+                    if (file) savePicture(await photoToIcon(file))
+                  }}
+                />
+              </label>
+            </div>
+            {picture.override && (
+              <button className="link more" disabled={savingPicture} onClick={() => savePicture(null)}>
+                Use the usual picture again
+              </button>
+            )}
+            {savingPicture && <div className="busy-bar" />}
+          </div>
+        </div>
+      )}
 
       {formOpen && (
         <div className="sheet-backdrop" onClick={() => setFormOpen(false)}>
@@ -127,11 +212,7 @@ export default function IngredientsPage() {
                   ))}
                 </Select>
               </label>
-              <input
-                placeholder="Other names recipes use, comma separated"
-                value={form.aliases}
-                onChange={(e) => setForm({ ...form, aliases: e.target.value })}
-              />
+              <input placeholder="Other names recipes use, comma separated" value={form.aliases} onChange={(e) => setForm({ ...form, aliases: e.target.value })} />
               <div className="row" style={{ alignItems: 'center' }}>
                 <IngredientIcon
                   entry={{
