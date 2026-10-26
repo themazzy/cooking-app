@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { convertIngredient, convertTemperatures, hasUnits } from './units.js'
+import { buildCatalogIndex, matchIngredient } from './catalog.js'
+import { SEED_INGREDIENTS } from '../data/ingredients.js'
+import { NUTRITION } from './calories.js'
 
 const c = (qty, unit, system) => {
   const r = convertIngredient({ qty, unit, name: 'x' }, system)
@@ -42,4 +45,27 @@ it('converts oven temperatures', () => {
 it('tells whether there is anything to convert', () => {
   expect(hasUnits([{ qty: '200', unit: 'g' }], 'imperial')).toBe(true)
   expect(hasUnits([{ qty: '2', unit: 'tbsp' }], 'imperial')).toBe(false)
+})
+
+describe('dry ingredients in metric', () => {
+  const index = buildCatalogIndex(SEED_INGREDIENTS)
+  const match = (name) => {
+    const e = matchIngredient(index, name)
+    return e && { ...e, density: NUTRITION.get(e.name.toLowerCase())?.density ?? null }
+  }
+  const d = (qty, unit, name) => {
+    const r = convertIngredient({ qty, unit, name }, 'metric', match)
+    return `${r.qty} ${r.unit}`
+  }
+  it('weighs flour, sugar and semolina', () => {
+    expect(d('2', 'cups', 'all-purpose flour')).toBe('260 g')
+    expect(d('1', 'cup', 'sugar')).toBe('205 g')
+    expect(d('1 ¼', 'cups', 'cream of wheat')).toBe('210 g')
+    expect(d('2', 'dl', 'krupice')).toBe('140 g')
+  })
+  it('keeps spoons, and liquids in ml', () => {
+    expect(d('0,5', 'tbsp', 'potato starch')).toBe('0,5 tbsp')
+    expect(d('1', 'cup', 'milk')).toBe('240 ml')
+    expect(d('250', 'ml', 'milk')).toBe('250 ml')
+  })
 })

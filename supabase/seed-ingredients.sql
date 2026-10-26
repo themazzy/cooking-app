@@ -327,7 +327,7 @@ insert into public.ingredients (name, aisle, image, base, aliases) values
   ('Spelt flour', 'Baking', null, null, array['špaldová mouka', 'лимецово брашно']::text[]),
   ('Almond flour', 'Baking', 'Ground Almonds', 'Almonds', array['ground almonds', 'almond meal', 'бадемово брашно']::text[]),
   ('Potato starch', 'Baking', 'Potato Starch', null, array['bramborový škrob', 'holandský škrob', 'картофено нишесте']::text[]),
-  ('Semolina', 'Baking', null, null, array['krupice', 'krupici', 'dětská krupička', 'krupička', 'грис']::text[]),
+  ('Semolina', 'Baking', null, null, array['cream of wheat', 'farina', 'semolina flour', 'durum semolina', 'krupice', 'krupici', 'dětská krupička', 'krupička', 'грис']::text[]),
   ('Custard powder', 'Baking', 'Custard Powder', null, array['pudding powder', 'пудинг']::text[]),
   ('Chocolate chips', 'Baking', 'Chocolate Chips', null, array['шоколадови капки']::text[]),
   ('Cocoa nibs', 'Baking', 'Cacao', null, array['raw cacao', 'какаови зърна']::text[]),

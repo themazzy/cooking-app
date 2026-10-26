@@ -122,7 +122,7 @@ export function parseQuantity(s) {
   if (m) return Number(m[1]) + Number(m[2]) / Number(m[3])
   m = s.match(/^(\d+)\/(\d+)$/)
   if (m) return Number(m[1]) / Number(m[2])
-  m = s.match(/^(\d+)([½⅓⅔¼¾⅛])$/)
+  m = s.match(/^(\d+)\s*([½⅓⅔¼¾⅛])$/)
   if (m) return Number(m[1]) + FRACTIONS[m[2]]
   const n = Number(s.replace(',', '.'))
   return Number.isFinite(n) ? n : null

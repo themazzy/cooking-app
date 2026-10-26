@@ -32,14 +32,32 @@ const label = (unit, text) => (unit === 'cup' ? (/^(1|½|⅓|⅔|¼|¾|0,\d+)$/.
 // Ounces and pounds round to a quarter so they read like a recipe
 const quarter = (n) => (n >= 10 ? Math.round(n) : Math.round(n * 4) / 4)
 
-/** One ingredient ({ qty, unit, name }) in `system` ('metric' or 'imperial'); anything else is left as it is. */
-export function convertIngredient(ing, system) {
+// Dry, pourable ingredients (flour, sugar, semolina, rice, oats, cocoa) are
+// weighed in metric kitchens, so cups and millilitres of them become grams.
+// Spoons stay spoons: half a spoon of starch reads better than 7 g.
+const DRY_AISLES = new Set(['Baking', 'Pasta & grains', 'Nuts & seeds', 'Spices'])
+const ML = { ml: 1, dl: 100, l: 1000, floz: 29.57, pint: 473.2, quart: 946.4, cup: 240 }
+const isDry = (entry) => entry?.density != null && entry.density < 0.9 && DRY_AISLES.has(entry.aisle)
+
+function toGrams(n, unit, density) {
+  const v = n * ML[unit] * density
+  return v >= 1000 ? [v / 1000, 'kg'] : [v, 'g']
+}
+
+/**
+ * One ingredient ({ qty, unit, name }) in `system` ('metric' or 'imperial');
+ * anything else is left as it is. `match` (name → catalog entry) lets metric
+ * weigh dry ingredients instead of measuring them in ml.
+ */
+export function convertIngredient(ing, system, match) {
   const unit = canonicalUnit(ing.unit)
+  const entry = system === 'metric' && unit && ML[unit] ? match?.(ing.name) : null
+  const dry = isDry(entry)
   const table = system === 'metric' ? TO_METRIC : system === 'imperial' ? FROM_METRIC : null
-  if (!table || !unit || !table[unit]) return ing
+  if (!table || !unit || (!table[unit] && !dry)) return ing
   const a = parseAmount(ing.qty)
   if (!a) return ing
-  const conv = system === 'metric' ? toMetric : toImperial
+  const conv = dry ? (n, u) => toGrams(n, u, entry.density) : system === 'metric' ? toMetric : toImperial
   const [min, u] = conv(a.min, unit)
   const max = a.max != null ? conv(a.max, unit)[0] : null
   const fmt = (n) => (['oz', 'lb', 'quart'].includes(u) ? formatAmount(quarter(n), 'cup') : formatAmount(n, u))
@@ -47,7 +65,7 @@ export function convertIngredient(ing, system) {
   return { ...ing, qty: max != null ? `${fmt(min)}–${last}` : last, unit: label(u, last) }
 }
 
-export const convertIngredients = (list, system) => list.map((i) => convertIngredient(i, system))
+export const convertIngredients = (list, system, match) => list.map((i) => convertIngredient(i, system, match))
 
 /** Oven temperatures in step text: "350°F" → "175 °C" (metric), "180 °C" → "355 °F" (imperial). */
 export function convertTemperatures(text, system) {
@@ -62,4 +80,4 @@ export function convertTemperatures(text, system) {
 }
 
 /** Whether a recipe uses any units that `system` would change. */
-export const hasUnits = (list, system) => list.some((i) => convertIngredient(i, system) !== i)
+export const hasUnits = (list, system, match) => list.some((i) => convertIngredient(i, system, match) !== i)

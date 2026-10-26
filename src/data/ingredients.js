@@ -339,7 +339,7 @@ Rye flour | Baking |  |
 Spelt flour | Baking |  |
 Almond flour | Baking | Ground Almonds | ground almonds, almond meal | Almonds
 Potato starch | Baking | Potato Starch |
-Semolina | Baking |  |
+Semolina | Baking |  | cream of wheat, farina, semolina flour, durum semolina
 Custard powder | Baking | Custard Powder | pudding powder
 Chocolate chips | Baking | Chocolate Chips |
 Cocoa nibs | Baking | Cacao | raw cacao
