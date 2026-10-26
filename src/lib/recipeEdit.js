@@ -1,4 +1,5 @@
 import { splitSteps } from './cook.js'
+import { tidyIngredient } from './ingredients.js'
 
 // Editable form of a parsed recipe. Quantities stay text while editing so
 // "1–2" or "½" can be typed; scaling and shopping lists parse them later.
@@ -15,12 +16,14 @@ export const emptyIngredient = (group = '') => ({ qty: '', unit: '', name: '', g
 /** { ingredients: [{ qty, unit, name, group }], steps } from pickRecipe output. */
 export function toEditable(parsed) {
   return {
-    ingredients: (parsed?.ingredients ?? []).map((i) => ({
-      qty: fmtQty(i),
-      unit: i.unit ?? '',
-      name: i.note ? `${i.name}, ${i.note}` : i.name,
-      group: i.group ?? '',
-    })),
+    ingredients: (parsed?.ingredients ?? []).map((i) =>
+      tidyIngredient({
+        qty: fmtQty(i),
+        unit: i.unit ?? '',
+        name: i.note ? `${i.name}, ${i.note}` : i.name,
+        group: i.group ?? '',
+      }),
+    ),
     steps: (parsed?.steps ?? []).join('\n'),
   }
 }

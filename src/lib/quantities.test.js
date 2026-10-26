@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SEED_INGREDIENTS } from '../data/ingredients.js'
 import { buildCatalogIndex, matchIngredient } from './catalog.js'
 import { NUTRITION, gramsOf, recipeCalories } from './calories.js'
-import { parseIngredientLine } from './ingredients.js'
+import { parseIngredientLine, tidyIngredient } from './ingredients.js'
 import { buildShoppingList, formatAmount, parseAmount, scaleAmount, sumRow } from './scale.js'
 import { parseStock, takeFrom } from './stock.js'
 import { convertIngredient } from './units.js'
@@ -217,5 +217,29 @@ describe('saved recipes', () => {
     const us = convertIngredient({ qty: '1–2', unit: 'l', name: 'water' }, 'imperial', match)
     expect(`${us.qty} ${us.unit}`).toBe('1–2 qt')
     expect(metric('2–3', 'lb', 'potatoes')).toBe('0,9–1,4 kg')
+  })
+})
+
+describe('the last three wrong imports', () => {
+  it('reads a glass of wine as a cup, but glass noodles as noodles', () => {
+    expect(line('1 glass red wine')).toEqual({ qty: '1', unit: 'cup', name: 'red wine' })
+    expect(line('2 glasses of water')).toEqual({ qty: '2', unit: 'cup', name: 'water' })
+    expect(line('200 g glass noodles')).toEqual({ qty: '200', unit: 'g', name: 'glass noodles' })
+    expect(line('1 glass noodles')).toEqual({ qty: '1', unit: '', name: 'glass noodles' })
+    expect(tidyIngredient({ qty: '100', unit: '', name: 'glass noodles' }).name).toBe('glass noodles')
+  })
+  it('reads a note in brackets when it names the ingredient', () => {
+    expect(m('Pork (17.6oz. Mince)')).toBe('Ground pork')
+    expect(m('Beef (10.5oz. Mince)')).toBe('Ground beef')
+    expect(m('Tomatoes (14.1oz. Peeled)')).toBe('Tomatoes')
+    expect(m('Red onion (Brown. Chopped)')).toBe('Red onion')
+  })
+  it('reads peppers measured in spoons as paprika', () => {
+    expect(tidyIngredient({ qty: '1', unit: 'tbsp', name: 'sweet peppers' }).name).toBe('sweet paprika')
+    expect(tidyIngredient({ qty: '1', unit: 'tsp', name: 'hot red pepper' }).name).toBe('hot paprika')
+    expect(tidyIngredient({ qty: '2', unit: 'tbsp', name: 'red pepper' }).name).toBe('paprika')
+    expect(tidyIngredient({ qty: '1', unit: 'tsp', name: 'pepper' }).name).toBe('pepper')
+    expect(tidyIngredient({ qty: '2', unit: '', name: 'sweet peppers' }).name).toBe('sweet peppers')
+    expect(m('sweet paprika')).toBe('Paprika')
   })
 })
