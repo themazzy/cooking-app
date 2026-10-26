@@ -2,11 +2,12 @@
   "appId": "com.themazzy.cookingapp",
   "appName": "Cooking App",
   "webDir": "dist",
-  "server": {
-    "allowNavigation": ["instagram.com", "*.instagram.com", "*.facebook.com"]
-  },
   "plugins": {
-    "CapacitorHttp": { "enabled": false },
-    "CapacitorCookies": { "enabled": true }
+    "CapacitorHttp": {
+      "enabled": false
+    },
+    "CapacitorCookies": {
+      "enabled": true
+    }
   }
 }

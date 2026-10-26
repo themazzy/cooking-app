@@ -1,14 +1,17 @@
 import { registerPlugin } from '@capacitor/core'
-import { canFetchCrossSite, postForm } from './http.js'
+import { canFetchCrossSite, getText, postForm } from './http.js'
 
 // Recipes in other languages translated into English, Czech or Bulgarian, for
 // free. On phones with Gemini Nano (Android AICore) the whole recipe is
 // translated on the phone (TranslatorPlugin.java); everywhere else Google
-// Translate's free web endpoint does it. Either way the result is saved with
-// the recipe, so it is translated only once.
+// Translate's free web endpoint does it. That endpoint is unofficial and can
+// refuse (a captcha, a limit), so MyMemory's free API (about 5000 characters
+// a day, no key) is the last resort. Either way the result is saved with the
+// recipe, so it is translated only once.
 
 const Translator = registerPlugin('Translator')
 const GOOGLE = 'https://translate.googleapis.com/translate_a/single?client=gtx&dt=t'
+const MYMEMORY = 'https://api.mymemory.translated.net/get'
 
 export const TARGETS = { en: 'English', cs: 'Czech', bg: 'Bulgarian' }
 
@@ -99,6 +102,54 @@ async function google(texts, from, to) {
   return { texts: texts.map((t, n) => lines[n]?.trim() || t), lang: data?.[2] ?? null }
 }
 
+/** A text cut at sentence ends (or spaces) into pieces of at most `max` characters. */
+export function pieces(text, max) {
+  const out = []
+  let rest = text.trim()
+  while (rest.length > max) {
+    const head = rest.slice(0, max)
+    const cut = Math.max(head.lastIndexOf('. '), head.lastIndexOf('! '), head.lastIndexOf('? '), head.lastIndexOf('; '))
+    const at = cut > max / 3 ? cut + 1 : head.lastIndexOf(' ') > max / 3 ? head.lastIndexOf(' ') : max
+    out.push(rest.slice(0, at).trim())
+    rest = rest.slice(at).trim()
+  }
+  if (rest) out.push(rest)
+  return out
+}
+
+const decodeEntities = (s) =>
+  s.replace(/&(#\d+|#x[\da-f]+|amp|quot|apos|lt|gt);/gi, (m, e) => {
+    const named = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' }[e.toLowerCase()]
+    if (named) return named
+    return String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10))
+  })
+
+async function myMemoryText(q, from, to) {
+  const url = `${MYMEMORY}?q=${encodeURIComponent(q)}&langpair=${from}|${to}`
+  const data = canFetchCrossSite() ? JSON.parse((await getText(url, { allowError: true })).text) : await (await fetch(url)).json()
+  if (Number(data?.responseStatus) !== 200) throw new Error(`MyMemory: ${data?.responseDetails || data?.responseStatus || 'no answer'}`)
+  return decodeEntities(data.responseData?.translatedText ?? '')
+}
+
+/** Texts translated with MyMemory, a few lines per request (it takes 500 bytes at most). */
+async function myMemory(texts, from, to) {
+  // Cyrillic and accented letters take two bytes, so pieces stay well under the limit
+  const parts = texts.map((t) => pieces(t.replace(/\n/g, ' '), 200))
+  const flat = parts.flat()
+  const done = []
+  for (const batch of batches(flat, 200)) {
+    const lines = batch.map((n) => flat[n])
+    let out = (await myMemoryText(lines.join('\n'), from, to)).split('\n')
+    if (out.length !== lines.length) {
+      out = []
+      for (const line of lines) out.push(await myMemoryText(line, from, to))
+    }
+    done.push(...out.map((l, i) => l.trim() || lines[i]))
+  }
+  let n = 0
+  return parts.map((p) => done.slice(n, (n += p.length)).join(' '))
+}
+
 /** The prompt asking Gemini Nano to translate numbered lines. */
 export function nanoPrompt(texts, from, to) {
   return [
@@ -179,8 +230,13 @@ export async function translateRecipe(recipe, to, { from = null, onStep = () => 
   }
   if (!done) {
     onStep(`Translating from ${languageName(lang)} with Google Translate…`)
-    done = []
-    for (const batch of batches(texts, 4000)) done.push(...(await google(batch.map((n) => texts[n]), lang, to)).texts)
+    try {
+      done = []
+      for (const batch of batches(texts, 4000)) done.push(...(await google(batch.map((n) => texts[n]), lang, to)).texts)
+    } catch (err) {
+      onStep(`Google Translate refused (${err?.message ?? err}), trying MyMemory…`)
+      done = await myMemory(texts, lang, to)
+    }
   }
   const map = new Map(texts.map((t, n) => [t, done[n] ?? t]))
   return {

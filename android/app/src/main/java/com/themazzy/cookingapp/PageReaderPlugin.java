@@ -5,13 +5,21 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.graphics.Color;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import androidx.activity.OnBackPressedCallback;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
@@ -49,6 +57,110 @@ public class PageReaderPlugin extends Plugin {
         } catch (Exception e) {
             call.reject("No app can open this link", e);
         }
+    }
+
+    /**
+     * Shows a sign-in page (Instagram) in its own WebView on top of the app.
+     * Unlike the app's main WebView, it has no bridge to the app's native
+     * plugins, so the site's scripts can't reach them. Cookies are shared, so
+     * the login applies to imports. Closes by itself once `doneCookie` is set
+     * for `url`, or with Done / Back; resolves with { signedIn }.
+     */
+    @SuppressLint("SetJavaScriptEnabled")
+    @PluginMethod
+    public void openLogin(PluginCall call) {
+        final String url = call.getString("url");
+        final String doneCookie = call.getString("doneCookie");
+        final String title = call.getString("title", "Sign in");
+        if (url == null || !url.startsWith("https://")) {
+            call.reject("https url required");
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            final ViewGroup root = getActivity().findViewById(android.R.id.content);
+            final LinearLayout panel = new LinearLayout(getContext());
+            panel.setOrientation(LinearLayout.VERTICAL);
+            panel.setBackgroundColor(Color.WHITE);
+            panel.setFitsSystemWindows(true);
+            panel.setClickable(true);
+
+            final LinearLayout bar = new LinearLayout(getContext());
+            bar.setOrientation(LinearLayout.HORIZONTAL);
+            bar.setGravity(Gravity.CENTER_VERTICAL);
+            int pad = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 12, getContext().getResources().getDisplayMetrics());
+            bar.setPadding(pad, pad / 2, pad / 2, pad / 2);
+            final TextView label = new TextView(getContext());
+            label.setText(title);
+            label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 17);
+            label.setTextColor(Color.BLACK);
+            bar.addView(label, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+            final Button done = new Button(getContext());
+            done.setText("Done");
+            bar.addView(done);
+            panel.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            final WebView webView = new WebView(getContext());
+            WebSettings settings = webView.getSettings();
+            settings.setJavaScriptEnabled(true);
+            settings.setDomStorageEnabled(true);
+            CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+            panel.addView(webView, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
+            root.addView(panel, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
+            final Handler handler = new Handler(Looper.getMainLooper());
+            final boolean[] closed = {false};
+            final OnBackPressedCallback[] back = new OnBackPressedCallback[1];
+            final Runnable close = () -> {
+                if (closed[0]) return;
+                closed[0] = true;
+                handler.removeCallbacksAndMessages(null);
+                back[0].remove();
+                CookieManager.getInstance().flush();
+                root.removeView(panel);
+                webView.stopLoading();
+                webView.destroy();
+                JSObject ret = new JSObject();
+                ret.put("signedIn", hasCookie(url, doneCookie));
+                call.resolve(ret);
+            };
+            back[0] = new OnBackPressedCallback(true) {
+                @Override
+                public void handleOnBackPressed() {
+                    if (webView.canGoBack()) webView.goBack();
+                    else close.run();
+                }
+            };
+            getActivity().getOnBackPressedDispatcher().addCallback(back[0]);
+            done.setOnClickListener(v -> close.run());
+
+            webView.setWebViewClient(new WebViewClient() {
+                @Override
+                public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                    String scheme = request.getUrl().getScheme();
+                    return !("http".equals(scheme) || "https".equals(scheme));
+                }
+            });
+            // Signed in: close a moment later, so the site can finish its redirect
+            final Runnable[] watch = new Runnable[1];
+            watch[0] = () -> {
+                if (closed[0]) return;
+                if (doneCookie != null && hasCookie(url, doneCookie)) handler.postDelayed(close, 1500);
+                else handler.postDelayed(watch[0], 1000);
+            };
+            handler.postDelayed(watch[0], 1000);
+            webView.loadUrl(url);
+        });
+    }
+
+    private static boolean hasCookie(String url, String name) {
+        if (name == null) return false;
+        String cookies = CookieManager.getInstance().getCookie(url);
+        if (cookies == null) return false;
+        for (String part : cookies.split(";")) {
+            String[] kv = part.trim().split("=", 2);
+            if (kv[0].equals(name) && kv.length > 1 && !kv[1].isEmpty()) return true;
+        }
+        return false;
     }
 
     @SuppressLint("SetJavaScriptEnabled")
