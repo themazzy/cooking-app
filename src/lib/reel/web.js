@@ -1,4 +1,5 @@
-import { DESKTOP_UA, getText } from '../http.js'
+import { DESKTOP_UA, FetchError, getText } from '../http.js'
+import { runInPage } from '../pageReader.js'
 import { decodeEntities, htmlToText, metaContent } from './html.js'
 import { categoriesFrom, cuisineFrom, detectServings, durationMinutes, servingsFrom } from '../recipeMeta.js'
 
@@ -169,8 +170,40 @@ export function parseRecipePage(html) {
   }
 }
 
+/** A bot check (Cloudflare "Just a moment…", a captcha) instead of the page. */
+export const isBotWall = (html) =>
+  !/application\/ld\+json/i.test(html) && /<title>\s*(?:just a moment|attention required|access denied|one more step)|challenges\.cloudflare\.com|cf-browser-verification|g-recaptcha|hcaptcha/i.test(html)
+
+// Runs inside the page (sent as source text): waits until the bot check has
+// let the browser through and the page is there, then hands back its HTML.
+function pageHtmlInPage({ waitMs }) {
+  const started = Date.now()
+  const ready = () =>
+    document.querySelector('script[type="application/ld+json"]') ||
+    (!/just a moment|attention required|one more step/i.test(document.title) && (document.body?.innerText ?? '').length > 2000)
+  const tick = () => {
+    if (ready() || Date.now() - started > waitMs) {
+      window.__cookingResult = { html: document.documentElement.outerHTML, url: location.href }
+    } else setTimeout(tick, 500)
+  }
+  tick()
+}
+
+/**
+ * The page's HTML. Sites behind Cloudflare and similar answer plain HTTP with
+ * a bot check (403); a real browser engine passes it, so try that next.
+ */
+async function loadPage(url) {
+  const page = await getText(url, { ua: DESKTOP_UA, allowError: true })
+  if (page.status < 400 && !isBotWall(page.text)) return page
+  const r = await runInPage(url, pageHtmlInPage, { waitMs: 25000 }, { timeoutMs: 32000, reinject: true }).catch(() => null)
+  if (r?.html && !isBotWall(r.html)) return { text: r.html, url: r.url || page.url, status: 200 }
+  const host = new URL(url).hostname
+  throw new FetchError(`${host} blocks apps with a bot check. Open the page in the browser and copy the recipe into "Or paste a recipe text".`, page.status)
+}
+
 export async function fetchWebRecipe(url) {
-  const page = await getText(url, { ua: DESKTOP_UA })
+  const page = await loadPage(url)
   const parsed = parseRecipePage(page.text)
   if (!parsed.description) throw new Error('Could not find a recipe on this page.')
   let image = null

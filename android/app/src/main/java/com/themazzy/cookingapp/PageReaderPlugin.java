@@ -58,6 +58,8 @@ public class PageReaderPlugin extends Plugin {
         final String script = call.getString("script");
         final int timeoutMs = call.getInt("timeoutMs", 25000);
         final String userAgent = call.getString("userAgent");
+        // Run the script again on each page load (a bot check that reloads into the real page)
+        final boolean reinject = Boolean.TRUE.equals(call.getBoolean("reinject", false));
         if (url == null || script == null) {
             call.reject("url and script are required");
             return;
@@ -114,11 +116,12 @@ public class PageReaderPlugin extends Plugin {
 
                 @Override
                 public void onPageFinished(WebView view, String loadedUrl) {
-                    if (injected[0] || finished[0]) return;
+                    if (finished[0] || (injected[0] && !reinject)) return;
                     if (loadedUrl == null || !loadedUrl.startsWith("http")) return;
+                    boolean first = !injected[0];
                     injected[0] = true;
                     view.evaluateJavascript(script, null);
-                    handler.postDelayed(poll[0], 300);
+                    if (first) handler.postDelayed(poll[0], 300);
                 }
             });
 

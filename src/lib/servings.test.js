@@ -57,3 +57,12 @@ describe('portions', () => {
     expect(page.meta.servings).toBe(5)
   })
 })
+
+describe('bot checks', () => {
+  it('tells a Cloudflare page from a recipe page', async () => {
+    const { isBotWall } = await import('./reel/web.js')
+    expect(isBotWall('<html><head><title>Just a moment...</title><script src="https://challenges.cloudflare.com/x"></script>')).toBe(true)
+    expect(isBotWall('<title>Coleslaw</title><script type="application/ld+json">{}</script>')).toBe(false)
+    expect(isBotWall('<title>Coleslaw</title><p>recipe</p>')).toBe(false)
+  })
+})
