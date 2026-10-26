@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { totalMinutes } from './lib/recipeMeta.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
+import NumberField from './NumberField.jsx'
 
 const minutesOrNull = (v) => (v === '' ? null : Math.max(0, Math.round(Number(v))) || null)
 
@@ -24,13 +25,15 @@ export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
   const time = (field, label) => (
     <label className="field">
       {label}
-      <input
-        type="number"
+      <NumberField
         inputMode="numeric"
-        min="0"
+        step={5}
+        min={0}
+        max={9999}
+        label={`${label} minutes`}
         placeholder={field === 'totalMin' && totalMinutes({ ...recipe, totalMin: null }) ? String(totalMinutes({ ...recipe, totalMin: null })) : 'min'}
         value={recipe[field] ?? ''}
-        onChange={(e) => onChange({ [field]: minutesOrNull(e.target.value), timesEstimated: false })}
+        onChange={(v) => onChange({ [field]: minutesOrNull(v), timesEstimated: false })}
       />
     </label>
   )

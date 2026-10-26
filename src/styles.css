@@ -1118,3 +1118,23 @@ button.cook-timer-time { overflow: hidden; }
   .sheet-handle { display: none; }
   .sheet-actions { bottom: -16px; }
 }
+
+/* Number boxes with up/down buttons (NumberField.jsx) */
+.num-field { position: relative; display: flex; min-width: 0; }
+.num-field input { flex: 1 1 auto; width: 100%; padding-right: 38px; -moz-appearance: textfield; appearance: textfield; }
+.num-field input::-webkit-outer-spin-button,
+.num-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.num-steps { position: absolute; top: 3px; bottom: 3px; right: 3px; width: 32px; display: flex; flex-direction: column; gap: 2px; }
+.num-steps button {
+  flex: 1 1 0; min-height: 0; min-width: 0; width: 100%; padding: 0; margin: 0;
+  display: grid; place-items: center; border: 0; border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent);
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.num-steps button:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 28%, transparent); }
+.num-steps button:disabled { opacity: 0.35; }
+.servings .num-field { width: 6.5em; }
+.servings .num-field input { width: 100%; }
+.cook-custom .num-field { width: 104px; }
+.cook-custom .num-field input { width: 100%; }
+.amount-row .num-field { flex: 1 1 auto; }

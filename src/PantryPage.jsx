@@ -13,6 +13,7 @@ import { toast } from './lib/toast.js'
 import { defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
 import { UnitChips, convertQty } from './UnitPicker.jsx'
 import Icon from './Icon.jsx'
+import NumberField, { unitStep } from './NumberField.jsx'
 
 const SOON = 3 // days
 const LINKED_KEY = 'cooking-app:linked-ingredients'
@@ -127,13 +128,15 @@ function ItemSheet({ item, entry, own, onSave, onRemove, onClose, onPicture, onR
           ))}
         <label className="field">How much is at home</label>
         <div className="amount-row">
-          <input
-            ref={qtyRef}
-            inputMode="decimal"
+          <NumberField
+            inputRef={qtyRef}
+            step={unitStep(unit)}
+            min={0}
+            label="amount"
             placeholder="Amount"
             aria-label="Amount"
             value={qty}
-            onChange={(e) => setQty(e.target.value)}
+            onChange={setQty}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
         </div>
@@ -152,7 +155,7 @@ function ItemSheet({ item, entry, own, onSave, onRemove, onClose, onPicture, onR
           <>
             <label className="field">Always keep at least (staple)</label>
             <div className="amount-row">
-              <input inputMode="decimal" placeholder="Not a staple" aria-label="Minimum amount" value={minQty} onChange={(e) => setMinQty(e.target.value)} />
+              <NumberField step={unitStep(minUnit)} min={0} label="minimum" placeholder="Not a staple" aria-label="Minimum amount" value={minQty} onChange={setMinQty} />
             </div>
             {unitChips(minUnit, setMinUnit, minQty, setMinQty, 'Minimum unit')}
             <label className="field">Use by</label>
