@@ -128,19 +128,51 @@ export async function readPhotos(files, langs = 'eng', onProgress) {
   return (await readPhotoPages(files, langs, onProgress)).join('\n\n')
 }
 
+// A tiny WebAssembly module that only validates where SIMD works (as in wasm-feature-detect)
+const SIMD_TEST = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11])
+const hasSimd = () => {
+  try {
+    return WebAssembly.validate(SIMD_TEST)
+  } catch {
+    return false
+  }
+}
+
+// Starting the reader should take seconds; if it hangs, say so instead of sitting at 0 %
+const START_LIMIT_MS = 60000
+
 /** Each photo's text, read by Tesseract. */
 async function readPhotoPages(files, langs, onProgress) {
   const { createWorker } = await import('tesseract.js')
   let page = 0
+  let last = 'starting'
   const base = new URL('tesseract/', document.baseURI).href
-  const worker = await createWorker(langs, 1, {
+  const core = hasSimd() ? 'tesseract-core-simd-lstm.wasm.js' : 'tesseract-core-lstm.wasm.js'
+  let timer
+  const starting = createWorker(langs, 1, {
     workerPath: `${base}worker.min.js`,
-    corePath: `${base}tesseract-core-simd-lstm.wasm.js`,
+    corePath: `${base}${core}`,
     langPath: `${base}lang`,
     workerBlobURL: false,
     cacheMethod: 'none', // the data is in the app already
-    logger: (m) => onProgress?.({ status: m.status, progress: m.progress, page: page + 1, pages: files.length }),
+    logger: (m) => {
+      last = `${m.status} ${Math.round((m.progress ?? 0) * 100)} %`
+      onProgress?.({ status: m.status, progress: m.progress, page: page + 1, pages: files.length })
+    },
+    errorHandler: (e) => {
+      last = `error: ${e}`
+    },
   })
+  const worker = await Promise.race([
+    starting,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        starting.then((w) => w.terminate()).catch(() => {})
+        const chrome = navigator.userAgent.match(/Chrome\/(\d+)/)?.[1]
+        reject(new Error(`The text reader did not start (stuck at: ${last}; ${core}, WebView ${chrome ?? '?'}). Please send this message to Claude.`))
+      }, START_LIMIT_MS)
+    }),
+  ]).finally(() => clearTimeout(timer))
   try {
     const texts = []
     for (; page < files.length; page++) {
