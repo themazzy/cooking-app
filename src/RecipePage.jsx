@@ -22,6 +22,7 @@ import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.j
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { formatKcal, recipeCalories } from './lib/calories.js'
 import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
+import Icon from './Icon.jsx'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -141,7 +142,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   }
   const languageBar = recipe.original ? (
     <div className="language-bar">
-      🌐 In {languageName(recipe.lang)} ·{' '}
+      <Icon name="globe" size={15} /> In {languageName(recipe.lang)} ·{' '}
       <button className="link" onClick={() => changeText(swapOriginal(recipe))}>
         Show in {languageName(recipe.original.lang)}
       </button>
@@ -158,7 +159,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   ) : translateTo ? (
     <div className="language-bar">
       <button className="link" disabled={translating === 'busy'} onClick={translate}>
-        🌐 {translating === 'busy' ? 'Translating…' : `Translate to ${languageName(translateTo)}`}
+        <Icon name="globe" size={15} /> {translating === 'busy' ? 'Translating…' : `Translate to ${languageName(translateTo)}`}
       </button>
       {translating && translating !== 'busy' && <span className="note"> {translating}</span>}
     </div>
@@ -180,11 +181,11 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const photoButtons = (
     <div className="row photo-actions">
       <label className="button secondary small">
-        📷 Take photo
+        <Icon name="camera" /> Take photo
         <input type="file" accept="image/*" capture="environment" hidden onChange={pickPhoto} />
       </label>
       <label className="button secondary small">
-        🖼 Choose photo
+        <Icon name="image" /> Choose photo
         <input type="file" accept="image/*" hidden onChange={pickPhoto} />
       </label>
       {(recipe.photo || recipe.photoKey) && (
@@ -216,7 +217,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
     <>
       {picture && <img className="hero" src={picture} alt="" onError={() => picture === recipe.image && setImageBroken(true)} />}
       {/* Videos are kept on the phone that saved them */}
-      {recipe.video && <p className="hint video-elsewhere">🎬 The video is saved on the other phone{recipe.sourceUrl ? '; the source link opens the original.' : '.'}</p>}
+      {recipe.video && <p className="hint video-elsewhere">The video is saved on the other phone{recipe.sourceUrl ? '; the source link opens the original.' : '.'}</p>}
     </>
   ) : null
 
@@ -455,7 +456,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         </p>
         {recipe.note?.trim() && (
           <div className="recipe-note-view">
-            <strong>📝 Note</strong>
+            <strong>Note</strong>
             <p>{recipe.note.trim()}</p>
           </div>
         )}
@@ -464,7 +465,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             ▶ Start cooking
           </button>
           <button className="big secondary" disabled={!ingredientCount} onClick={() => setShopping(true)}>
-            {added ? '✓ On the list' : '🛒 Add to list'}
+            {added ? '✓ On the list' : <><Icon name="cart" /> Add to list</>}
           </button>
         </div>
       </header>
@@ -522,7 +523,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         {hasCalories && (
           <details className="kcal-sum">
             <summary>
-              🔥 About {formatKcal(cookingCalories.total)} kcal
+              <Icon name="flame" size={15} /> About {formatKcal(cookingCalories.total)} kcal
               {recipe.servings ? ` for ${cookFor} ${cookFor === 1 ? 'portion' : 'portions'} · ${formatKcal(perPortion)} per portion` : ''}
             </summary>
             <ul>

@@ -3,6 +3,7 @@ import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
 import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
+import Icon from './Icon.jsx'
 
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
@@ -204,7 +205,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
         </button>
         <div className="cook-title">{title || 'Recipe'}</div>
         <button className="link" onClick={() => setCustom((c) => (c == null ? '5' : null))}>
-          ⏱ Timer
+          <Icon name="timer" /> Timer
         </button>
         <button className="link" onClick={() => setShowAll((v) => !v)}>
           {showAll ? 'Hide' : 'Ingredients'}
@@ -273,7 +274,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
                   <div className="row">
                     {found.map((t, k) => (
                       <button key={k} className="secondary" onClick={() => addTimer(t.label, t.seconds)}>
-                        ⏱ Start {t.label} timer
+                        <Icon name="timer" /> Start {t.label} timer
                       </button>
                     ))}
                   </div>

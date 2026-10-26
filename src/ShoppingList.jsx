@@ -6,6 +6,7 @@ import { openExternal } from './lib/pageReader.js'
 import { isOut } from './lib/stock.js'
 import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
+import Icon from './Icon.jsx'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
 
@@ -26,7 +27,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
         </header>
         <div className="empty">
           <div className="empty-icon" aria-hidden="true">
-            🛒
+            <Icon name="cart" size={44} />
           </div>
           <p>No list yet.</p>
           <p className="hint">Open a recipe and tap Add to list, or pick several recipes at once.</p>

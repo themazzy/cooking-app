@@ -6,6 +6,7 @@ import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
 import { averageRating } from './lib/ratings.js'
 import Select from './Select.jsx'
+import Icon from './Icon.jsx'
 
 const matches = (r, q) =>
   !q ||
@@ -45,15 +46,15 @@ function Thumb({ recipe }) {
 function CardFacts({ recipe: r, home }) {
   const minutes = totalMinutes(r)
   const facts = [
-    minutes ? <span key="t">⏱ {r.timesEstimated ? '~' : ''}{formatMinutes(minutes)}</span> : null,
-    r.servings ? <span key="p" title="Portions">👤 {r.servings}</span> : null,
+    minutes ? <span key="t"><Icon name="clock" size={14} /> {r.timesEstimated ? '~' : ''}{formatMinutes(minutes)}</span> : null,
+    r.servings ? <span key="p" title="Portions"><Icon name="user" size={14} /> {r.servings}</span> : null,
     home?.total ? (
       <span key="h" className={home.missing.length === 0 ? 'home-ok' : ''} title="Ingredients at home">
-        🏠 {home.have}/{home.total}
+        <Icon name="home" size={14} /> {home.have}/{home.total}
       </span>
     ) : null,
     averageRating(r) ? <Stars key="r" value={Math.round(averageRating(r))} size="small" /> : null,
-    r.note?.trim() ? <span key="n" title="Has a note">📝</span> : null,
+    r.note?.trim() ? <span key="n" title="Has a note"><Icon name="note" size={14} /></span> : null,
   ].filter(Boolean)
   return facts.length ? <span className="card-facts">{facts}</span> : null
 }
@@ -117,12 +118,12 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
             </button>
             {home.size > 0 && (
               <button className={`chip-btn${fromHome ? ' on' : ''}`} aria-pressed={fromHome} onClick={() => (setFromHome(!fromHome), !fromHome && setSort('home'))}>
-                🏠 Can cook now
+                Can cook now
               </button>
             )}
             {timed && (
               <button className={`chip-btn${quick ? ' on' : ''}`} aria-pressed={quick} onClick={() => setQuick(!quick)}>
-                ⏱ Under {QUICK} min
+                Under {QUICK} min
               </button>
             )}
             {categories.map((c) => (
@@ -204,7 +205,9 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
           <p className="hint">No recipe matches.</p>
         ) : (
           <div className="empty">
-            <div className="empty-icon" aria-hidden="true">🍳</div>
+            <div className="empty-icon" aria-hidden="true">
+              <Icon name="pot" size={44} />
+            </div>
             <p>No recipes yet.</p>
             <p className="hint">Share a reel or a recipe page to the app, or use Import or + Add above.</p>
           </div>

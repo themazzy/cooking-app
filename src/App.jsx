@@ -41,6 +41,7 @@ import { ACCENTS, THEMES, applyTheme, resolveTheme } from './lib/theme.js'
 import { setWorking, toast } from './lib/toast.js'
 import { RecipeListSkeleton, RecipePageSkeleton, StartSkeleton } from './Skeleton.jsx'
 import Select from './Select.jsx'
+import Icon from './Icon.jsx'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
@@ -1167,11 +1168,11 @@ export default function App() {
           )}
           <div className="row">
             <label className={`button${photoPages.length ? ' secondary' : ''}`}>
-              📷 {photoPages.length ? 'Take another' : 'Take photo'}
+              <Icon name="camera" /> {photoPages.length ? 'Take another' : 'Take photo'}
               <input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={addPhotoPages} />
             </label>
             <label className="button secondary">
-              🖼 {photoPages.length ? 'Add from gallery' : 'Pick from gallery'}
+              <Icon name="image" /> {photoPages.length ? 'Add from gallery' : 'Pick from gallery'}
               <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={addPhotoPages} />
             </label>
           </div>
@@ -1270,7 +1271,7 @@ export default function App() {
               + Add
             </button>
             <button className="icon-button" aria-label="Settings" onClick={() => go('#/settings')}>
-              ⚙
+              <Icon name="settings" size={22} />
             </button>
           </div>
         )}
@@ -1291,7 +1292,7 @@ export default function App() {
       ) : (
         recipes.length > 1 && (
           <button className="link list-hint" onClick={() => setSelection({})}>
-            🛒 Shop for several recipes
+            <Icon name="cart" /> Shop for several recipes
           </button>
         )
       )}
