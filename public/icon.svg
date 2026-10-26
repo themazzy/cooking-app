@@ -1,21 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><defs><clipPath id="c"><rect x="18" y="18" width="72" height="72" rx="16"/></clipPath></defs><g clip-path="url(#c)">
-  <rect width="108" height="108" fill="#2e7d55"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72"><defs><clipPath id="c"><rect x="18" y="18" width="72" height="72" rx="16"/></clipPath></defs><g clip-path="url(#c)"><defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6e8"/><stop offset="1" stop-color="#f6e2c4"/></linearGradient></defs><rect width="108" height="108" fill="url(#bg)"/><defs>
 
-<g transform="translate(0 2)">
-  <!-- Steam -->
-  <g fill="none" stroke="#fff8ec" stroke-width="3.6" stroke-linecap="round" opacity="0.92">
-    <path d="M43 43c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
-    <path d="M54 41c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
-    <path d="M65 43c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
-  </g>
-  <!-- Handles -->
-  <rect x="23" y="54" width="10" height="5" rx="2.5" fill="#fff8ec"/>
-  <rect x="75" y="54" width="10" height="5" rx="2.5" fill="#fff8ec"/>
-  <!-- Pot -->
-  <path d="M30 51h48v16a12 12 0 0 1-12 12H42a12 12 0 0 1-12-12z" fill="#fff8ec"/>
-  <rect x="27" y="47" width="54" height="6.5" rx="3.25" fill="#ffffff"/>
-  <!-- Leaf on the pot -->
-  <path d="M47 70c0-8 6-12 14-12 0 8-6 12-14 12z" fill="#5cc08d"/>
-  <path d="M48.5 68.5l9-8" stroke="#2f7a52" stroke-width="1.4" stroke-linecap="round"/>
-</g>
-</g></svg>
+<linearGradient id="pot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b3261e"/><stop offset=".45" stop-color="#e5483a"/><stop offset="1" stop-color="#9c1f18"/></linearGradient>
+<linearGradient id="lid" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ef5a49"/><stop offset="1" stop-color="#c22e22"/></linearGradient>
+<radialGradient id="sh" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#7a4a1a" stop-opacity=".35"/><stop offset="1" stop-color="#7a4a1a" stop-opacity="0"/></radialGradient></defs>
+<g transform="translate(54 58) scale(0.86) translate(-54 -54)">
+<ellipse cx="54" cy="81" rx="28" ry="4.5" fill="url(#sh)"/>
+<g fill="none" stroke="#e7b98a" stroke-width="3" stroke-linecap="round" opacity=".9"><path d="M45 37c-2.5-3 2.5-5.5 0-8.5"/><path d="M54 35c-2.5-3 2.5-5.5 0-8.5s2.5-5.5 0-8"/><path d="M63 37c-2.5-3 2.5-5.5 0-8.5"/></g>
+<rect x="24" y="56" width="9" height="6" rx="3" fill="#8f1d16"/><rect x="75" y="56" width="9" height="6" rx="3" fill="#8f1d16"/>
+<path d="M30 52h48v15a12 12 0 0 1-12 12H42a12 12 0 0 1-12-12z" fill="url(#pot)"/>
+<path d="M34 56h3v12a7 7 0 0 0 4 6.3" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2" stroke-linecap="round"/>
+<path d="M27 50c0-5 12-8 27-8s27 3 27 8v2.5H27z" fill="url(#lid)"/>
+<rect x="49" y="38.5" width="10" height="5" rx="2.5" fill="#2b2b2b"/>
+<path d="M33 47.5c6-2.5 14-3.2 21-3.2" stroke="#fff" stroke-opacity=".45" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+</g></g></svg>
