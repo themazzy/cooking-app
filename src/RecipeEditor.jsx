@@ -11,7 +11,9 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
   const { ingredients, steps } = recipe
 
   const setIngredients = (next) => onChange({ ...recipe, ingredients: next })
-  const update = (n, field, value) => setIngredients(ingredients.map((i, k) => (k === n ? { ...i, [field]: value } : i)))
+  // A name typed by hand is no longer a swap for the one before
+  const update = (n, field, value) =>
+    setIngredients(ingredients.map((i, k) => (k === n ? { ...i, [field]: value, ...(field === 'name' ? { swappedFrom: undefined } : {}) } : i)))
   const remove = (n) => setIngredients(ingredients.filter((_, k) => k !== n))
   const insertAfter = (n) => {
     const next = [...ingredients]

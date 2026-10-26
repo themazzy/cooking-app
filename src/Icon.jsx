@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  ArrowLeftRight,
   ArrowRight,
   ArrowUpDown,
   BookOpen,
@@ -42,6 +43,7 @@ import {
 // Lucide icons by short name; only these end up in the app
 const ICONS = {
   back: ArrowLeft,
+  swap: ArrowLeftRight,
   next: ArrowRight,
   reorder: ArrowUpDown,
   book: BookOpen,
