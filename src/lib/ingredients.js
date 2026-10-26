@@ -10,10 +10,10 @@ const UNITS = {
   ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра'],
   dl: ['dl', 'decilitr', 'decilitry', 'decilitrů', 'дл'],
   l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра'],
-  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици'],
-  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички'],
+  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек'],
+  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек'],
   cup: ['hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши'],
-  pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя'],
+  pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт'],
   clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката'],
   pinch: ['špetka', 'špetku', 'špetky', 'pinch', 'щипка', 'щипки'],
   can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins', 'консерва', 'консерви', 'кутия', 'кутии', 'буркан', 'буркана'],
@@ -50,12 +50,14 @@ const LABELLED = new RegExp(`^(.+?)\\s*[:–—-]\\s+${QTY}\\s*(?:${UNIT})?\\s*(
 const TO_TASTE = /^(.+?)\s*[:–—-]\s+(to taste|as needed|optional|podle chuti|dle chuti|podle potřeby|dle potřeby|volitelně|на вкус|по вкус|по желание|според вкуса|колкото поеме)\.?$/iu
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
-const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва)(?![\p{L}])/iu
-const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод)(?![\p{L}])/iu
-// A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", "За тестото"
-const FOR_HEADING = /^(?:for\s+(?:the\s+)?|na\s+|pro\s+|за\s+)\p{L}/iu
+const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти)(?![\p{L}])/iu
+const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування)(?![\p{L}])/iu
+// A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", and the same in the languages
+// recipes often come in before they are translated: "Für die Soße", "Para la salsa", "Per il sugo", "Pour la sauce", "Do sosu", "Для соуса"
+const FOR = '(?:for|na|pro|за|für|para|per|pour|do|для)'
+const FOR_HEADING = new RegExp(`^${FOR}\\s+\\p{L}`, 'iu')
 // "Ingredients for the sauce", "Suroviny na těsto", "Продукти за плънката": a heading for one sub-list
-const INGREDIENTS_FOR = /^(?:ingredients?|ingredience|suroviny|съставки|продукти|необходими продукти|необходими съставки|нужни продукти)\s+((?:for|na|pro|за)\s+.+)$/iu
+const INGREDIENTS_FOR = new RegExp(`^(?:ingredients?|ingredience|suroviny|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|zutaten|ingredientes|ingredienti|ingrédients|składniki|ингредиенты|продукты)\\s+(${FOR}\\s+.+)$`, 'iu')
 const capitalise = (s) => s.charAt(0).toLocaleUpperCase() + s.slice(1)
 const isShouted = (s) => s === s.toLocaleUpperCase() && /\p{Lu}/u.test(s)
 // "ЗА ТЕСТОТО" → "За тестото"
@@ -114,7 +116,7 @@ const stripMeasures = (s) => s.replace(IN_PARENS, ' ').replace(LOOSE, ' ').repla
 const cleanName = (s) =>
   stripMeasures(s)
     .replace(/^[-–:,/\s]+|[\s.,;:/]+$/g, '')
-    .replace(/^of\s+/i, '') // "50 ml / 2 oz of cream"
+    .replace(/^(?:of|de|di|du)\s+(?=\p{L})/iu, '') // "50 ml / 2 oz of cream", "300 g de harina"
     .trim()
 
 // A unit left at the start of a name, as a translation leaves it: "tablespoon of cornstarch", "heaped teaspoon salt"

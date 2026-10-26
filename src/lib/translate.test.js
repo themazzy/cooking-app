@@ -77,3 +77,14 @@ describe('pieces', () => {
     expect(out[0].endsWith('.')).toBe(true)
   })
 })
+
+describe('applyTranslation and groups', () => {
+  it('translates group names and tidies units left in names', () => {
+    const map = new Map([
+      ['Na omáčku', 'For the sauce'],
+      ['polévkové lžíce vody', 'tablespoons of water'],
+    ])
+    const out = applyTranslation({ title: '', steps: '', ingredients: [{ qty: '2', unit: '', name: 'polévkové lžíce vody', group: 'Na omáčku' }] }, map)
+    expect(out.ingredients).toEqual([{ qty: '2', unit: 'tbsp', name: 'water', group: 'For the sauce' }])
+  })
+})
