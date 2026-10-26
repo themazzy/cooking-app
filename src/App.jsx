@@ -277,7 +277,7 @@ export default function App() {
   const translateDraft = useCallback(
     async (recipe) => {
       const to = settings.translateTo
-      if (!native || !to || to === 'off') return recipe
+      if (!to || to === 'off') return recipe
       try {
         const from = await detectLanguage(recipe)
         if (!from || from === to || (settings.keepOwnLanguages && TARGETS[from])) return recipe
@@ -290,7 +290,7 @@ export default function App() {
         return recipe
       }
     },
-    [native, settings.translateTo, settings.keepOwnLanguages],
+    [settings.translateTo, settings.keepOwnLanguages],
   )
 
   /** Shows an import (or paste) as a new, unsaved recipe page, translated if it is in another language. */
@@ -669,7 +669,7 @@ export default function App() {
           onUseStock={useStock}
           units={settings.units}
           onUnits={(units) => setSettings((s) => ({ ...s, units }))}
-          translateTo={native && settings.translateTo !== 'off' ? settings.translateTo : null}
+          translateTo={settings.translateTo !== 'off' ? settings.translateTo : null}
           categories={allCategories(recipes)}
           cuisines={allCuisines(recipes)}
         />
@@ -789,9 +789,8 @@ export default function App() {
               </label>
             )}
             <p className="hint">
-              {native
-                ? 'Translation runs on the phone. Each language downloads once (about 30 MB), then works offline. You can switch back to the original on the recipe page.'
-                : 'Translation only works in the Android app.'}
+              Phones with Gemini Nano translate on the phone; others use Google Translate (needs internet). The translation is saved with the recipe, and the
+              recipe page can switch back to the original.
             </p>
             <label>
               <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}

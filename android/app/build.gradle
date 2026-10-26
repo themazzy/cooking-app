@@ -56,9 +56,10 @@ dependencies {
     // On-device text recognition for recipe photos (Latin script). The model
     // comes through Google Play services instead of inside the app (~20 MB less)
     implementation "com.google.android.gms:play-services-mlkit-text-recognition:19.0.1"
-    // Recipe translation: language detection from Play services, translation models downloaded on first use
+    // Recipe translation: language detection from Play services and Gemini Nano
+    // through AICore (its model is on the phone, not in the APK)
     implementation "com.google.android.gms:play-services-mlkit-language-id:17.0.0"
-    implementation "com.google.mlkit:translate:17.0.3"
+    implementation "com.google.mlkit:genai-prompt:1.0.0-beta4"
 }
 
 apply from: 'capacitor.build.gradle'
