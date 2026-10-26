@@ -297,12 +297,24 @@ function multiplied(text) {
   return `${Number(n) * Number(size.replace(',', '.'))} ${unit} ${word}${rest}`
 }
 
+// "1 cup plus 2 tbsp milk": the two amounts added up in the first unit
+const PLUS = new RegExp(`^(${NUM})\\s*(${UNIT_RE})\\.?\\s+(?:plus|\\+|and|a)\\s+(${NUM})\\s*(${UNIT_RE})\\.?\\s+(?=\\p{L})`, 'iu')
+const IN_BASE = { tsp: ['ml', 4.93], tbsp: ['ml', 14.79], cup: ['ml', 236.6], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], g: ['g', 1], kg: ['g', 1000], oz: ['g', 28.35], lb: ['g', 453.6] }
+function plus(text) {
+  const m = text.match(PLUS)
+  if (!m) return text
+  const [a, b] = [IN_BASE[unitOf(m[2])], IN_BASE[unitOf(m[4])]]
+  if (!a || !b || a[0] !== b[0]) return text
+  const total = parseQuantity(m[1]) + (parseQuantity(m[3]) * b[1]) / a[1]
+  return `${Math.round(total * 1000) / 1000} ${m[2]} ${text.slice(m[0].length)}`
+}
+
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
-  const text = multiplied(spoonLetter(wordAmount(cleanLine(line))))
+  const text = plus(multiplied(spoonLetter(wordAmount(cleanLine(line))))
     .replace(MIXED_DASH, '$1 $2')
     .replace(HEAPED, '$1 ')
-    .replace(SIZE_FIRST, '$1 ')
+    .replace(SIZE_FIRST, '$1 '))
   if (!text) return null
   if (CJK.test(text)) {
     const cjk = parseCjkLine(text)
