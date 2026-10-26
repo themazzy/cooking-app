@@ -658,3 +658,16 @@ input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; wi
 .tags-edit select { width: 100%; }
 .times { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 2px; color: var(--muted); font-size: 0.92rem; }
 .times strong { color: var(--text); }
+
+/* Ratings and notes */
+.stars { display: inline-flex; gap: 2px; line-height: 1; }
+.stars > * { color: var(--border); }
+.stars > .on { color: #f5b301; }
+.stars.big button { background: none; border: 0; padding: 4px 3px; min-height: 40px; min-width: 36px; font-size: 1.6rem; cursor: pointer; box-shadow: none; }
+.stars.small { font-size: 0.85rem; }
+.rating-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.recipe-note { display: block; margin: 8px 0 12px; }
+.recipe-note textarea { margin-top: 4px; }
+.recipe-note-view { background: var(--sunken); border-radius: var(--radius); padding: 10px 12px; margin: 8px 0; }
+.recipe-note-view p { margin: 4px 0 0; white-space: pre-wrap; }
+.card-rating { display: flex; align-items: center; gap: 6px; margin: 2px 0; }

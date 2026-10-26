@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
+import Stars from './Stars.jsx'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 
 const matches = (r, q) =>
   !q ||
   r.title?.toLowerCase().includes(q) ||
   r.cuisine?.toLowerCase().includes(q) ||
+  r.note?.toLowerCase().includes(q) ||
   r.categories?.some((c) => c.toLowerCase().includes(q)) ||
   r.ingredients?.some((i) => i.name?.toLowerCase().includes(q))
 
@@ -50,6 +52,7 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
   const timed = recipes.some((r) => totalMinutes(r))
+  const rated = recipes.some((r) => r.rating)
   const filtered = !!(category || cuisine || quick)
   const shown = recipes
     .filter(
@@ -64,7 +67,9 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
         ? (a.title || '').localeCompare(b.title || '')
         : sort === 'quick'
           ? (totalMinutes(a) ?? 1e9) - (totalMinutes(b) ?? 1e9)
-          : 0,
+          : sort === 'rated'
+            ? (b.rating ?? 0) - (a.rating ?? 0)
+            : 0,
     )
   const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed)
   return (
@@ -107,6 +112,7 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
                 ['new', 'Newest'],
                 ['az', 'A–Z'],
                 ...(timed ? [['quick', 'Quickest']] : []),
+                ...(rated ? [['rated', 'Top rated']] : []),
               ].map(([k, label]) => (
                 <button key={k} className={sort === k ? 'on' : ''} onClick={() => setSort(k)}>
                   {label}
@@ -127,6 +133,12 @@ export default function RecipeList({ recipes, onOpen, selection, onSelect }) {
                 <Thumb recipe={r} />
                 <span className="card-text">
                   <span className="recipe-title">{r.title || 'Untitled recipe'}</span>
+                  {(r.rating || r.note?.trim()) && (
+                    <span className="card-rating">
+                      {r.rating ? <Stars value={r.rating} size="small" /> : null}
+                      {r.note?.trim() ? <span title="Has a note">📝</span> : null}
+                    </span>
+                  )}
                   <span className="note">
                     {[
                       totalMinutes(r) ? `⏱ ${r.timesEstimated ? '~' : ''}${formatMinutes(totalMinutes(r))}` : null,
