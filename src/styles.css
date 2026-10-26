@@ -640,3 +640,21 @@ ul.shopping ul.uses { flex: 1 0 100%; list-style: none; margin: 0 0 10px; paddin
 ul.shopping ul.uses li { display: flex; flex-direction: column; align-items: flex-start; border: 0; padding: 4px 0; font-size: 0.9rem; text-decoration: none; }
 ul.shopping ul.uses .uses-for { color: var(--muted); font-size: 0.8rem; }
 ul.shopping li.checked ul.uses span { text-decoration: none; }
+
+/* Recipe categories, cuisine and times */
+.recipe-filters { margin-bottom: 10px; }
+.recipe-filters .aisle-chips { padding-top: 0; padding-bottom: 8px; }
+.chip-btn.soft { background: transparent; border: 1px solid var(--border); }
+.chip-btn.soft.on { background: var(--accent); border-color: var(--accent); }
+.sort-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sort-row .segmented { margin: 0; }
+.chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-btn.add { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
+input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; width: 10em; font-size: 0.88rem; }
+.time-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.time-fields input { width: 100%; }
+.tags-edit { margin-bottom: 14px; }
+.tags-edit h3 { margin-top: 14px; }
+.tags-edit select { width: 100%; }
+.times { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 2px; color: var(--muted); font-size: 0.92rem; }
+.times strong { color: var(--text); }

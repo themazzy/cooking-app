@@ -4,6 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { draftFromImport } from './lib/recipeDraft.js'
+import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
 import RecipePage from './RecipePage.jsx'
@@ -451,7 +452,7 @@ export default function App() {
         step('Loading the reel page…')
         reel = await loadReel(url)
         if (reel.signedIn != null) setIgSignedIn(reel.signedIn)
-        r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30) }
+        r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30), image: reel.image ?? null, meta: reel.meta ?? null }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
         if (reel.platform === 'web') {
           step(reel.structured ? 'Found the recipe data on the page.' : 'No recipe data on the page, reading its text instead.', reel.structured ? 'ok' : 'warn')
@@ -613,6 +614,8 @@ export default function App() {
           onUseStock={useStock}
           units={settings.units}
           onUnits={(units) => setSettings((s) => ({ ...s, units }))}
+          categories={allCategories(recipes)}
+          cuisines={allCuisines(recipes)}
         />
       </main>
     )

@@ -1,5 +1,6 @@
 import { DESKTOP_UA, getText } from '../http.js'
 import { decodeEntities, htmlToText, metaContent } from './html.js'
+import { categoriesFrom, cuisineFrom, durationMinutes } from '../recipeMeta.js'
 
 const isType = (node, type) => [].concat(node?.['@type'] ?? []).some((t) => String(t).toLowerCase() === type)
 
@@ -116,6 +117,17 @@ export function ingredientGroups(html) {
   return []
 }
 
+/** Times (minutes), categories and cuisine of a schema.org Recipe. */
+export function recipeJsonLdMeta(recipe) {
+  return {
+    prepMin: durationMinutes(recipe.prepTime),
+    cookMin: durationMinutes(recipe.cookTime ?? recipe.performTime),
+    totalMin: durationMinutes(recipe.totalTime),
+    categories: categoriesFrom(recipe.recipeCategory),
+    cuisine: cuisineFrom(recipe.recipeCuisine),
+  }
+}
+
 export function parseRecipePage(html) {
   const recipe = findRecipeJsonLd(html)
   if (recipe) {
@@ -124,6 +136,7 @@ export function parseRecipePage(html) {
       description: recipeJsonLdToText(recipe, ingredientGroups(html)),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
       image: jsonLdImage(recipe.image) ?? metaContent(html, 'og:image'),
+      meta: recipeJsonLdMeta(recipe),
       structured: true,
     }
   }

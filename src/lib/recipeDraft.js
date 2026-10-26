@@ -1,5 +1,6 @@
 import { pickRecipe } from './recipeSource.js'
 import { toEditable } from './recipeEdit.js'
+import { tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
 
 const NUM_WORDS = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, eight: 8, dva: 2, dvě: 2, tři: 3, čtyři: 4, pět: 5, šest: 6 }
 const N = '(\\d{1,2}|one|two|three|four|five|six|eight|dva|dvě|tři|čtyři|pět|šest)'
@@ -32,10 +33,28 @@ export function titleFrom(text, fallback) {
   return fallback
 }
 
+/**
+ * Prep, cook and total minutes: the website's data, else times written in the
+ * recipe text, else the step times added up as the cooking time (estimated).
+ */
+export function detectTimes(result, picked, steps) {
+  const fields = ['prepMin', 'cookMin', 'totalMin']
+  const out = { prepMin: null, cookMin: null, totalMin: null, timesEstimated: false }
+  for (const found of [result.meta, timesFromText(picked?.text), timesFromText(result.description)]) {
+    for (const f of fields) out[f] ??= found?.[f] ?? null
+  }
+  if (fields.every((f) => out[f] == null)) {
+    out.cookMin = timeFromSteps(steps)
+    out.timesEstimated = out.cookMin != null
+  }
+  return out
+}
+
 /** A recipe ready to edit, from what an import (or paste) found. */
 export function draftFromImport(result) {
   const picked = pickRecipe(result)
   const editable = toEditable(picked)
+  const tags = tagsFromHashtags([result.description, picked?.text].filter(Boolean).join('\n'))
   return {
     id: null,
     title: titleFrom(result.description, result.author ? `Recipe from ${result.author}` : 'New recipe'),
@@ -45,6 +64,9 @@ export function draftFromImport(result) {
     servings: detectServings(picked?.text) ?? detectServings(result.description) ?? detectServings(result.transcript),
     ingredients: editable.ingredients,
     steps: editable.steps,
+    categories: result.meta?.categories?.length ? result.meta.categories : tags.categories,
+    cuisine: result.meta?.cuisine ?? tags.cuisine,
+    ...detectTimes(result, picked, editable.steps),
     source: picked?.source ?? null,
     raw: { description: result.description ?? null, transcript: result.transcript ?? null, comments: result.comments ?? [] },
     video: null,
