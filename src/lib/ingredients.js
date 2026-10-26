@@ -10,8 +10,8 @@ const UNITS = {
   ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра'],
   dl: ['dl', 'decilitr', 'decilitry', 'decilitrů', 'дл'],
   l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра'],
-  tbsp: ['lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици'],
-  tsp: ['lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички'],
+  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици'],
+  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички'],
   cup: ['hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши'],
   pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя'],
   clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката'],
@@ -52,6 +52,35 @@ const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*
 
 const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва)(?![\p{L}])/iu
 const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод)(?![\p{L}])/iu
+// A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", "За тестото"
+const FOR_HEADING = /^(?:for\s+(?:the\s+)?|na\s+|pro\s+|за\s+)\p{L}/iu
+// "Ingredients for the sauce", "Suroviny na těsto", "Продукти за плънката": a heading for one sub-list
+const INGREDIENTS_FOR = /^(?:ingredients?|ingredience|suroviny|съставки|продукти|необходими продукти|необходими съставки|нужни продукти)\s+((?:for|na|pro|за)\s+.+)$/iu
+const capitalise = (s) => s.charAt(0).toLocaleUpperCase() + s.slice(1)
+const isShouted = (s) => s === s.toLocaleUpperCase() && /\p{Lu}/u.test(s)
+// "ЗА ТЕСТОТО" → "За тестото"
+const headingCase = (s) => capitalise(isShouted(s) ? s.toLocaleLowerCase() : s)
+
+/**
+ * The group a heading line starts ("For the sauce"), or null. Inside an ingredient list a short line
+ * ending in ":" or written in capitals ("SAUCE") is one too.
+ */
+export function groupHeading(line, inList) {
+  const header = line.replace(/[\s:–—-]+$/u, '').trim()
+  if (!header || /\d/.test(header) || /[.!?]$/.test(header)) return null
+  if (STEP_HEADER.test(header) || /^(?:notes?|tips?|poznámk|tip|бележк|съвет)/iu.test(header)) return null
+  const words = wordCount(header)
+  const sub = header.match(INGREDIENTS_FOR)
+  if (sub && words <= 7) return headingCase(sub[1])
+  if (INGREDIENT_HEADER.test(header)) return null
+  if (words > 5 || parseIngredientLine(line)) return null
+  if (FOR_HEADING.test(header) && (inList || /:\s*$/.test(line) || words <= 4)) return headingCase(header)
+  if (!inList) return null
+  if (/:\s*$/.test(line)) return headingCase(cleanName(header))
+  if (header.length >= 3 && isShouted(header) && words <= 3) return headingCase(header)
+  return null
+}
+
 const NUMBERED_STEP = /^(?:step\s*|krok\s*|стъпка\s*)?\d{1,2}\s*[.)]\s+(?=\p{L})/iu
 const DECORATION = /^[\s\-–—•*·>]+|^[\p{Extended_Pictographic}️‍\s]+/u
 
@@ -85,7 +114,21 @@ const stripMeasures = (s) => s.replace(IN_PARENS, ' ').replace(LOOSE, ' ').repla
 const cleanName = (s) =>
   stripMeasures(s)
     .replace(/^[-–:,/\s]+|[\s.,;:/]+$/g, '')
+    .replace(/^of\s+/i, '') // "50 ml / 2 oz of cream"
     .trim()
+
+// A unit left at the start of a name, as a translation leaves it: "tablespoon of cornstarch", "heaped teaspoon salt"
+const UNIT_IN_NAME = new RegExp(`^(?:(?:heaped|heaping|level|rounded|scant|full|large|small)\\s+)?(${UNIT_RE})\\.?\\s+(?:of\\s+)?(?=\\p{L})`, 'iu')
+
+/** An editable ingredient ({ qty, unit, name }) with a unit or "of" moved out of its name. */
+export function tidyIngredient(i) {
+  const name = i.name ?? ''
+  const m = i.unit ? null : name.match(UNIT_IN_NAME)
+  const unit = m && m[1].length > 1 ? unitOf(m[1]) : null
+  if (unit) return { ...i, unit: unit === 'pcs' ? '' : unit, name: name.slice(m[0].length) }
+  const rest = name.replace(/^of\s+(?=\p{L})/iu, '')
+  return rest === name ? i : { ...i, name: rest }
+}
 
 // Amounts written as words at the start of a line: "половин чаша", "půl lžičky", "две яйца"
 const WORD_AMOUNTS = { половин: '½', půl: '½', един: '1', една: '1', едно: '1', два: '2', две: '2', три: '3', четири: '4', пет: '5', шест: '6' }
@@ -199,13 +242,23 @@ export function parseRecipeText(text) {
     const header = line.replace(/[:\s]+$/, '')
     // "Prep time: 15 min", "Приготвяне: 20 мин" are times (read elsewhere), not a section
     if (/^[^:–-]{1,30}[:–-]\s*\d/u.test(line) && wordCount(line) <= 6 && Object.values(timesFromText(line)).some((v) => v != null)) continue
+    // "For the sauce", "Ingredients for the sauce", "Тесто:" start a sub-list of the ingredients
+    const sub = section !== 'steps' || INGREDIENTS_FOR.test(header) ? groupHeading(line, section === 'ingredients') : null
+    if (sub) {
+      group = sub
+      // A loose "For the sauce" in a caption is only a list once ingredients follow
+      if (section === 'ingredients' || /:\s*$/.test(line) || INGREDIENTS_FOR.test(header)) section = 'ingredients'
+      continue
+    }
     // "Ingredients", or "Необходими продукти за 4 порции"
     if (INGREDIENT_HEADER.test(header) && (wordCount(header) <= 4 || (wordCount(header) <= 7 && detectServings(header)))) {
       section = 'ingredients'
+      group = null
       continue
     }
     if (STEP_HEADER.test(header) && wordCount(header) <= 4) {
       section = 'steps'
+      group = null
       continue
     }
 
@@ -228,10 +281,6 @@ export function parseRecipeText(text) {
     }
 
     const ing = parseIngredientLine(line)
-    if (!ing && section === 'ingredients' && /:\s*$/.test(line) && wordCount(line) <= 5) {
-      group = cleanName(line)
-      continue
-    }
     // Outside an ingredient list, only short lines with a quantity count, so
     // sentences like "Bake for 25 minutes at 180 °C" don't become ingredients
     if (ing && (section === 'ingredients' || ing.unit || wordCount(line) <= 5)) {
