@@ -5,25 +5,19 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const SEARCHES = {
-  'ribeye-steak': 'raw ribeye steak', 'rump-steak': 'raw rump steak', 'flank-steak': 'raw flank steak', 'skirt-steak': 'raw skirt steak',
-  't-bone-steak': 'raw T-bone steak', 'steak': 'raw beef steak', 'beef-sirloin': 'raw beef sirloin', 'beef-chuck': 'raw beef chuck',
-  'beef-round': 'raw beef topside', 'beef-short-ribs': 'raw beef short ribs', 'beef-cheeks': 'raw beef cheeks', 'stewing-beef': 'raw diced beef stew meat',
-  'roast-beef': 'sliced roast beef', 'corned-beef': 'corned beef sliced', 'beef-liver': 'raw beef liver', 'calf-liver': 'raw calf liver',
-  'pork-liver': 'raw pork liver', 'beef-tongue': 'raw beef tongue', 'tripe': 'raw honeycomb tripe', 'bone-marrow': 'marrow bones raw',
-  'veal-shank': 'raw veal shank ossobuco', 'pork-chops': 'raw pork chops', 'pork-loin': 'raw pork loin', 'pork-leg': 'raw pork leg',
-  'pork-cheeks': 'raw pork cheeks', 'pork-neck': 'raw pork neck collar', 'pork-shoulder': 'raw pork shoulder', 'pork-tenderloin': 'raw pork tenderloin',
-  'pork-ribs': 'raw pork spare ribs', 'pork-knuckle': 'raw pork knuckle', 'pork-belly': 'raw pork belly', 'pig-trotters': 'raw pig trotters',
-  'gammon': 'gammon steak raw', 'chicken-wings': 'raw chicken wings', 'chicken-drumsticks': 'raw chicken drumsticks', 'chicken-hearts': 'raw chicken hearts',
-  'chicken-gizzards': 'raw chicken gizzards', 'chicken-liver': 'raw chicken livers', 'turkey-breast': 'raw turkey breast', 'turkey-legs': 'raw turkey legs',
-  'turkey': 'raw whole turkey', 'duck-breast': 'raw duck breast', 'rack-of-lamb': 'raw rack of lamb', 'lamb-shanks': 'raw lamb shanks',
-  'pheasant': 'plucked pheasant raw', 'quail': 'raw quail plucked', 'goose': 'raw goose plucked', 'rabbit': 'raw rabbit meat',
-  'hare': 'hare meat raw', 'venison': 'raw venison', 'wild-boar': 'wild boar meat raw', 'pancetta': 'pancetta',
-  'lardons': 'lardons bacon', 'smoked-bacon': 'smoked bacon slices', 'salami': 'salami sliced', 'pepperoni': 'pepperoni sliced',
-  'sujuk': 'sucuk sausage', 'lukanka': 'lukanka', 'chinese-sausage': 'lap cheong sausage', 'speck': 'speck ham',
-  'serrano-ham': 'jamon serrano sliced', 'elenski-but': 'elenski but', 'bresaola': 'bresaola', 'pastarma': 'pastirma',
-  'mortadella': 'mortadella sliced', 'kielbasa': 'kielbasa', 'merguez': 'merguez sausages', 'spekacky': 'špekáčky',
-  'parky': 'párky', 'klobasa': 'klobása', 'jitrnice': 'jitrnice', 'smoked-meat': 'uzené maso', 'head-cheese': 'tlačenka',
-  'meatballs': 'meatballs', 'kebapche': 'kebapche', 'char-siu': 'char siu', 'lard-cracklings': 'pork cracklings škvarky',
+  'rump-steak': ['rump steak meat', 'incategory:"Beef steaks"'], 'flank-steak': ['flank steak', 'bavette meat'], 'skirt-steak': ['skirt steak', 'hanger steak'],
+  'beef-round': ['beef topside joint', 'incategory:"Raw beef"'], 'beef-short-ribs': ['short ribs beef', 'incategory:"Beef ribs"'], 'beef-cheeks': ['beef cheek meat', 'ox cheek'],
+  'beef-chuck': ['beef chuck', 'chuck roast'], 'stewing-beef': ['beef cubes', 'diced beef meat', 'stewing beef'], 'tripe': ['tripe food', 'incategory:"Tripe"'],
+  'veal-shank': ['ossobuco', 'veal shank'], 'pork-tenderloin': ['pork tenderloin', 'pork fillet meat'], 'gammon': ['gammon', 'gammon steak'],
+  'chicken-gizzards': ['gizzards food', 'chicken gizzard'], 'lamb-shanks': ['lamb shank', 'lamb shanks'], 'pheasant': ['pheasant meat', 'roast pheasant'],
+  'wild-boar': ['wild boar meat', 'boar meat'], 'calf-liver': ['calf liver', 'veal liver'], 'pork-liver': ['pork liver', 'pig liver food'],
+  'beef-tongue': ['beef tongue', 'ox tongue food'], 'bone-marrow': ['marrow bones', 'bone marrow food'], 'pork-loin': ['pork loin', 'pork loin roast'],
+  'pork-leg': ['pork leg meat', 'leg of pork'], 'pork-cheeks': ['pork cheeks', 'pig cheek meat'], 'pork-neck': ['pork neck', 'pork collar', 'krkovice'],
+  'pork-shoulder': ['pork shoulder', 'pork shoulder roast'], 'pork-ribs': ['pork ribs', 'spare ribs', 'incategory:"Spare ribs"'], 'pork-knuckle': ['pork knuckle', 'ham hock', 'Schweinshaxe'],
+  'chicken-hearts': ['chicken hearts', 'incategory:"Chicken hearts (food)"'], 'turkey-breast': ['turkey breast meat', 'turkey breast fillet'], 'turkey-legs': ['turkey leg meat', 'turkey drumstick'],
+  'turkey': ['roast turkey', 'whole turkey meat', 'thanksgiving turkey'], 'duck-breast': ['duck breast', 'magret'], 'rack-of-lamb': ['rack of lamb', 'lamb rack'],
+  'quail': ['quail meat', 'roasted quail'], 'goose': ['roast goose', 'goose meat'], 'hare': ['hare meat', 'jugged hare'],
+  'lardons': ['lardons', 'diced bacon'], 'elenski-but': ['Елено бут', 'Еленски бут'], 'mortadella': ['mortadella', 'mortadella bologna'], 'smoked-meat': ['smoked pork meat', 'Kassler', 'smoked meat'],
 }
 
 const API = 'https://commons.wikimedia.org/w/api.php'
@@ -32,16 +26,18 @@ const strip = (s) => String(s ?? '').replace(/<[^>]+>/g, '').trim()
 
 mkdirSync('photo-candidates', { recursive: true })
 const found = {}
-for (const [slug, q] of Object.entries(SEARCHES)) {
-  const url = `${API}?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=${encodeURIComponent(`${q} filetype:bitmap`)}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=240`
-  try {
+for (const [slug, queries] of Object.entries(SEARCHES)) {
+  found[slug] = []
+  let n = 0
+  for (const q of [queries].flat()) try {
+    const url = `${API}?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=${encodeURIComponent(`${q} filetype:bitmap`)}&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=240`
     const pages = Object.values((await (await fetch(url, { headers: UA })).json()).query?.pages ?? {}).sort((a, b) => a.index - b.index)
-    found[slug] = []
-    for (const [n, p] of pages.entries()) {
+    for (const p of pages) {
+      if (found[slug].some((c) => c.title === p.title)) continue
       const info = p.imageinfo?.[0]
       if (!info?.thumburl) continue
       const meta = info.extmetadata ?? {}
-      const file = `photo-candidates/${slug}-${n}.jpg`
+      const file = `photo-candidates/${slug}-${n++}.jpg`
       const res = await fetch(info.thumburl, { headers: UA })
       if (!res.ok) continue
       writeFileSync(file, Buffer.from(await res.arrayBuffer()))
@@ -49,7 +45,7 @@ for (const [slug, q] of Object.entries(SEARCHES)) {
       await new Promise((r) => setTimeout(r, 150))
     }
   } catch (e) {
-    found[slug] = { error: String(e) }
+    found[slug].push({ error: String(e) })
   }
 }
 writeFileSync('photo-candidates/candidates.json', JSON.stringify(found, null, 1))
