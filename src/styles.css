@@ -588,9 +588,9 @@ button.ebag {
   color: #0e6b35;
 }
 :root[data-theme='dark'] button.ebag { background: #1d3327; color: #7fd6a2; }
-.settings select, .settings input:not([type='checkbox']) { max-width: 100%; flex: 1 1 100%; }
+.settings .select, .settings input:not([type='checkbox']) { max-width: 100%; flex: 1 1 100%; }
 .settings { grid-template-columns: minmax(0, 1fr); }
-.settings select { flex: 0 1 auto; min-width: 0; text-overflow: ellipsis; }
+.settings .select { min-width: 0; }
 .settings input:not([type='checkbox']) { font-size: 14px; }
 .settings label:has(> input[type='checkbox']) { flex-wrap: nowrap; }
 
@@ -646,7 +646,7 @@ label.field input { color: var(--text); }
 .amount-row { display: flex; gap: 8px; align-items: center; margin: 4px 0 10px; }
 .amount-row input { flex: 1 1 auto; font-size: 1.2rem; font-weight: 600; }
 .amount-row input[type='date'] { font-size: 1rem; font-weight: 400; }
-.amount-row select { flex: 0 0 6.5em; font-size: 1rem; }
+.amount-row .select { flex: 0 0 6.5em; font-size: 1rem; }
 .quick { display: flex; gap: 6px; flex-wrap: wrap; }
 button.link.more { margin-top: 10px; }
 .receipt-list { flex: 1 1 auto; overflow-y: auto; }
@@ -685,7 +685,7 @@ input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; wi
 .time-fields input { width: 100%; }
 .tags-edit { margin-bottom: 14px; }
 .tags-edit h3 { margin-top: 14px; }
-.tags-edit select { width: 100%; }
+.tags-edit .select { width: 100%; }
 .times { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 2px; color: var(--muted); font-size: 0.92rem; }
 .times strong { color: var(--text); }
 
@@ -921,3 +921,45 @@ button .toast-spin { flex-basis: 16px; height: 16px; border-color: color-mix(in 
 .cooked-list .row-actions { display: flex; gap: 4px; align-items: flex-start; }
 .cooked-edit { display: grid; gap: 6px; margin-top: 6px; }
 .cooked-list li > div:first-child { flex: 1; min-width: 0; }
+
+/* Drop-downs (Select.jsx): a field that opens a sheet of choices */
+button.select {
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 10px 12px 10px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: var(--sunken);
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+}
+button.select:active:not(:disabled) { transform: none; border-color: var(--accent); }
+button.select[aria-expanded='true'] { border-color: var(--accent); background: var(--card); }
+.select-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.select-caret { flex: 0 0 auto; width: 8px; height: 8px; margin: -4px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+button.select.sort-select { min-height: 36px; padding: 4px 10px 4px 12px; font-size: 0.9rem; }
+.select-backdrop { z-index: 55; }
+.select-sheet { max-height: 70vh; }
+.select-title { font-size: 1rem; color: var(--muted); font-weight: 600; margin: 0 0 6px; }
+.select-options { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.select-options li { margin: 0; }
+.select-options button {
+  width: 100%;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  text-align: left;
+}
+.select-options button:active:not(:disabled) { transform: none; background: var(--sunken); }
+.select-options button.on { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+.select-check { font-weight: 800; }
+/* With a sheet open, toasts move to the top so they don't cover its choices */
+body:has(.sheet-backdrop) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
