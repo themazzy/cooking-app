@@ -37,10 +37,12 @@ import {
   ScanBarcode,
   Settings,
   ShoppingCart,
+  Shuffle,
   Star,
   StickyNote,
   Timer,
   User,
+  WandSparkles,
   X,
 } from 'lucide-react'
 
@@ -84,6 +86,8 @@ const ICONS = {
   repeat: Repeat,
   settings: Settings,
   cart: ShoppingCart,
+  shuffle: Shuffle,
+  wand: WandSparkles,
   star: Star,
   note: StickyNote,
   timer: Timer,
