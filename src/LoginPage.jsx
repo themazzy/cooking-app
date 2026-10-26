@@ -39,7 +39,7 @@ export default function LoginPage() {
       <div className="login-logo" aria-hidden="true">
         <Icon name="pot" size={52} />
       </div>
-      <h1>Cooking App</h1>
+      <h1>Simmer</h1>
       <p className="sub">Recipes from reels and websites, shared with your household.</p>
       <form className="card account" onSubmit={submit}>
         <h2>{mode === 'signup' ? 'Create an account' : 'Sign in'}</h2>

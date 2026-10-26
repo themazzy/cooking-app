@@ -1204,7 +1204,7 @@ export default function App() {
           </div>
           <p className="hint">
             {native
-              ? 'Tip: share a reel or page to Cooking App from Instagram, TikTok, YouTube or the browser.'
+              ? 'Tip: share a reel or page to Simmer from Instagram, TikTok, YouTube or the browser.'
               : "Websites can't load Instagram, TikTok or Facebook pages. Use the Android app for links, or paste the text below."}
           </p>
         </section>
