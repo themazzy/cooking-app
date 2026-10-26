@@ -2,9 +2,31 @@ import { Fragment, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { toast } from './lib/toast.js'
+import { NUTRITION } from './lib/calories.js'
 import Select from './Select.jsx'
 
-const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null }
+const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null, kcal: '', piece_g: '' }
+
+const toNumber = (text) => {
+  const n = Number(String(text ?? '').trim().replace(',', '.'))
+  return String(text ?? '').trim() && Number.isFinite(n) && n >= 0 ? n : null
+}
+
+/** kcal per 100 g and the weight of one piece; empty fields show what is used instead. */
+function KcalFields({ kcal, piece, fallback, onChange }) {
+  return (
+    <div className="kcal-fields">
+      <label className="field">
+        kcal per 100 g
+        <input inputMode="decimal" placeholder={fallback?.kcal != null ? String(fallback.kcal) : 'unknown'} value={kcal} onChange={(e) => onChange({ kcal: e.target.value })} />
+      </label>
+      <label className="field">
+        grams per piece
+        <input inputMode="decimal" placeholder={fallback?.piece_g != null ? String(fallback.piece_g) : 'optional'} value={piece} onChange={(e) => onChange({ piece_g: e.target.value })} />
+      </label>
+    </div>
+  )
+}
 
 /** The ingredient catalog: the shared list plus your own (local brands etc.), with search. */
 export default function IngredientsPage() {
@@ -22,16 +44,19 @@ export default function IngredientsPage() {
   const overrides = new Map(entries.filter((e) => e.household_id && sharedKeys.has(e.name.toLowerCase())).map((e) => [e.name.toLowerCase(), e]))
   const own = entries.filter((e) => e.household_id && !overrides.has(e.name.toLowerCase()) && matches(e)).sort((a, b) => a.name.localeCompare(b.name))
   const shared = sharedNames.filter(matches).sort((a, b) => AISLES.indexOf(a.aisle) - AISLES.indexOf(b.aisle) || a.name.localeCompare(b.name))
-  // { entry, override } while changing an everyday ingredient's picture
+  // { entry, override, kcal, piece_g } while changing an everyday ingredient's picture or calories
   const [picture, setPicture] = useState(null)
   const [savingPicture, setSavingPicture] = useState(false)
+  const openShared = (entry, override) =>
+    setPicture({ entry, override, kcal: override?.own_kcal != null ? String(override.own_kcal) : '', piece_g: override?.own_piece_g != null ? String(override.own_piece_g) : '' })
 
-  const savePicture = async (image_data) => {
+  /** Saves the household's own version of an everyday ingredient; null patch goes back to the usual one. */
+  const saveOverride = async (patch, done) => {
     const { entry, override } = picture
     setSavingPicture(true)
     try {
-      if (override && !image_data) await remove(override.id)
-      else if (override) await update(override.id, { image_data })
+      if (override && !patch) await remove(override.id)
+      else if (override) await update(override.id, patch)
       else
         await add({
           name: entry.name,
@@ -39,9 +64,9 @@ export default function IngredientsPage() {
           aisle: entry.aisle,
           aliases: entry.aliases ?? [],
           image: entry.image ?? null,
-          image_data,
+          ...patch,
         })
-      toast(image_data ? `New picture for ${entry.name}` : `${entry.name} has its usual picture again`)
+      toast(done)
       setPicture(null)
     } catch (e) {
       toast(e?.message ?? String(e), { kind: 'error' })
@@ -64,6 +89,8 @@ export default function IngredientsPage() {
       aliases: (e.aliases ?? []).join(', '),
       image: e.household_id ? (e.image ?? '') : '',
       image_data: e.image_data ?? null,
+      kcal: e.own_kcal != null ? String(e.own_kcal) : '',
+      piece_g: e.own_piece_g != null ? String(e.own_piece_g) : '',
     })
     setMessage(null)
     setFormOpen(true)
@@ -82,6 +109,11 @@ export default function IngredientsPage() {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
     }
+    // Calories only go along when set (or cleared), so saving works before the columns exist
+    const editing = entries.find((e) => e.id === editingId)
+    const kcal = toNumber(form.kcal)
+    const piece_g = toNumber(form.piece_g) || null
+    if (kcal != null || piece_g != null || editing?.own_kcal != null || editing?.own_piece_g != null) Object.assign(entry, { kcal, piece_g })
     try {
       if (editingId) await update(editingId, entry)
       else await add(entry)
@@ -98,14 +130,14 @@ export default function IngredientsPage() {
   const row = (e) => {
     const override = !e.household_id ? overrides.get(e.name.toLowerCase()) : null
     return (
-      <li key={e.id ?? e.name} onClick={() => (e.household_id ? startEdit(e) : setPicture({ entry: e, override }))} className="editable">
+      <li key={e.id ?? e.name} onClick={() => (e.household_id ? startEdit(e) : openShared(e, override))} className="editable">
         <IngredientIcon entry={override ?? e} size={36} />
         <span className="grow">
           {e.name}
           {e.base && <span className="from">counts as {e.base}</span>}
           {!e.base && e.aliases?.length > 0 && <span className="from">{e.aliases.join(', ')}</span>}
         </span>
-        {override && <span className="badge muted">own picture</span>}
+        {override && <span className="badge muted">edited</span>}
       </li>
     )
   }
@@ -127,7 +159,7 @@ export default function IngredientsPage() {
         ) : (
           <p className="hint">Local brands and anything missing from the list. Tap + Add your own. Tap one of yours to change it.</p>
         )}
-        <p className="hint">Tap an everyday ingredient to give it your own picture, e.g. the local product you buy.</p>
+        <p className="hint">Tap an everyday ingredient to give it your own picture (e.g. the local product you buy) or change its calories.</p>
         <h3>Everyday ingredients ({shared.length})</h3>
         <ul className="catalog">
           {shared.map((e, n) => (
@@ -147,7 +179,9 @@ export default function IngredientsPage() {
               <IngredientIcon entry={picture.override ?? picture.entry} size={64} />
               <div>
                 <h2>{picture.entry.name}</h2>
-                <p className="note">{picture.override ? 'Your own picture, shared with your household' : 'The usual picture'}</p>
+                <p className="note">
+                  {picture.override ? 'Your own version, shared with your household' : 'The usual picture'} · {picture.override?.kcal ?? picture.entry.kcal ?? '?'} kcal per 100 g
+                </p>
               </div>
             </div>
             <div className="row">
@@ -162,7 +196,7 @@ export default function IngredientsPage() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0]
                     e.target.value = ''
-                    if (file) savePicture(await photoToIcon(file))
+                    if (file) saveOverride({ image_data: await photoToIcon(file) }, `New picture for ${picture.entry.name}`)
                   }}
                 />
               </label>
@@ -176,14 +210,30 @@ export default function IngredientsPage() {
                   onChange={async (e) => {
                     const file = e.target.files?.[0]
                     e.target.value = ''
-                    if (file) savePicture(await photoToIcon(file))
+                    if (file) saveOverride({ image_data: await photoToIcon(file) }, `New picture for ${picture.entry.name}`)
                   }}
                 />
               </label>
             </div>
+            <h3>Calories</h3>
+            <KcalFields
+              kcal={picture.kcal}
+              piece={picture.piece_g}
+              fallback={NUTRITION.get(picture.entry.name.toLowerCase())}
+              onChange={(patch) => setPicture((p) => ({ ...p, ...patch }))}
+            />
+            <div className="row">
+              <button
+                className="secondary"
+                disabled={savingPicture}
+                onClick={() => saveOverride({ kcal: toNumber(picture.kcal), piece_g: toNumber(picture.piece_g) || null }, `Calories saved for ${picture.entry.name}`)}
+              >
+                Save calories
+              </button>
+            </div>
             {picture.override && (
-              <button className="link more" disabled={savingPicture} onClick={() => savePicture(null)}>
-                Use the usual picture again
+              <button className="link more" disabled={savingPicture} onClick={() => saveOverride(null, `${picture.entry.name} is back to the usual picture and calories`)}>
+                Use the usual picture and calories again
               </button>
             )}
             {savingPicture && <div className="busy-bar" />}
@@ -213,6 +263,12 @@ export default function IngredientsPage() {
                 </Select>
               </label>
               <input placeholder="Other names recipes use, comma separated" value={form.aliases} onChange={(e) => setForm({ ...form, aliases: e.target.value })} />
+              <KcalFields
+                kcal={form.kcal}
+                piece={form.piece_g}
+                fallback={sharedNames.find((e) => e.name.toLowerCase() === form.base.trim().toLowerCase())}
+                onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+              />
               <div className="row" style={{ alignItems: 'center' }}>
                 <IngredientIcon
                   entry={{

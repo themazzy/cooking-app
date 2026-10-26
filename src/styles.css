@@ -969,3 +969,11 @@ button.select.sort-select { min-height: 36px; padding: 4px 10px 4px 12px; font-s
 .select-check { font-weight: 800; }
 /* With a sheet open, toasts move to the top so they don't cover its choices */
 body:has(.sheet-backdrop) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
+.kcal-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kcal-fields input { width: 100%; }
+.kcal-sum { margin-top: 12px; background: var(--sunken); border-radius: 12px; padding: 8px 12px; }
+.kcal-sum summary { color: var(--text); font-weight: 600; font-size: 0.92rem; }
+.kcal-sum ul { list-style: none; padding: 0; margin: 6px 0; }
+.kcal-sum li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.88rem; padding: 3px 0; margin: 0; }
+.kcal-sum li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.kcal-sum .note { margin: 6px 0 2px; }
