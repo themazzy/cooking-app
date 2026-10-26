@@ -8,12 +8,13 @@ const PageReader = registerPlugin('PageReader')
 /**
  * Runs `fn(args)` inside `url` in a real browser engine. `fn` must be
  * self-contained (no imports or outer variables): it is sent as source text.
- * Returns the stored result, or null on timeout.
+ * With `reinject`, `fn` runs again on every page the WebView lands on (a bot
+ * check that reloads into the real page). Returns the stored result, or null on timeout.
  */
-export async function runInPage(url, fn, args = {}, { timeoutMs = 25000, userAgent } = {}) {
+export async function runInPage(url, fn, args = {}, { timeoutMs = 25000, userAgent, reinject = false } = {}) {
   if (!canFetchCrossSite()) return null
   const script = `(${fn.toString()})(${JSON.stringify(args)})`
-  const res = await PageReader.read({ url, script, timeoutMs, ...(userAgent ? { userAgent } : {}) })
+  const res = await PageReader.read({ url, script, timeoutMs, reinject, ...(userAgent ? { userAgent } : {}) })
   let value = null
   try {
     value = res?.value ? JSON.parse(JSON.parse(res.value)) : null
@@ -37,6 +38,7 @@ function summarize(value) {
   for (const [k, v] of Object.entries(value)) {
     if (v && typeof v === 'object' && 'body' in v) out[k] = { status: v.status, length: v.body?.length, body: String(v.body).slice(0, 400) }
     else if (Array.isArray(v)) out[k] = v.slice(0, 8).map((x) => (x && typeof x === 'object' && 'text' in x ? { ...x, text: String(x.text).slice(0, 120) } : x))
+    else if (typeof v === 'string' && v.length > 400) out[k] = `${v.slice(0, 400)}… (${v.length} chars)`
     else out[k] = v
   }
   return out

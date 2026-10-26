@@ -25,7 +25,7 @@ import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
-import { debugReport, extractUrl, loadReel } from './lib/reel/index.js'
+import { debugReport, detectPlatform, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
 
@@ -449,7 +449,7 @@ export default function App() {
       let failure = null
       let videoBlob = null
       try {
-        step('Loading the reel page…')
+        step(detectPlatform(url) === 'web' ? 'Loading the page…' : 'Loading the reel page…')
         reel = await loadReel(url)
         if (reel.signedIn != null) setIgSignedIn(reel.signedIn)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30), image: reel.image ?? null, meta: reel.meta ?? null }
