@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+<g transform="translate(0 2)">
+  <!-- Steam -->
+  <g fill="none" stroke="#fff8ec" stroke-width="3.6" stroke-linecap="round" opacity="0.92">
+    <path d="M43 43c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
+    <path d="M54 41c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
+    <path d="M65 43c-3-3.5 3-6.5 0-10s3-6.5 0-10"/>
+  </g>
+  <!-- Handles -->
+  <rect x="23" y="54" width="10" height="5" rx="2.5" fill="#fff8ec"/>
+  <rect x="75" y="54" width="10" height="5" rx="2.5" fill="#fff8ec"/>
+  <!-- Pot -->
+  <path d="M30 51h48v16a12 12 0 0 1-12 12H42a12 12 0 0 1-12-12z" fill="#fff8ec"/>
+  <rect x="27" y="47" width="54" height="6.5" rx="3.25" fill="#ffffff"/>
+  <!-- Leaf on the pot -->
+  <path d="M47 70c0-8 6-12 14-12 0 8-6 12-14 12z" fill="#5cc08d"/>
+  <path d="M48.5 68.5l9-8" stroke="#2f7a52" stroke-width="1.4" stroke-linecap="round"/>
+</g>
+</svg>
