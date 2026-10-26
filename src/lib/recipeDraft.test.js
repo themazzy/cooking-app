@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectServings, draftFromImport, titleFrom } from './recipeDraft.js'
+import { detectServings, draftFromImport, draftFromTranslatedSource, sourceLines, titleFrom } from './recipeDraft.js'
 
 describe('recipe drafts', () => {
   it('finds the number of portions', () => {
@@ -28,5 +28,32 @@ describe('recipe drafts', () => {
     expect(d.servings).toBe(2)
     expect(d.ingredients.map((i) => i.name)).toEqual(['Ground beef', 'Fresh tomatoes'])
     expect(d.sourceUrl).toBe('https://www.instagram.com/reel/X/')
+  })
+})
+
+describe('reading a recipe through English', () => {
+  // A Turkish caption: the parser knows no Turkish units or headings
+  const result = { description: 'Köfte\nKöfte için:\n500 gr kıyma\n1 yemek kaşığı tuz\nSos için:\n2 yemek kaşığı salça', comments: [] }
+  const english = ['Meatballs', 'For the meatballs:', '500 g minced meat', '1 tablespoon salt', 'For the sauce:', '2 tablespoons tomato paste']
+
+  it('translates the lines the recipe was read from', () => {
+    expect(sourceLines(result)).toHaveLength(6)
+  })
+
+  it('reads the English lines and keeps the first reading as the original', () => {
+    const draft = draftFromImport(result)
+    const read = draftFromTranslatedSource(draft, 'Meatballs', english, 'tr')
+    expect(read.ingredients.map((i) => [i.group, i.qty, i.unit, i.name])).toEqual([
+      ['For the meatballs', '500', 'g', 'minced meat'],
+      ['For the meatballs', '1', 'tbsp', 'salt'],
+      ['For the sauce', '2', 'tbsp', 'tomato paste'],
+    ])
+    expect(read.lang).toBe('en')
+    expect(read.original).toMatchObject({ lang: 'tr', title: draft.title, ingredients: draft.ingredients })
+  })
+
+  it('keeps the first reading when the translation reads worse', () => {
+    const draft = draftFromImport(result)
+    expect(draftFromTranslatedSource(draft, 'x', ['Meatballs', 'some meat'], 'tr')).toBeNull()
   })
 })

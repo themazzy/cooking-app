@@ -59,7 +59,7 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -356,7 +356,9 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             recipe={{ ingredients: recipe.ingredients, steps: recipe.steps }}
             source={recipe.source}
             onChange={(next) => set({ ...next, source: null })}
-            onReset={() => {
+            onReset={async () => {
+              // Read and translated the same way as a new import, when the app can
+              if (onReread) return set(await onReread(recipe))
               const picked = pickRecipe(raw)
               set({ ...toEditable(picked), source: picked?.source ?? null })
             }}
