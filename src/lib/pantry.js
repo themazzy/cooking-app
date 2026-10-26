@@ -36,7 +36,8 @@ export async function addToPantry(name, amount = '', extra = {}) {
       .from('pantry_items')
       .update({ amount: amount.trim(), ...extra, updated_at: new Date().toISOString() })
       .eq('household_id', household_id)
-      .ilike('name', name.trim())
+      // The same name in any case; % and _ would otherwise match other names
+      .ilike('name', name.trim().replace(/[\\%_]/g, '\\$&'))
     if (e) throw e
   } else if (error) throw error
 }

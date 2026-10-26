@@ -1,5 +1,6 @@
 import { supabase } from './supabase.js'
 import { deleteRecipe, getRecipe, getVideo, listRecipes, putRecipe, putVideo } from './store.js'
+import { mergeLists } from './listMerge.js'
 
 // Keeps the recipes on this phone and the household's recipes in Supabase in
 // step. The phone stays the working copy (it works offline); each sync
@@ -7,8 +8,9 @@ import { deleteRecipe, getRecipe, getVideo, listRecipes, putRecipe, putVideo } f
 // Saved videos stay on the phone that saved them; only older recipes may
 // still have one in the household's storage (videoPath), which can be played.
 
-const LAST_PULL_KEY = 'cooking-app:last-pull'
 const DELETED_KEY = 'cooking-app:deleted'
+// The shopping list as both phones last agreed on it, to join their edits
+const SHOPPING_BASE_KEY = 'cooking-app:shopping-base'
 
 const read = (key, fallback) => {
   try {
@@ -35,15 +37,14 @@ export async function getHousehold({ refresh = false } = {}) {
 }
 export const forgetHousehold = () => {
   household = null
-  localStorage.removeItem(LAST_PULL_KEY)
+  localStorage.removeItem(SHOPPING_BASE_KEY)
 }
 
 export async function joinHousehold(code) {
   const { data, error } = await supabase.rpc('join_household', { code })
   if (error) throw error
   household = data
-  // Everything from the new household comes down on the next sync
-  localStorage.removeItem(LAST_PULL_KEY)
+  localStorage.removeItem(SHOPPING_BASE_KEY)
   return data
 }
 
@@ -67,7 +68,9 @@ async function pushRecipe(hid, recipe, userId) {
   }
   const { error } = await supabase.from('recipes').upsert(row)
   if (error) throw error
-  await putRecipe({ ...recipe, syncedAt: recipe.updatedAt })
+  // Saved again while uploading: that newer edit stays, and goes up next time
+  const now = await getRecipe(recipe.id)
+  if (now && now.updatedAt === recipe.updatedAt) await putRecipe({ ...now, syncedAt: recipe.updatedAt })
 }
 
 /**
@@ -92,17 +95,19 @@ export async function syncRecipes() {
     if (error) throw error
     await supabase.storage.from('recipe-videos').remove([`${hid}/${id}.webm`, `${hid}/${id}.mp4`])
   }
-  write(DELETED_KEY, [])
+  // Deletions made while this ran are kept for next time
+  if (deleted.length) write(DELETED_KEY, read(DELETED_KEY, []).filter((id) => !deleted.includes(id)))
 
-  // 2. Changes from the other phone(s)
-  const since = read(LAST_PULL_KEY, null)
-  let query = supabase.from('recipes').select('id, data, deleted, updated_at, video_path').eq('household_id', hid).order('updated_at')
-  if (since) query = query.gt('updated_at', since)
-  const { data: rows, error } = await query
+  // 2. Changes from the other phone(s). Every recipe's id and time is
+  // compared with when this phone last synced it (a short list), then only
+  // the changed ones are downloaded whole.
+  const { data: rows, error } = await supabase.from('recipes').select('id, deleted, updated_at').eq('household_id', hid)
   if (error) throw error
+  const locals = new Map((await listRecipes()).map((r) => [r.id, r]))
+  const wanted = []
   for (const row of rows ?? []) {
     const remoteAt = Date.parse(row.updated_at)
-    const local = await getRecipe(row.id)
+    const local = locals.get(row.id)
     if (row.deleted) {
       if (local) {
         await deleteRecipe(row.id)
@@ -110,19 +115,37 @@ export async function syncRecipes() {
       }
       continue
     }
+    if (local?.syncedAt === remoteAt) continue
     // Local edits that are newer win; they are pushed below
-    if (local && (local.updatedAt ?? 0) > remoteAt && local.syncedAt !== local.updatedAt) continue
-    await putRecipe({ ...row.data, id: row.id, updatedAt: remoteAt, syncedAt: remoteAt, videoPath: row.video_path })
-    pulled++
+    if (local && local.syncedAt !== local.updatedAt && (local.updatedAt ?? 0) > remoteAt) continue
+    wanted.push(row.id)
   }
-  if (rows?.length) write(LAST_PULL_KEY, rows[rows.length - 1].updated_at)
+  for (let n = 0; n < wanted.length; n += 50) {
+    const { data: full, error: e } = await supabase.from('recipes').select('id, data, updated_at, video_path').in('id', wanted.slice(n, n + 50))
+    if (e) throw e
+    for (const row of full ?? []) {
+      // Saved here while downloading: keep that edit
+      const now = await getRecipe(row.id)
+      if ((now?.updatedAt ?? null) !== (locals.get(row.id)?.updatedAt ?? null)) continue
+      const remoteAt = Date.parse(row.updated_at)
+      await putRecipe({ ...row.data, id: row.id, updatedAt: remoteAt, syncedAt: remoteAt, videoPath: row.video_path })
+      pulled++
+    }
+  }
 
-  // 3. Recipes saved or changed here since their last sync
+  // 3. Recipes saved or changed here since their last sync. One that fails
+  // (say, a recipe of a household this account has left) does not stop the rest.
+  const failed = []
   for (const recipe of await listRecipes()) {
     if (recipe.syncedAt === recipe.updatedAt) continue
-    await pushRecipe(hid, recipe, user.id)
-    pushed++
+    try {
+      await pushRecipe(hid, recipe, user.id)
+      pushed++
+    } catch (err) {
+      failed.push(`${recipe.title || 'A recipe'}: ${err?.message ?? err}`)
+    }
   }
+  if (failed.length) throw new Error(`${failed.length} recipe${failed.length > 1 ? 's' : ''} not uploaded (${failed[0]})`)
   return { pushed, pulled }
 }
 
@@ -137,24 +160,53 @@ export async function loadVideo(recipe) {
   return data
 }
 
-/** Shopping list: newer of the local and the shared one. Pushes the local one when it is newer. */
+/**
+ * Shopping list (with the meal plan): takes the shared one when only it
+ * changed, uploads this phone's when only it changed, and joins the two when
+ * both did. Returns the list to keep on this phone.
+ */
 export async function syncShopping(local) {
   const { data: session } = await supabase.auth.getSession()
   const user = session?.session?.user
   if (!user) return local
   const hid = (await getHousehold()).id
-  const { data: row, error } = await supabase.from('shopping_lists').select('data, updated_at').eq('household_id', hid).maybeSingle()
-  if (error) throw error
-  const remoteAt = row ? Date.parse(row.updated_at) : 0
-  const localAt = local?.updatedAt ?? 0
-  if (row?.data && remoteAt > localAt) return { ...row.data, updatedAt: remoteAt }
-  if (local && localAt > remoteAt) {
-    const { error: e } = await supabase
-      .from('shopping_lists')
-      .upsert({ household_id: hid, data: local, updated_at: new Date(localAt).toISOString(), updated_by: user.id })
-    if (e) throw e
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data: row, error } = await supabase.from('shopping_lists').select('data, updated_at').eq('household_id', hid).maybeSingle()
+    if (error) throw error
+    const remoteAt = row ? Date.parse(row.updated_at) : 0
+    const remote = row?.data ? { ...row.data, updatedAt: remoteAt } : null
+    const localAt = local?.updatedAt ?? 0
+    const base = read(SHOPPING_BASE_KEY, null)
+
+    let result
+    if (!remote) result = local
+    else if (!local) result = remote
+    else if (!base) result = remoteAt >= localAt ? remote : local // first sync since this update: newer wins
+    else {
+      const localChanged = localAt !== base.updatedAt
+      const remoteChanged = remoteAt !== base.updatedAt
+      if (!remoteChanged && !localChanged) return local
+      if (!remoteChanged) result = local
+      else if (!localChanged) result = remote
+      else result = { ...mergeLists(base, local, remote), updatedAt: Math.max(Date.now(), remoteAt + 1) }
+    }
+    if (!result) return local
+
+    if (result !== remote) {
+      // Only replaces the version read above, so a change from the other phone in between is not lost
+      const at = new Date(result.updatedAt ?? Date.now()).toISOString()
+      const fields = { data: { ...result, updatedAt: undefined }, updated_at: at, updated_by: user.id }
+      const { data: written, error: e } = row
+        ? await supabase.from('shopping_lists').update(fields).eq('household_id', hid).eq('updated_at', row.updated_at).select('household_id')
+        : await supabase.from('shopping_lists').insert({ household_id: hid, ...fields }).select('household_id')
+      if (e?.code === '23505' || (!e && !written?.length)) continue // the other phone was quicker: read again
+      if (e) throw e
+      result = { ...result, updatedAt: Date.parse(at) }
+    }
+    write(SHOPPING_BASE_KEY, result)
+    return result
   }
-  return local
+  throw new Error('The shopping list kept changing on the other phone; try again')
 }
 
 /** Calls `onChange` when the other phone changes a recipe or the list. Returns an unsubscribe function. */

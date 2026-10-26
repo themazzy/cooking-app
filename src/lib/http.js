@@ -42,6 +42,10 @@ function assertNative() {
   }
 }
 
+// Without these a request that never answers leaves an import "Working…" for good.
+// The read timeout counts silence, not the whole download.
+const TIMEOUTS = { connectTimeout: 15000, readTimeout: 30000 }
+
 const asText = (data) => (typeof data === 'string' ? data : JSON.stringify(data))
 
 /** GET a page as text. Returns { text, url, status } where url is the final URL after redirects. */
@@ -53,6 +57,7 @@ export async function getText(url, { headers = {}, ua = MOBILE_UA, allowError = 
       url,
       headers: { 'User-Agent': ua, 'Accept-Language': 'cs,en;q=0.8', ...headers },
       responseType: 'text',
+      ...TIMEOUTS,
     })
   } catch (err) {
     record('GET', url, null, String(err?.message ?? err))
@@ -79,6 +84,7 @@ export async function postForm(url, fields, { headers = {}, ua = DESKTOP_UA } = 
       headers: { 'User-Agent': ua, 'Content-Type': 'application/x-www-form-urlencoded', ...headers },
       data: fields,
       responseType: 'text',
+      ...TIMEOUTS,
     })
   } catch (err) {
     record('POST', url, null, String(err?.message ?? err))
@@ -99,6 +105,7 @@ export async function postJson(url, body, { headers = {}, ua = DESKTOP_UA } = {}
       headers: { 'User-Agent': ua, 'Content-Type': 'application/json', ...headers },
       data: body,
       responseType: 'text',
+      ...TIMEOUTS,
     })
   } catch (err) {
     record('POST', url, null, String(err?.message ?? err))
@@ -127,6 +134,8 @@ export async function getBytes(url, { headers = {}, ua = MOBILE_UA } = {}) {
     url,
     headers: { 'User-Agent': ua, ...headers },
     responseType: 'arraybuffer',
+    ...TIMEOUTS,
+    readTimeout: 60000,
   })
   record('GET', url, res, null)
   if (res.status >= 400) throw new FetchError(`Video download answered ${res.status}`, res.status)
