@@ -39,6 +39,23 @@ function Thumb({ recipe }) {
   )
 }
 
+/** One short row of numbers under the title: time, portions, what is at home, rating. */
+function CardFacts({ recipe: r, home }) {
+  const minutes = totalMinutes(r)
+  const facts = [
+    minutes ? <span key="t">⏱ {r.timesEstimated ? '~' : ''}{formatMinutes(minutes)}</span> : null,
+    r.servings ? <span key="p" title="Portions">👤 {r.servings}</span> : null,
+    home?.total ? (
+      <span key="h" className={home.missing.length === 0 ? 'home-ok' : ''} title="Ingredients at home">
+        🏠 {home.have}/{home.total}
+      </span>
+    ) : null,
+    r.rating ? <Stars key="r" value={r.rating} size="small" /> : null,
+    r.note?.trim() ? <span key="n" title="Has a note">📝</span> : null,
+  ].filter(Boolean)
+  return facts.length ? <span className="card-facts">{facts}</span> : null
+}
+
 /**
  * Saved recipes, newest first, with a search over names and ingredients.
  * With `selection` ({ id: portions }) each recipe can be ticked for a
@@ -153,23 +170,12 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
                 <Thumb recipe={r} />
                 <span className="card-text">
                   <span className="recipe-title">{r.title || 'Untitled recipe'}</span>
-                  {(r.rating || r.note?.trim()) && (
-                    <span className="card-rating">
-                      {r.rating ? <Stars value={r.rating} size="small" /> : null}
-                      {r.note?.trim() ? <span title="Has a note">📝</span> : null}
+                  <CardFacts recipe={r} home={home.get(r.id)} />
+                  {(r.cuisine || lastCooked(r) || PLATFORM[r.platform]) && (
+                    <span className="card-sub">
+                      {[r.cuisine, lastCooked(r) ? `Cooked ${cookedAgo(lastCooked(r))}` : PLATFORM[r.platform]].filter(Boolean).join(' · ')}
                     </span>
                   )}
-                  <span className="note">
-                    {[
-                      totalMinutes(r) ? `⏱ ${r.timesEstimated ? '~' : ''}${formatMinutes(totalMinutes(r))}` : null,
-                      home.get(r.id)?.total ? `🏠 ${home.get(r.id).have}/${home.get(r.id).total}` : null,
-                      r.servings ? `${r.servings} portions` : null,
-                      r.cuisine ?? `${r.ingredients?.filter((i) => i.name?.trim()).length ?? 0} ingredients`,
-                      lastCooked(r) ? `cooked ${cookedAgo(lastCooked(r))}` : PLATFORM[r.platform],
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
                 </span>
                 {selection && <span className={`tick${picked ? ' on' : ''}`} aria-hidden="true">{picked ? '✓' : ''}</span>}
               </button>

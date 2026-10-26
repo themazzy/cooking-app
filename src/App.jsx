@@ -35,6 +35,9 @@ import { openLogin } from './lib/pageReader.js'
 import { debugReport, detectPlatform, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
+import { ACCENTS, THEMES, applyTheme, resolveTheme } from './lib/theme.js'
+import { setWorking, toast } from './lib/toast.js'
+import { RecipeListSkeleton, RecipePageSkeleton, StartSkeleton } from './Skeleton.jsx'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 const HISTORY_KEY = 'cooking-app:history'
@@ -70,6 +73,20 @@ function parseRoute() {
   const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
   return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
 }
+/** What a single change saved from the reading view was, for the toast. */
+const savedWhat = (patch) =>
+  'rating' in patch ? 'Rating saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
+
+// Order of the tabs, so switching slides the right way
+const TAB_ORDER = ['home', 'plan', 'shopping', 'pantry', 'ingredients']
+const slideDir = (from, to) => {
+  if (from === to) return 'up'
+  const a = TAB_ORDER.indexOf(from)
+  const b = TAB_ORDER.indexOf(to)
+  if (a >= 0 && b >= 0) return b > a ? 'forward' : 'back'
+  return b >= 0 ? 'back' : 'forward' // into a recipe or settings, and back out to a tab
+}
+
 const go = (hash, { replace = false } = {}) => {
   if (replace) window.location.replace(hash)
   else window.location.hash = hash
@@ -94,18 +111,23 @@ export default function App() {
     ebagSearch: EBAG_SEARCH,
     alarmSound: 'beep',
     alarmVibrate: true,
+    theme: 'system',
+    accent: 'herb',
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
   // Recipe photos waiting to be read: [{ file, url }]
   const [photoPages, setPhotoPages] = useState([])
   const [recipes, setRecipes] = useState([])
+  const [recipesLoaded, setRecipesLoaded] = useState(false)
   // The recipe on screen: { recipe, videoBlob, dirty }
   const [editing, setEditing] = useState(null)
   const [shrink, setShrink] = useState(null)
   const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
   const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
   const [pantry, setPantry] = useState(cachedPantry)
+  // Nothing cached yet: the pantry shows placeholders until the first load
+  const [pantryReady, setPantryReady] = useState(() => cachedPantry().length > 0)
   const [user, setUser] = useState(undefined) // undefined while the saved session loads
   const [syncState, setSyncState] = useState(null) // { at } or { error }
   const savedIds = useRef({})
@@ -122,12 +144,20 @@ export default function App() {
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
+  useEffect(() => applyTheme({ theme: settings.theme, accent: settings.accent }), [settings.theme, settings.accent])
   // A saved copy needs a download at least as sharp; without one the smallest is enough
   useEffect(() => {
     setVideoMinShortSide(settings.saveVideos ? (VIDEO_QUALITY[settings.videoQuality] ?? VIDEO_QUALITY.small).shortSide : 0)
   }, [settings.saveVideos, settings.videoQuality])
 
-  const refreshRecipes = useCallback(() => listRecipes().then(setRecipes).catch(() => setRecipes([])), [])
+  const refreshRecipes = useCallback(
+    () =>
+      listRecipes()
+        .then(setRecipes)
+        .catch(() => setRecipes([]))
+        .finally(() => setRecipesLoaded(true)),
+    [],
+  )
   useEffect(() => {
     refreshRecipes()
     persistStorage()
@@ -146,7 +176,8 @@ export default function App() {
 
   const syncing = useRef(false)
   const syncAgain = useRef(false)
-  const runSync = useCallback(async () => {
+  const lastSyncError = useRef(null)
+  const runSync = useCallback(async ({ manual = false } = {}) => {
     if (!user) return
     // A sync asked for while one runs (a save, the other phone) runs right after it
     if (syncing.current) {
@@ -154,12 +185,14 @@ export default function App() {
       return
     }
     syncing.current = true
+    setWorking('sync', true)
     try {
       do {
         syncAgain.current = false
         const recipesDone = await syncRecipes()
         await refreshRecipes()
         setPantry(await loadPantry())
+        setPantryReady(true)
         const sent = shoppingRef.current
         const list = await syncShopping(sent)
         if (list !== sent) {
@@ -173,10 +206,18 @@ export default function App() {
         }
         setSyncState({ at: Date.now(), warning: recipesDone?.warning ?? null })
       } while (syncAgain.current)
+      lastSyncError.current = null
+      if (manual) toast('Everything is synced', { id: 'sync' })
     } catch (err) {
-      setSyncState({ error: err?.message ?? String(err) })
+      const error = err?.message ?? String(err)
+      setSyncState({ error })
+      setPantryReady(true)
+      // Said once, not on every retry while offline
+      if (manual || lastSyncError.current !== error) toast(`Sync failed: ${error}`, { kind: 'error', id: 'sync' })
+      lastSyncError.current = error
     } finally {
       syncing.current = false
+      setWorking('sync', false)
     }
   }, [user, refreshRecipes])
 
@@ -202,11 +243,12 @@ export default function App() {
       .then((u) => (unsubscribe = u))
       .catch(() => {})
     const sub = CapApp.addListener('resume', onResume)
-    window.addEventListener('online', runSync)
+    const onOnline = () => runSync()
+    window.addEventListener('online', onOnline)
     return () => {
       unsubscribe?.()
       sub.then((h) => h.remove())
-      window.removeEventListener('online', runSync)
+      window.removeEventListener('online', onOnline)
     }
   }, [user, runSync, householdRev])
 
@@ -363,6 +405,16 @@ export default function App() {
   // `patch` saves a single change straight from the reading view (a new photo)
   const saveEditing = async (patch) => {
     if (!editing) return
+    const toastId = toast('Saving…', { kind: 'loading' })
+    try {
+      await saveRecipe(patch)
+      toast(patch ? savedWhat(patch) : 'Recipe saved', { id: toastId })
+    } catch (err) {
+      toast(`Not saved: ${err?.message ?? err}`, { kind: 'error', id: toastId })
+      throw err
+    }
+  }
+  const saveRecipe = async (patch) => {
     const { videoBlob } = editing
     const recipe = { ...editing.recipe, ...patch }
     const id = recipe.id ?? newId()
@@ -392,6 +444,7 @@ export default function App() {
     if (!editing?.recipe.id) return
     await deleteRecipe(editing.recipe.id)
     markDeleted(editing.recipe.id)
+    toast(`Deleted ${editing.recipe.title || 'the recipe'}`)
     setEditing(null)
     refreshRecipes()
     runSync()
@@ -423,6 +476,7 @@ export default function App() {
     }))
     const others = (shopping?.recipes ?? []).filter((r) => !entries.some((e) => e.id === r.id))
     updateShopping(makeList([...others, ...planned], recipes, catalog.match, shopping))
+    toast(`Added ${entries.length} planned recipe${entries.length === 1 ? '' : 's'} to the list`)
   }
 
   // With a list already going, picking recipes asks whether to add to it or start again
@@ -436,6 +490,7 @@ export default function App() {
       const others = (shopping?.recipes ?? []).filter((r) => !entries.some((e) => e.id === r.id))
       updateShopping(makeList([...others, ...entries], recipes, catalog.match, shopping))
     } else updateShopping(makeList(entries, recipes, catalog.match))
+    toast(how === 'add' ? `Added ${entries.length} recipe${entries.length === 1 ? '' : 's'} to the list` : `New list from ${entries.length} recipe${entries.length === 1 ? '' : 's'}`)
     setSelection(null)
     tabGo('#/shopping')
   }
@@ -466,6 +521,13 @@ export default function App() {
 
   const runSyncRef = useRef(null)
   runSyncRef.current = runSync
+
+  // Which way the next page slides in (styles.css, main[data-dir])
+  const lastPage = useRef(route.page)
+  const dir = useMemo(() => slideDir(lastPage.current, route.page), [route.page])
+  useEffect(() => {
+    lastPage.current = route.page
+  }, [route.page])
 
   // Staples below their minimum are kept on the shopping list; once restocked they leave it
   useEffect(() => {
@@ -508,6 +570,7 @@ export default function App() {
         if (usesUp(item, next)) await removeFromPantry(item.id)
         else await updatePantryItem(item.id, { amount: next })
       }
+      toast('Stock at home updated')
     } finally {
       setPantry(await loadPantry().catch(() => pantry))
     }
@@ -692,7 +755,7 @@ export default function App() {
     openDraft(r)
   }
 
-  if (user === undefined) return <main className="hint">Loading…</main>
+  if (user === undefined) return <StartSkeleton />
   if (!user) return <LoginPage />
 
   const topbar = (
@@ -705,10 +768,10 @@ export default function App() {
 
   const showing =
     editing && ((route.page === 'recipe' && editing.recipe.id === route.id) || (route.page === 'new' && !editing.recipe.id))
-  if (route.page === 'recipe' && !showing) return <main className="hint">Loading…</main>
+  if (route.page === 'recipe' && !showing) return <RecipePageSkeleton />
   if (showing) {
     return (
-      <main>
+      <main data-dir={dir}>
         <RecipePage
           recipe={editing.recipe}
           videoBlob={editing.videoBlob}
@@ -722,7 +785,10 @@ export default function App() {
           onDelete={deleteEditing}
           onDiscard={discardEditing}
           onBack={back}
-          onAddToList={(entry) => updateShopping(addToList(shopping, entry, recipes, catalog.match))}
+          onAddToList={(entry) => {
+            updateShopping(addToList(shopping, entry, recipes, catalog.match))
+            toast('Added to the shopping list')
+          }}
           onUseStock={useStock}
           units={settings.units}
           alarm={{ sound: settings.alarmSound, vibrate: settings.alarmVibrate }}
@@ -740,8 +806,8 @@ export default function App() {
 
   if (route.page === 'pantry') {
     return (
-      <main className="tabbed">
-        <PantryPage items={pantry} onChanged={() => loadPantry().then(setPantry)} />
+      <main className="tabbed" data-dir={dir}>
+        <PantryPage items={pantry} loading={!pantryReady} onChanged={() => loadPantry().then(setPantry)} />
         {tabbar}
       </main>
     )
@@ -749,7 +815,7 @@ export default function App() {
 
   if (route.page === 'plan') {
     return (
-      <main className="tabbed">
+      <main className="tabbed" data-dir={dir}>
         <PlanPage plan={shopping?.plan ?? {}} recipes={recipes} pantry={pantry} onChange={updatePlan} onShop={shopPlan} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
         {tabbar}
       </main>
@@ -758,7 +824,7 @@ export default function App() {
 
   if (route.page === 'ingredients') {
     return (
-      <main className="tabbed">
+      <main className="tabbed" data-dir={dir}>
         <IngredientsPage />
         {tabbar}
       </main>
@@ -767,7 +833,7 @@ export default function App() {
 
   if (route.page === 'shopping') {
     return (
-      <main className="tabbed">
+      <main className="tabbed" data-dir={dir}>
         <ShoppingList
           list={shopping}
           pantry={pantry}
@@ -781,6 +847,7 @@ export default function App() {
               else await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
             }
             setPantry(await loadPantry())
+            toast(`${items.length} item${items.length === 1 ? '' : 's'} put at home`)
           }}
           onChange={updateShopping}
           onNew={() => {
@@ -796,7 +863,7 @@ export default function App() {
 
   if (route.page === 'settings') {
     return (
-      <main>
+      <main data-dir={dir}>
         {topbar}
         <section className="card">
           <h2>Settings</h2>
@@ -807,6 +874,37 @@ export default function App() {
               setHouseholdRev((n) => n + 1)
             }}
           />
+        </section>
+        <section className="card">
+          <h3>Look</h3>
+          <span className="settings-label">Theme</span>
+          <div className="theme-pick" role="group" aria-label="Theme">
+            {Object.entries(THEMES).map(([k, label]) => (
+              <button key={k} className={settings.theme === k ? 'on' : ''} aria-pressed={settings.theme === k} onClick={() => setSettings({ ...settings, theme: k })}>
+                <span className={`theme-swatch ${k}`} aria-hidden="true" />
+                {label}
+              </button>
+            ))}
+          </div>
+          <span className="settings-label" style={{ marginTop: 16 }}>
+            Colour · {ACCENTS[settings.accent]?.label ?? ACCENTS.herb.label}
+          </span>
+          <div className="accent-pick" role="group" aria-label="Colour">
+            {Object.entries(ACCENTS).map(([k, a]) => (
+              <button
+                key={k}
+                style={{ '--swatch': resolveTheme(settings.theme) === 'dark' ? a.dark : a.light }}
+                className={settings.accent === k ? 'on' : ''}
+                aria-pressed={settings.accent === k}
+                aria-label={a.label}
+                title={a.label}
+                onClick={() => setSettings({ ...settings, accent: k })}
+              >
+                {settings.accent === k ? '✓' : ''}
+              </button>
+            ))}
+          </div>
+          <p className="hint">Saved on this phone only, so each of you can pick your own.</p>
         </section>
         <section className="card">
           <h3>Importing</h3>
@@ -968,7 +1066,7 @@ export default function App() {
 
   if (route.page === 'import') {
     return (
-      <main>
+      <main data-dir={dir}>
         {topbar}
         <section className="card">
           <h2>Import a recipe</h2>
@@ -1066,7 +1164,12 @@ export default function App() {
                 <progress max="100" value={download.pct} />
               </div>
             )}
-            {busy && <div className="spinner">Working…</div>}
+            {busy && !download && (
+              <div className="spinner">
+                Working…
+                <div className="busy-bar" />
+              </div>
+            )}
             {report && !busy && (
               <div className="row">
                 <button
@@ -1110,7 +1213,7 @@ export default function App() {
   const picked = selection ? Object.values(selection).filter((v) => v != null).length : 0
 
   return (
-    <main className={selection ? 'selecting' : 'tabbed'}>
+    <main className={selection ? 'selecting' : 'tabbed'} data-dir={dir}>
       <header className="main-header">
         <h1>{selection ? 'Pick recipes' : 'Recipes'}</h1>
         {!selection && (
@@ -1148,6 +1251,9 @@ export default function App() {
         )
       )}
 
+      {!recipesLoaded || (!recipes.length && !syncState) ? (
+        <RecipeListSkeleton />
+      ) : (
       <RecipeList
         recipes={recipes}
         pantry={pantry}
@@ -1155,6 +1261,7 @@ export default function App() {
         selection={selection}
         onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}
       />
+      )}
 
       <p className="hint sync">
         {syncState?.error
@@ -1162,7 +1269,7 @@ export default function App() {
           : syncState?.at
             ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${syncState.warning ? `. ${syncState.warning}` : ''}`
             : 'Syncing…'}{' '}
-        <button className="link" onClick={runSync}>
+        <button className="link" onClick={() => runSync({ manual: true })}>
           Sync now
         </button>
       </p>
