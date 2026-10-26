@@ -85,26 +85,56 @@ export function expiryLabel(days) {
   return days < 14 ? `expires in ${days} days` : `expires ${new Date(Date.now() + days * 86400000).toLocaleDateString()}`
 }
 
+/** "200 g" (or "2 tbsp + 1 tsp") → { qty, unit } for takeFrom; null without a number. */
+const splitAmount = (text) => {
+  const m = String(text ?? '').trim().match(/^([\d.,½¼¾⅓⅔/]+(?:\s*[–-]\s*[\d.,]+)?)\s*(.*)$/)
+  return m ? { qty: m[1], unit: m[2] } : null
+}
+
+/** Stock text after taking out `usedText` ("200 g"), or null when it can't be worked out. */
+export function takeUsed(stockText, usedText) {
+  const a = splitAmount(usedText)
+  return a ? takeFrom(stockText, a.qty, a.unit) : null
+}
+
+/** One amount for several recipe lines of the same ingredient: added up when the units compare. */
+function totalUsed(amounts) {
+  const texts = amounts.map(([q, u]) => [q, u].filter((x) => String(x ?? '').trim()).join(' ')).filter(Boolean)
+  if (texts.length <= 1) return texts[0] ?? ''
+  const parts = amounts.map(([q, u]) => {
+    const a = parseAmount(q)
+    return a ? toBase(a.max ?? a.min, u) : null
+  })
+  if (parts.some((p) => !p) || parts.some((p) => p.base !== parts[0].base)) return texts.join(' + ')
+  return formatStock({ value: parts.reduce((n, p) => n + p.value, 0), base: parts[0].base })
+}
+
 /**
- * What cooking these ingredients takes out of the stock:
- * [{ item, used: '200 g', next: '300 g' }] for every stock item with an amount that compares.
+ * What cooking could take out of the stock, for the cook to check after
+ * cooking: [{ item, used, next, on }] for every ingredient kept at home.
+ * `next` is what would be left; `on` is false when the amounts don't
+ * compare (no amount, or "1 bottle" against "2 tbsp"), so nothing changes
+ * unless the cook says how much is left.
  */
-export function planCooking(ingredients, pantry, canonical) {
-  const byKey = new Map(pantry.map((p) => [canonical(p.name), p]))
-  const plan = new Map()
+export function stockReview(ingredients, pantry, canonical) {
+  const byKey = new Map(pantry.filter((p) => !isOut(p)).map((p) => [canonical(p.name), p]))
+  const uses = new Map()
   for (const ing of ingredients) {
     if (!String(ing.name ?? '').trim()) continue
     const item = byKey.get(canonical(ing.name))
     if (!item) continue
-    const current = plan.get(item.id)?.next ?? item.amount
-    const next = takeFrom(current, ing.qty, ing.unit)
-    if (next == null) continue
-    const used = [ing.qty, ing.unit].filter((x) => String(x ?? '').trim()).join(' ')
-    const prev = plan.get(item.id)
-    plan.set(item.id, { item, used: prev ? `${prev.used} + ${used}` : used, next })
+    if (!uses.has(item.id)) uses.set(item.id, { item, amounts: [] })
+    uses.get(item.id).amounts.push([ing.qty, ing.unit])
   }
-  return [...plan.values()]
+  return [...uses.values()].map(({ item, amounts }) => {
+    const used = totalUsed(amounts)
+    const next = used ? takeUsed(item.amount, used) : null
+    return { item, used, next: next ?? item.amount ?? '', on: next != null }
+  })
 }
+
+/** True when cooking would use the item up and it goes from the pantry (staples stay at 0). */
+export const usesUp = (item, next) => (parseStock(next)?.value ?? 1) <= 0 && !String(item.min_amount ?? '').trim()
 
 /**
  * How much of a recipe is at home: { have, total, missing } over its named

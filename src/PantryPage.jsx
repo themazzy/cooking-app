@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
-import { addToPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
+import { addToPantry, pantryError, removeFromPantry, updatePantryItem } from './lib/pantry.js'
 import { addTo, daysLeft, expiryLabel, isOut, shortfall } from './lib/stock.js'
 import { readReceiptPhotos } from './lib/ocr.js'
 import { readReceipt } from './lib/receipt.js'
@@ -191,7 +191,7 @@ export default function PantryPage({ items, onChanged }) {
       await onChanged()
       return true
     } catch (e) {
-      setMessage(e?.message ?? String(e))
+      setMessage(pantryError(e))
       return false
     }
   }

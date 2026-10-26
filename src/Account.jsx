@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase.js'
 import { forgetHousehold, getHousehold, joinHousehold } from './lib/sync.js'
+import { clearDevice, listRecipes } from './lib/store.js'
+
+// What this phone keeps of the signed-in household, besides the recipes (settings stay)
+const HOUSEHOLD_KEYS = ['shopping', 'pantry', 'catalog', 'deleted', 'history'].map((k) => `cooking-app:${k}`)
 
 /** Sign-in for syncing, and the household (shared recipes and list) with its invite code. */
 export default function Account({ user, onChanged }) {
@@ -10,6 +14,8 @@ export default function Account({ user, onChanged }) {
   const [household, setHousehold] = useState(null)
   const [message, setMessage] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [bring, setBring] = useState(true)
+  const [signingOut, setSigningOut] = useState(null) // { unsynced } while asking
 
   useEffect(() => {
     if (!user) return setHousehold(null)
@@ -29,6 +35,22 @@ export default function Account({ user, onChanged }) {
       setBusy(false)
     }
   }
+
+  const signOut = (clear) =>
+    run(async () => {
+      await supabase.auth.signOut()
+      forgetHousehold()
+      if (clear) {
+        await clearDevice()
+        for (const k of HOUSEHOLD_KEYS) localStorage.removeItem(k)
+        // Starts again from the empty phone
+        window.location.replace('#/')
+        window.location.reload()
+        return
+      }
+      setSigningOut(null)
+      onChanged()
+    })
 
   if (!user) {
     return (
@@ -90,7 +112,7 @@ export default function Account({ user, onChanged }) {
           disabled={busy || code.trim().length < 6}
           onClick={() =>
             run(async () => {
-              setHousehold(await joinHousehold(code))
+              setHousehold(await joinHousehold(code, { bring }))
               setCode('')
               onChanged()
             })
@@ -99,21 +121,44 @@ export default function Account({ user, onChanged }) {
           Join
         </button>
       </div>
-      <div className="row">
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() =>
-            run(async () => {
-              await supabase.auth.signOut()
-              forgetHousehold()
-              onChanged()
-            })
-          }
-        >
-          Sign out
-        </button>
-      </div>
+      <label>
+        <input type="checkbox" checked={bring} onChange={(e) => setBring(e.target.checked)} /> Bring the recipes on this phone into the household I join
+      </label>
+      {signingOut ? (
+        <div className="card stock-plan">
+          <strong>Also clear this phone?</strong>
+          <p className="hint">
+            Clearing removes the recipes, saved videos, shopping list and pantry copy from this phone; they stay in the household for the next sign-in.
+            {signingOut.unsynced > 0 && ` ${signingOut.unsynced} recipe${signingOut.unsynced > 1 ? 's have' : ' has'} not synced yet and would be lost.`}
+          </p>
+          <div className="row">
+            <button className="secondary" disabled={busy} onClick={() => signOut(false)}>
+              Keep them
+            </button>
+            <button className="secondary" disabled={busy} onClick={() => signOut(true)}>
+              Clear this phone
+            </button>
+            <button className="link" onClick={() => setSigningOut(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="row">
+          <button
+            className="secondary"
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                const unsynced = (await listRecipes()).filter((r) => r.syncedAt !== r.updatedAt).length
+                setSigningOut({ unsynced })
+              })
+            }
+          >
+            Sign out
+          </button>
+        </div>
+      )}
       {message && <p className="hint">{message}</p>}
     </div>
   )

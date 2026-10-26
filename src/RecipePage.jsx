@@ -16,7 +16,7 @@ import { scaleIngredients, scaleSteps } from './lib/scale.js'
 import { seekableBlob } from './lib/webmFix.js'
 import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
-import { isOut, planCooking } from './lib/stock.js'
+import { isOut, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
@@ -165,7 +165,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         🖼 Choose photo
         <input type="file" accept="image/*" hidden onChange={pickPhoto} />
       </label>
-      {recipe.photo && (
+      {(recipe.photo || recipe.photoKey) && (
         <button className="link" onClick={() => setPhoto(null)}>
           Remove photo
         </button>
@@ -173,11 +173,12 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
       {photoNote && <span className="note">{photoNote}</span>}
     </div>
   )
-  const picture = recipe.photo ?? (imageBroken ? null : recipe.image) ?? recipe.thumb ?? null
+  // Offline, a photo saved on the other phone shows as its small copy
+  const picture = recipe.photo ?? recipe.photoThumb ?? (imageBroken ? null : recipe.image) ?? recipe.thumb ?? null
 
   const video = videoSrc ? (
     <div className="video">
-      <VideoPlayer src={videoSrc} poster={recipe.photo ?? recipe.thumb ?? undefined} />
+      <VideoPlayer src={videoSrc} poster={recipe.photo ?? recipe.photoThumb ?? recipe.thumb ?? undefined} />
       {(shrink || edit) && (
         <div className="note">
           {shrink?.state === 'running'
@@ -512,7 +513,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           ingredients={shown}
           steps={stepsText}
           alarm={alarm}
-          stockPlan={planCooking(scaled, pantry, canonical)}
+          stockPlan={stockReview(scaled, pantry, canonical)}
           onUseStock={onUseStock}
           onCooked={recipe.id ? (note) => onSavePatch({ cooked: addCooked(recipe, Date.now(), note) }) : null}
           onClose={() => setCooking(false)}

@@ -1,15 +1,18 @@
-// Saved recipes and their videos, kept on this device in IndexedDB.
-// Videos are Blobs in their own store so the recipe list stays light.
+// Saved recipes with their videos and photos, kept on this device in
+// IndexedDB. Videos and photos have their own stores so the recipe list stays light.
 
 const DB_NAME = 'cooking-app'
 let dbPromise = null
 
 function db() {
   dbPromise ??= new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1)
+    const req = indexedDB.open(DB_NAME, 2)
     req.onupgradeneeded = () => {
-      req.result.createObjectStore('recipes', { keyPath: 'id' })
-      req.result.createObjectStore('videos')
+      const d = req.result
+      if (!d.objectStoreNames.contains('recipes')) d.createObjectStore('recipes', { keyPath: 'id' })
+      if (!d.objectStoreNames.contains('videos')) d.createObjectStore('videos')
+      // Version 2: recipe photos, { key, data } by recipe id
+      if (!d.objectStoreNames.contains('photos')) d.createObjectStore('photos')
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -39,9 +42,18 @@ export const putRecipe = (recipe) => run('recipes', 'readwrite', (s) => s.put(re
 export async function deleteRecipe(id) {
   await run('recipes', 'readwrite', (s) => s.delete(id))
   await run('videos', 'readwrite', (s) => s.delete(id))
+  await run('photos', 'readwrite', (s) => s.delete(id))
 }
 export const getVideo = (id) => run('videos', 'readonly', (s) => s.get(id))
 export const putVideo = (id, blob) => run('videos', 'readwrite', (s) => s.put(blob, id))
+export const getPhoto = (id) => run('photos', 'readonly', (s) => s.get(id))
+export const putPhoto = (id, photo) => run('photos', 'readwrite', (s) => s.put(photo, id))
+export const deletePhoto = (id) => run('photos', 'readwrite', (s) => s.delete(id))
+
+/** Empties this device's saved recipes, videos and photos (signing out with "clear"). */
+export async function clearDevice() {
+  for (const store of ['recipes', 'videos', 'photos']) await run(store, 'readwrite', (s) => s.clear())
+}
 
 /** Asks the browser not to evict saved data when the phone runs low on space. */
 export async function persistStorage() {

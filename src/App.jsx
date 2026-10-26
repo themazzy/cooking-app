@@ -19,8 +19,9 @@ import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
 import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
-import { addTo, isOut, parseStock, shortfall } from './lib/stock.js'
-import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
+import { addTo, isOut, shortfall, usesUp } from './lib/stock.js'
+import { loadPhoto, loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
+import { storePhoto } from './lib/photos.js'
 import ShoppingList from './ShoppingList.jsx'
 import PlanPage from './PlanPage.jsx'
 import { prunePlan } from './lib/plan.js'
@@ -155,9 +156,8 @@ export default function App() {
     try {
       do {
         syncAgain.current = false
-        await syncRecipes()
+        const recipesDone = await syncRecipes()
         await refreshRecipes()
-        catalogRefresh.current?.()
         setPantry(await loadPantry())
         const sent = shoppingRef.current
         const list = await syncShopping(sent)
@@ -170,7 +170,7 @@ export default function App() {
           shoppingRef.current = next
           writeStore(SHOPPING_KEY, next)
         }
-        setSyncState({ at: Date.now() })
+        setSyncState({ at: Date.now(), warning: recipesDone?.warning ?? null })
       } while (syncAgain.current)
     } catch (err) {
       setSyncState({ error: err?.message ?? String(err) })
@@ -180,9 +180,18 @@ export default function App() {
   }, [user, refreshRecipes])
 
   // Sync when signed in, when the app comes back, and when the other phone changes something
+  // Bumped when the account or household changes, so live updates follow it
+  const [householdRev, setHouseholdRev] = useState(0)
   useEffect(() => {
     if (!user) return
     runSync()
+    // The catalog changes rarely: loaded now (with the household's own
+    // ingredients), when the app comes back, and when one is changed
+    catalogRefresh.current?.()
+    const onResume = () => {
+      catalogRefresh.current?.()
+      runSync()
+    }
     let unsubscribe = null
     subscribeHousehold((what) => {
       if (what === 'pantry') loadPantry().then(setPantry).catch(() => {})
@@ -191,16 +200,26 @@ export default function App() {
     })
       .then((u) => (unsubscribe = u))
       .catch(() => {})
-    const sub = CapApp.addListener('resume', runSync)
+    const sub = CapApp.addListener('resume', onResume)
     window.addEventListener('online', runSync)
     return () => {
       unsubscribe?.()
       sub.then((h) => h.remove())
       window.removeEventListener('online', runSync)
     }
-  }, [user, runSync])
+  }, [user, runSync, householdRev])
 
-  // Opening a saved recipe loads it (and its video) from the device
+  /** The recipe's own photo (this phone or the household's storage), or nothing when offline. */
+  const loadRecipePhoto = async (recipe) => {
+    if (typeof recipe.photo === 'string') return recipe.photo // saved before photos had their own store
+    try {
+      return await loadPhoto(recipe)
+    } catch {
+      return null
+    }
+  }
+
+  // Opening a saved recipe loads it (and its video and photo) from the device
   useEffect(() => {
     if (route.page !== 'recipe' || !route.id || editing?.recipe.id === route.id) return
     let cancelled = false
@@ -215,13 +234,16 @@ export default function App() {
         videoBlob = null // offline, or the video is only on the other phone
       }
       if (cancelled) return
-      setEditing({ recipe, videoBlob, dirty: false })
+      const photo = await loadRecipePhoto(recipe)
+      if (cancelled) return
+      setEditing({ recipe: photo ? { ...recipe, photo } : recipe, videoBlob, dirty: false })
       // Recipes saved before thumbnails existed get one the first time they open
       if (videoBlob && !recipe.thumb) {
         const thumb = await videoThumb(videoBlob)
         if (!thumb) return
-        const updated = { ...recipe, thumb, updatedAt: Date.now() }
-        await putRecipe(updated)
+        const stored = await getRecipe(recipe.id)
+        if (!stored) return
+        await putRecipe({ ...stored, thumb, updatedAt: Date.now() })
         setEditing((e) => (e?.recipe.id === recipe.id ? { ...e, recipe: { ...e.recipe, thumb } } : e))
         refreshRecipes()
         runSyncRef.current?.()
@@ -347,7 +369,8 @@ export default function App() {
     const now = Date.now()
     const keepVideo = !!videoBlob && settings.saveVideos
     const thumb = recipe.thumb ?? (keepVideo ? await videoThumb(videoBlob) : null)
-    const stored = {
+    // The photo goes to its own store; the recipe keeps which one it has
+    const stored = await storePhoto({
       ...recipe,
       id,
       thumb,
@@ -355,11 +378,11 @@ export default function App() {
       video: keepVideo || (recipe.id && !videoBlob) ? recipe.video : null,
       createdAt: recipe.createdAt ?? now,
       updatedAt: now,
-    }
+    })
     await putRecipe(stored)
     if (keepVideo && !recipe.id) await putVideo(id, videoBlob)
     if (recipe.key) savedIds.current[recipe.key] = id
-    setEditing({ recipe: stored, videoBlob: keepVideo ? videoBlob : null, dirty: false })
+    setEditing({ recipe: recipe.photo ? { ...stored, photo: recipe.photo } : stored, videoBlob: keepVideo ? videoBlob : null, dirty: false })
     refreshRecipes()
     runSync()
     go(`#/recipe/${encodeURIComponent(id)}`, { replace: route.page === 'new' })
@@ -402,9 +425,17 @@ export default function App() {
     updateShopping(makeList([...others, ...planned], recipes, catalog.match, shopping))
   }
 
-  const makeShoppingList = () => {
+  // With a list already going, picking recipes asks whether to add to it or start again
+  const [listChoice, setListChoice] = useState(false)
+  const hasList = !!(shopping?.items?.length || shopping?.recipes?.length)
+  const makeShoppingList = (how = hasList ? null : 'replace') => {
+    if (!how) return setListChoice(true)
+    setListChoice(false)
     const entries = recipes.filter((r) => selection?.[r.id] != null).map((r) => ({ id: r.id, portions: selection[r.id] }))
-    updateShopping(makeList(entries, recipes, catalog.match))
+    if (how === 'add') {
+      const others = (shopping?.recipes ?? []).filter((r) => !entries.some((e) => e.id === r.id))
+      updateShopping(makeList([...others, ...entries], recipes, catalog.match, shopping))
+    } else updateShopping(makeList(entries, recipes, catalog.match))
     setSelection(null)
     tabGo('#/shopping')
   }
@@ -417,7 +448,9 @@ export default function App() {
       return go('#/', { replace: true })
     }
     const stored = await getRecipe(id)
-    if (stored) setEditing((e) => ({ ...e, recipe: stored, dirty: false }))
+    if (!stored) return
+    const photo = await loadRecipePhoto(stored)
+    setEditing((e) => ({ ...e, recipe: photo ? { ...stored, photo } : stored, dirty: false }))
   }
 
   // Tabs: from Recipes they open on top of it, so Back returns there; between tabs they replace each other
@@ -468,13 +501,16 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pantry, shopping, user])
 
-  /** Takes what a cooked recipe used out of the stock; used-up items go, except staples. */
+  /** Takes what the cook confirmed after cooking out of the stock; used-up items go, except staples. */
   const useStock = async (plan) => {
-    for (const { item, next } of plan) {
-      if ((parseStock(next)?.value ?? 1) <= 0 && !item.min_amount?.trim()) await removeFromPantry(item.id)
-      else await updatePantryItem(item.id, { amount: next })
+    try {
+      for (const { item, next } of plan) {
+        if (usesUp(item, next)) await removeFromPantry(item.id)
+        else await updatePantryItem(item.id, { amount: next })
+      }
+    } finally {
+      setPantry(await loadPantry().catch(() => pantry))
     }
-    setPantry(await loadPantry())
   }
 
   const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
@@ -764,7 +800,13 @@ export default function App() {
         {topbar}
         <section className="card">
           <h2>Settings</h2>
-          <Account user={user} onChanged={() => setSyncState(null)} />
+          <Account
+            user={user}
+            onChanged={() => {
+              setSyncState(null)
+              setHouseholdRev((n) => n + 1)
+            }}
+          />
         </section>
         <section className="card">
           <h3>Importing</h3>
@@ -1112,7 +1154,7 @@ export default function App() {
         {syncState?.error
           ? `Sync failed: ${syncState.error}`
           : syncState?.at
-            ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            ? `Synced ${new Date(syncState.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${syncState.warning ? `. ${syncState.warning}` : ''}`
             : 'Syncing…'}{' '}
         <button className="link" onClick={runSync}>
           Sync now
@@ -1124,12 +1166,31 @@ export default function App() {
           <button className="secondary" onClick={() => setSelection(null)}>
             Cancel
           </button>
-          <button disabled={!picked} onClick={makeShoppingList}>
+          <button disabled={!picked} onClick={() => makeShoppingList()}>
             Make list from {picked} recipe{picked === 1 ? '' : 's'}
           </button>
         </div>
       ) : (
         tabbar
+      )}
+
+      {listChoice && (
+        <div className="sheet-backdrop" onClick={() => setListChoice(false)}>
+          <div className="sheet" role="dialog" aria-label="There is a list already" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-handle" aria-hidden="true" />
+            <h2>There is a list already</h2>
+            <p className="hint">
+              It has {shopping.items.filter((i) => !i.checked).length} things to buy. Adding keeps them, with what you added by hand and the staples; a new list starts
+              from these recipes only.
+            </p>
+            <div className="sheet-actions">
+              <button className="secondary" onClick={() => makeShoppingList('replace')}>
+                Start a new list
+              </button>
+              <button onClick={() => makeShoppingList('add')}>Add to the list</button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   )

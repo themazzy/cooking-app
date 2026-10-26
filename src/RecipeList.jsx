@@ -26,7 +26,7 @@ const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook
 function Thumb({ recipe }) {
   const { match } = useCatalog()
   const [broken, setBroken] = useState(false)
-  const src = recipe.photo ?? recipe.thumb ?? (broken ? null : recipe.image)
+  const src = recipe.photoThumb ?? recipe.photo ?? recipe.thumb ?? (broken ? null : recipe.image)
   if (src) return <img className="thumb" src={src} alt="" loading="lazy" onError={() => src === recipe.image && setBroken(true)} />
   const icons = (recipe.ingredients ?? [])
     .map((i) => match(i.name))
