@@ -222,6 +222,19 @@ describe('ingredient groups', () => {
     ])
   })
 
+  it('reads headings in recipes that get translated afterwards', () => {
+    expect(groups('Zutaten:\nFür die Frikadellen\n500 g Hackfleisch\nFür die Soße:\n2 EL Speisestärke\nZubereitung:\nMischen.')).toEqual([
+      ['Für die Frikadellen', 'Hackfleisch'],
+      ['Für die Soße', 'Speisestärke'],
+    ])
+    expect(groups('Ingredientes\nPara la masa:\n300 g de harina\nPara el relleno:\n2 cucharadas de aceite')).toEqual([
+      ['Para la masa', 'harina'],
+      ['Para el relleno', 'aceite'],
+    ])
+    expect(groups('Ингредиенты:\nДля соуса:\n1 ст. л. крахмала')).toEqual([['Для соуса', 'крахмала']])
+    expect(parseIngredientLine('2 EL Speisestärke')).toMatchObject({ unit: 'tbsp' })
+  })
+
   it('reads headings in capitals inside an ingredient list', () => {
     expect(groups('Ingredients\nSAUCE\n2 tbsp soy sauce\nDOUGH\n300 g flour')).toEqual([
       ['Sauce', 'soy sauce'],
