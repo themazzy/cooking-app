@@ -37,8 +37,8 @@ describe('imperial', () => {
 })
 
 it('converts oven temperatures', () => {
-  expect(convertTemperatures('Bake at 350°F for 20 min', 'metric')).toBe('Bake at 175 °C for 20 min')
-  expect(convertTemperatures('Bake at 180 °C', 'imperial')).toBe('Bake at 355 °F')
+  expect(convertTemperatures('Bake at 350°F for 20 min', 'metric')).toBe('Bake at 180 °C for 20 min')
+  expect(convertTemperatures('Bake at 180 °C', 'imperial')).toBe('Bake at 350 °F')
   expect(convertTemperatures('Bake at 180 °C', 'metric')).toBe('Bake at 180 °C')
 })
 

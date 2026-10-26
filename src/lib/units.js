@@ -74,16 +74,80 @@ export function convertIngredient(ing, system, match) {
 
 export const convertIngredients = (list, system, match) => list.map((i) => convertIngredient(i, system, match))
 
-/** Oven temperatures in step text: "350°F" → "175 °C" (metric), "180 °C" → "355 °F" (imperial). */
+// A temperature in a step: "180 °C", "350F", "200 degrees Celsius", Czech "180 stupňů", Bulgarian "200 градуса", "gas mark 4"
+const DEGREE_WORD = 'degrees?|deg\\.?|stup(?:ň|n)(?:ů|u|ě|e|ích|ich)?|градус(?:а|и)?'
+const TEMP = new RegExp(
+  `(?<![\\d.,])(?<n>\\d{2,3})(?:\\s*(?:-|–|to|až|до)\\s*(?<hi>\\d{2,3}))?\\s*(?:(?<deg>[°º˚])\\s*(?<degScale>[CF](?![\\p{L}])|celsius|fahrenheit)?|(?<word>${DEGREE_WORD})(?:\\s*(?<wordScale>C(?![\\p{L}])|F(?![\\p{L}])|celsius|celsia|fahrenheit|по\\s+целзий))?|(?<letter>[CF])(?![\\p{L}]))` +
+    '|gas\\s+mark\\s+(?<gas>\\d)(?!\\d)',
+  'giu',
+)
+// Gas mark to °C and °F
+const GAS = { 1: [140, 275], 2: [150, 300], 3: [170, 325], 4: [180, 350], 5: [190, 375], 6: [200, 400], 7: [220, 425], 8: [230, 450], 9: [240, 475] }
+// Ways two temperatures are written together: "180 °C / 350 °F", "425°F (220°C)", "180 °C or 350 °F"
+const BETWEEN = /^\s*(?:\/|\(|or|nebo|или|,|=|–|-)?\s*$/iu
+
+function readTemp(m) {
+  const g = m.groups
+  if (g.gas) return GAS[g.gas] ? { gas: GAS[g.gas] } : null
+  const n = Number(g.n)
+  const hi = g.hi ? Number(g.hi) : null
+  const scale = (g.degScale ?? g.wordScale ?? g.letter ?? '').trim().toLowerCase()
+  if (scale.startsWith('f')) return { n, hi, f: true }
+  if (scale) return { n, hi, f: false }
+  // Czech and Bulgarian recipes count in Celsius; a bare "220°" or "400 degrees" is Fahrenheit only when too hot for Celsius
+  if (g.word && !/^deg/i.test(g.word)) return { n, hi, f: false }
+  return n < 30 ? null : { n, hi, f: (hi ?? n) >= 260 }
+}
+
+// Oven dials step by 10 °C and 25 °F; lower temperatures (sugar, meat inside) stay closer
+const toC = (f) => {
+  const c = ((f - 32) * 5) / 9
+  return c >= 150 ? Math.round(c / 10) * 10 : c >= 100 ? Math.round(c / 5) * 5 : Math.round(c)
+}
+const toF = (c) => {
+  const f = (c * 9) / 5 + 32
+  return f >= 250 ? Math.round(f / 25) * 25 : Math.round(f / 5) * 5
+}
+
+/**
+ * Oven temperatures in step text: "350°F" → "180 °C" (metric), "180 °C" → "350 °F" (imperial).
+ * Where both are written ("180 °C / 350 °F") only the one for `system` stays.
+ */
 export function convertTemperatures(text, system) {
   if (system !== 'metric' && system !== 'imperial') return text
-  return String(text ?? '').replace(/(\d{2,3})\s*°?\s*(?:degrees\s*)?([CF])\b/gi, (all, num, scale) => {
-    const n = Number(num)
-    const f = scale.toUpperCase() === 'F'
-    if (system === 'metric' && f) return `${Math.round(((n - 32) * 5) / 9 / 5) * 5} °C`
-    if (system === 'imperial' && !f) return `${Math.round(((n * 9) / 5 + 32) / 5) * 5} °F`
-    return all
-  })
+  const s = String(text ?? '')
+  const found = [...s.matchAll(TEMP)].map((m) => ({ at: m.index, end: m.index + m[0].length, t: readTemp(m), raw: m[0] })).filter((x) => x.t)
+  const show = (x) => {
+    const { t } = x
+    if (t.gas) return system === 'metric' ? `${t.gas[0]} °C` : `${t.gas[1]} °F`
+    const range = (fn) => (t.hi != null ? `${fn(t.n)}–${fn(t.hi)}` : `${fn(t.n)}`)
+    if (system === 'metric' && t.f) return `${range(toC)} °C`
+    if (system === 'imperial' && !t.f) return `${range(toF)} °F`
+    return x.raw
+  }
+  // The one written in the wanted scale, of a pair
+  const wanted = (x) => !x.t.gas && x.t.f === (system === 'imperial')
+  let out = ''
+  let pos = 0
+  for (let i = 0; i < found.length; i++) {
+    const a = found[i]
+    const b = found[i + 1]
+    const gap = b ? s.slice(a.end, b.at) : null
+    const paired = b && BETWEEN.test(gap) && (a.t.gas || b.t.gas || a.t.f !== b.t.f)
+    out += s.slice(pos, a.at)
+    if (paired) {
+      const keep = wanted(b) && !wanted(a) ? b : a
+      out += show(keep)
+      pos = b.end
+      // the bracket around the second one goes with it
+      if (gap.includes('(') && s[pos] === ')') pos++
+      i++
+    } else {
+      out += show(a)
+      pos = a.end
+    }
+  }
+  return out + s.slice(pos)
 }
 
 /** Whether a recipe uses any units that `system` would change. */
