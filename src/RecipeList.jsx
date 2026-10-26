@@ -9,6 +9,7 @@ import { allCollections, inCollection } from './lib/collections.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
 import { formatKcal, portionKcal } from './lib/calories.js'
+import { tagMatches } from './lib/recipeTags.js'
 
 const matches = (r, q) =>
   !q ||
@@ -16,6 +17,7 @@ const matches = (r, q) =>
   r.cuisine?.toLowerCase().includes(q) ||
   r.note?.toLowerCase().includes(q) ||
   r.categories?.some((c) => c.toLowerCase().includes(q)) ||
+  r.tags?.some((t) => t.toLowerCase().includes(q)) ||
   r.collections?.some((c) => c.toLowerCase().includes(q)) ||
   r.ingredients?.some((i) => i.name?.toLowerCase().includes(q))
 
@@ -111,6 +113,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const [category, setCategory] = useState(null)
   const [collection, setCollection] = useState(null) // its name
   const [cuisine, setCuisine] = useState(null)
+  const [picked, setPicked] = useState([]) // diet and style tags, all must fit
   const [maxTime, setMaxTime] = useState(null) // minutes
   const [maxKcal, setMaxKcal] = useState(null) // per portion
   const [topRated, setTopRated] = useState(false)
@@ -120,6 +123,8 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const q = query.trim().toLowerCase()
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
+  const tags = byCount(recipes.flatMap((r) => r.tags ?? []))
+  const toggleTag = (t) => setPicked(picked.includes(t) ? picked.filter((p) => p !== t) : [...picked, t])
   const collections = allCollections(recipes)
   const open = collections.find((c) => c.name.toLowerCase() === collection?.toLowerCase()) ?? null
   const timed = recipes.some((r) => totalMinutes(r))
@@ -130,8 +135,8 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   // What can be cooked from what is at home: recipes missing at most this many ingredients
   const home = new Map(pantry.length ? recipes.map((r) => [r.id, homeMatch(r, pantry, canonical)]) : [])
   const MISSING_OK = 2
-  const filtered = !!(category || cuisine || maxTime || maxKcal || topRated || notCooked || fromHome)
-  const clearFilters = () => (setCategory(null), setCuisine(null), setMaxTime(null), setMaxKcal(null), setTopRated(false), setNotCooked(false), setFromHome(false))
+  const filtered = !!(category || cuisine || picked.length || maxTime || maxKcal || topRated || notCooked || fromHome)
+  const clearFilters = () => (setCategory(null), setCuisine(null), setPicked([]), setMaxTime(null), setMaxKcal(null), setTopRated(false), setNotCooked(false), setFromHome(false))
   const shown = recipes
     .filter(
       (r) =>
@@ -139,6 +144,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
         (!open || inCollection(r, open.name)) &&
         (!category || r.categories?.includes(category)) &&
         (!cuisine || r.cuisine === cuisine) &&
+        picked.every((t) => tagMatches(r, t)) &&
         (!maxTime || (totalMinutes(r) != null && totalMinutes(r) <= maxTime)) &&
         (!maxKcal || (kcal.get(r.id) != null && kcal.get(r.id) <= maxKcal)) &&
         (!topRated || averageRating(r) >= TOP_RATED) &&
@@ -156,7 +162,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
       }[sort]
       return by ? by() : 0
     })
-  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || timed || counted || rated || cooked || home.size)
+  const showFilters = recipes.length > 1 && (categories.length || cuisines.length || tags.length || timed || counted || rated || cooked || home.size)
   const quickFilters = [
     ...(timed ? TIMES.map((m) => [`t${m}`, `Under ${m} min`, maxTime === m, () => setMaxTime(maxTime === m ? null : m)]) : []),
     ...(counted ? KCALS.map((k) => [`k${k}`, `Under ${k} kcal`, maxKcal === k, () => setMaxKcal(maxKcal === k ? null : k)]) : []),
@@ -220,6 +226,15 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
               {quickFilters.map(([k, label, on, toggle]) => (
                 <button key={k} className={`chip-btn${on ? ' on' : ''}`} aria-pressed={on} onClick={toggle}>
                   {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div className="aisle-chips" role="group" aria-label="Diet and style">
+              {tags.map((t) => (
+                <button key={t} className={`chip-btn soft${picked.includes(t) ? ' on' : ''}`} aria-pressed={picked.includes(t)} onClick={() => toggleTag(t)}>
+                  {t}
                 </button>
               ))}
             </div>

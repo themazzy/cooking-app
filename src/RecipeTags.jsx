@@ -1,27 +1,61 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { totalMinutes } from './lib/recipeMeta.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
+import { useCatalog } from './catalog.jsx'
+import { DEFAULT_TAGS, hasTag, suggestTags } from './lib/recipeTags.js'
 
 const minutesOrNull = (v) => (v === '' ? null : Math.max(0, Math.round(Number(v))) || null)
 
-/** Prep/cook/total minutes, cuisine and categories in the recipe form. */
-export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
+/** Chips to tick, plus a "New" one to type a name that isn't there yet. */
+function ChipPicker({ all, picked, suggested = [], label, onChange }) {
   const [adding, setAdding] = useState(false)
-  const [newCategory, setNewCategory] = useState('')
-  const [otherCuisine, setOtherCuisine] = useState(false)
-  const picked = recipe.categories ?? []
+  const [typed, setTyped] = useState('')
   const has = (c) => picked.some((p) => p.toLowerCase() === c.toLowerCase())
-  const toggle = (c) => onChange({ categories: has(c) ? picked.filter((p) => p.toLowerCase() !== c.toLowerCase()) : [...picked, c] })
+  const toggle = (c) => onChange(has(c) ? picked.filter((p) => p.toLowerCase() !== c.toLowerCase()) : [...picked, c])
   const add = () => {
-    const name = newCategory.trim().replace(/\s+/g, ' ')
-    if (name && !has(name)) onChange({ categories: [...picked, name.charAt(0).toLocaleUpperCase() + name.slice(1)] })
-    setNewCategory('')
+    const name = typed.trim().replace(/\s+/g, ' ')
+    if (name && !has(name)) onChange([...picked, name.charAt(0).toLocaleUpperCase() + name.slice(1)])
+    setTyped('')
     setAdding(false)
   }
-  // Categories picked on this recipe that no other recipe uses yet still show
-  const shown = [...categories, ...picked.filter((p) => !categories.some((c) => c.toLowerCase() === p.toLowerCase()))]
+  // Picked ones that no other recipe uses yet still show
+  const shown = [...all, ...picked.filter((p) => !all.some((c) => c.toLowerCase() === p.toLowerCase()))]
+  const hinted = (c) => !has(c) && suggested.some((s) => s.toLowerCase() === c.toLowerCase())
+  return (
+    <div className="chip-wrap">
+      {shown.map((c) => (
+        <button key={c} className={`chip-btn${has(c) ? ' on' : ''}${hinted(c) ? ' suggest' : ''}`} aria-pressed={has(c)} onClick={() => toggle(c)}>
+          {c}
+        </button>
+      ))}
+      {adding ? (
+        <input
+          className="chip-input"
+          autoFocus
+          aria-label={`New ${label}`}
+          placeholder={`New ${label}`}
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          onBlur={add}
+        />
+      ) : (
+        <button className="chip-btn add" onClick={() => setAdding(true)}>
+          <Icon name="plus" size={16} strokeWidth={2.5} /> New
+        </button>
+      )}
+    </div>
+  )
+}
+
+/** Prep/cook/total minutes, cuisine, categories and diet/style tags in the recipe form. */
+export default function RecipeTags({ recipe, categories, cuisines, tags = DEFAULT_TAGS, onChange }) {
+  const { match } = useCatalog()
+  const [otherCuisine, setOtherCuisine] = useState(false)
+  // Tags the ingredients, steps and calories point to
+  const suggested = useMemo(() => suggestTags(recipe, match).tags, [recipe, match])
   const time = (field, label) => (
     <label className="field">
       {label}
@@ -81,29 +115,11 @@ export default function RecipeTags({ recipe, categories, cuisines, onChange }) {
       )}
 
       <h3>Categories</h3>
-      <div className="chip-wrap">
-        {shown.map((c) => (
-          <button key={c} className={`chip-btn${has(c) ? ' on' : ''}`} aria-pressed={has(c)} onClick={() => toggle(c)}>
-            {c}
-          </button>
-        ))}
-        {adding ? (
-          <input
-            className="chip-input"
-            autoFocus
-            aria-label="New category"
-            placeholder="New category"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && add()}
-            onBlur={add}
-          />
-        ) : (
-          <button className="chip-btn add" onClick={() => setAdding(true)}>
-            <Icon name="plus" size={16} strokeWidth={2.5} /> New
-          </button>
-        )}
-      </div>
+      <ChipPicker all={categories} picked={recipe.categories ?? []} label="category" onChange={(next) => onChange({ categories: next })} />
+
+      <h3>Diet and style</h3>
+      <ChipPicker all={tags} picked={recipe.tags ?? []} suggested={suggested} label="tag" onChange={(next) => onChange({ tags: next })} />
+      {suggested.some((t) => !hasTag(recipe, t)) && <p className="note">Outlined ones look right for this recipe: tap to add.</p>}
     </div>
   )
 }

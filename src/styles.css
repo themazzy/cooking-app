@@ -716,6 +716,7 @@ ul.shopping li.checked ul.uses span { text-decoration: none; }
 .sort-row .segmented { margin: 0; }
 .chip-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-btn.add { background: transparent; border: 1px dashed var(--border); color: var(--muted); }
+.chip-btn.suggest { box-shadow: inset 0 0 0 1.5px var(--accent); }
 input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; width: 10em; font-size: 0.88rem; }
 .time-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .time-fields input { width: 100%; }

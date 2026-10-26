@@ -6,6 +6,7 @@ import { MODELS, transcribe } from './lib/transcribe.js'
 import { PARSER_LANGS, draftFromImport, draftFromTranslatedSource, sourceLines } from './lib/recipeDraft.js'
 import { TARGETS, detectLanguage, languageName, translateRecipe, translateTexts } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
+import { allTags, importTags } from './lib/recipeTags.js'
 import { allCollections, collectionName, inCollection, renameCollection } from './lib/collections.js'
 import { deleteRecipe, getRecipe, listRecipes, newId, persistStorage, putRecipe, putVideo } from './lib/store.js'
 import { VIDEO_QUALITY, canShrinkVideo, shrinkVideo } from './lib/shrinkVideo.js'
@@ -419,17 +420,19 @@ export default function App() {
   const openDraft = useCallback(
     async (r, videoBlob = null, extra = {}) => {
       const key = newId()
-      const recipe = await translateDraft({
+      const read = await translateDraft({
         ...(await readThroughEnglish(r, draftFromImport(r))),
         ...extra,
         key,
         video: videoBlob ? { size: videoBlob.size, originalSize: videoBlob.size, type: videoBlob.type, shrunk: false } : null,
       })
+      // Light, Baked, Vegetarian… from the ingredients, steps and calories
+      const recipe = { ...read, tags: importTags(read, catalog.match) }
       setEditing({ recipe, videoBlob, dirty: true })
       go('#/new')
       if (videoBlob && settings.saveVideos) startShrink(key, videoBlob, settings.videoQuality)
     },
-    [settings.saveVideos, settings.videoQuality, startShrink, translateDraft, readThroughEnglish],
+    [settings.saveVideos, settings.videoQuality, startShrink, translateDraft, readThroughEnglish, catalog.match],
   )
 
   /** Ingredients and steps read again from a recipe's saved source text, as a new import would read them. */
@@ -896,6 +899,7 @@ export default function App() {
           categories={allCategories(recipes)}
           collections={allCollections(recipes).map((c) => c.name)}
           cuisines={allCuisines(recipes)}
+          tags={allTags(recipes)}
         />
       </main>
     )
