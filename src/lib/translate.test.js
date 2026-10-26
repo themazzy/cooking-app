@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyTranslation, batches, googleLines, languageName, nanoLines, nanoPrompt, recipeTexts, swapOriginal } from './translate.js'
+import { applyTranslation, batches, googleLines, languageName, nanoLines, nanoPrompt, pieces, recipeTexts, swapOriginal } from './translate.js'
 
 const recipe = {
   title: 'Apfelkuchen',
@@ -64,5 +64,16 @@ describe('translation engines', () => {
     expect(prompt).toContain('1| hladká mouka\n2| sůl')
     expect(nanoLines('Here you go:\n1| plain flour\n2| salt', 2)).toEqual(['plain flour', 'salt'])
     expect(nanoLines('1| plain flour', 3)).toBe(null)
+  })
+})
+
+describe('pieces', () => {
+  it('cuts long texts at sentence ends, short ones stay whole', () => {
+    expect(pieces('Short.', 200)).toEqual(['Short.'])
+    const long = 'Mix the flour and water. ' + 'Knead it well for ten minutes. '.repeat(10)
+    const out = pieces(long, 120)
+    expect(out.every((p) => p.length <= 120)).toBe(true)
+    expect(out.join(' ')).toBe(long.trim())
+    expect(out[0].endsWith('.')).toBe(true)
   })
 })

@@ -38,8 +38,22 @@ jobs:
       - name: Sync Capacitor (copy web assets into android project)
         run: npx cap sync android
 
+      # The signing key lives in repository secrets, never in the repo
+      - name: Write the signing key
+        if: github.event_name != 'pull_request'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Add the ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD repository secrets, so the APK installs as an update"
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/cookingapp.keystore
+
       - name: Build debug APK
         working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK

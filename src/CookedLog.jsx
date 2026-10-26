@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { dayKey } from './lib/plan.js'
-import { cookedAgo } from './lib/history.js'
+import { addCooked, cookedAgo, removeCooked } from './lib/history.js'
 
 /** When the recipe was cooked, with a note each time, and a button to add today. */
 export default function CookedLog({ cooked = [], onChange }) {
@@ -12,7 +12,7 @@ export default function CookedLog({ cooked = [], onChange }) {
     const now = new Date()
     // A past day keeps the time of day so two on one day stay in order
     const at = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).getTime()
-    onChange([...cooked, { at, ...(note.trim() ? { note: note.trim() } : {}) }])
+    onChange(addCooked({ cooked }, at, note))
     setAdding(false)
     setNote('')
     setDay(dayKey(new Date()))
@@ -50,7 +50,7 @@ export default function CookedLog({ cooked = [], onChange }) {
               <strong>{new Date(c.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</strong> <span className="note">{cookedAgo(c.at)}</span>
               {c.note && <p>{c.note}</p>}
             </div>
-            <button className="link remove" aria-label="Remove this entry" onClick={() => onChange(cooked.filter((x) => x.at !== c.at))}>
+            <button className="link remove" aria-label="Remove this entry" onClick={() => onChange(removeCooked({ cooked }, c.at))}>
               ×
             </button>
           </li>

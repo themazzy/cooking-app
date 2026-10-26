@@ -31,6 +31,7 @@ import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
+import { openLogin } from './lib/pageReader.js'
 import { debugReport, detectPlatform, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { CapacitorCookies } from '@capacitor/core'
@@ -258,8 +259,7 @@ export default function App() {
     window.scrollTo(0, 0)
   }, [route.page, route.id])
 
-  // Re-checked whenever the app comes back to the front: signing in happens
-  // on Instagram's own page, and Back may restore this page from cache
+  // Re-checked whenever the app comes back to the front (a login can also expire)
   useEffect(() => {
     if (!native) return
     const check = () => isInstagramSignedIn().then(setIgSignedIn)
@@ -940,8 +940,8 @@ export default function App() {
             <h3>Instagram</h3>
             <p>{igSignedIn ? 'Signed in' : 'Not signed in'}</p>
             <p className="hint">
-              Some reels, and all comments, are shown only to logged-in users. Signing in opens Instagram inside this app;
-              when you are logged in, press Back until you return here. The login stays on this phone.
+              Some reels, and all comments, are shown only to logged-in users. Signing in opens Instagram in a separate window
+              that closes by itself once you are logged in. The login stays on this phone.
             </p>
             <div className="row">
               {igSignedIn ? (
@@ -949,7 +949,13 @@ export default function App() {
                   Sign out of Instagram
                 </button>
               ) : (
-                <button className="secondary" onClick={() => (window.location.href = INSTAGRAM_LOGIN_URL)}>
+                <button
+                  className="secondary"
+                  onClick={async () => {
+                    await openLogin(INSTAGRAM_LOGIN_URL, { doneCookie: 'sessionid', title: 'Sign in to Instagram' }).catch(() => false)
+                    setIgSignedIn(await isInstagramSignedIn())
+                  }}
+                >
                   Sign in to Instagram
                 </button>
               )}

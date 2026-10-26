@@ -10,3 +10,5 @@ android/app/src/main/assets/public
 android/capacitor-cordova-android-plugins
 *.apk
 public/tesseract
+*.keystore
+*.jks

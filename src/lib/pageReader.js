@@ -49,3 +49,13 @@ export async function openExternal(url) {
   if (canFetchCrossSite()) await PageReader.openExternal({ url })
   else window.open(url, '_blank', 'noopener')
 }
+
+/**
+ * Opens a sign-in page in its own window on top of the app (no access to
+ * the app itself). Resolves with true when `doneCookie` is set afterwards.
+ */
+export async function openLogin(url, { doneCookie, title } = {}) {
+  if (!canFetchCrossSite()) return false
+  const res = await PageReader.openLogin({ url, doneCookie, title })
+  return !!res?.signedIn
+}
