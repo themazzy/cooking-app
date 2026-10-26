@@ -5,7 +5,7 @@ import { buildCatalogIndex, matchIngredient } from './catalog.js'
 vi.mock('./supabase.js', () => ({ supabase: {} }))
 vi.mock('./sync.js', () => ({ getHousehold: async () => ({ id: 'h1' }) }))
 
-const { guessIngredient, isValidBarcode, normalizeBarcode, packAmount, productLabel } = await import('./barcode.js')
+const { guessIngredient, isValidBarcode, normalizeBarcode, packAmount, productAisle, productLabel, productName } = await import('./barcode.js')
 
 const index = buildCatalogIndex(SEED_INGREDIENTS)
 const match = (name) => matchIngredient(index, name)
@@ -56,5 +56,17 @@ describe('what the product is', () => {
   it('labels a product with its brand once', () => {
     expect(productLabel({ product_name: 'Кисело мляко', brands: 'Верея, Danone', quantity: '400 г' })).toBe('Верея Кисело мляко, 400 г')
     expect(productLabel({ product_name: 'Verea yogurt', brands: 'Verea' })).toBe('Verea yogurt')
+  })
+})
+
+describe('own ingredient from a product', () => {
+  it('names it by brand and name, without the size', () => {
+    expect(productName({ product_name: 'Zero', brands: 'Coca-Cola', quantity: '500 ml' })).toBe('Coca-Cola Zero')
+    expect(productName({ product_name: 'Coca-Cola Zero Sugar', brands: 'Coca-Cola' })).toBe('Coca-Cola Zero Sugar')
+  })
+  it('puts it in an aisle from its categories', () => {
+    expect(productAisle({ categories_tags: ['en:beverages', 'en:carbonated-drinks', 'en:sodas', 'en:colas'] })).toBe('Drinks')
+    expect(productAisle({ categories_tags: ['en:dairies', 'en:fermented-milk-products', 'en:yogurts'] })).toBe('Dairy & eggs')
+    expect(productAisle({ categories_tags: [] })).toBe('Other')
   })
 })

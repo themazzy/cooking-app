@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { toast } from './lib/toast.js'
+import { renamePantryItems } from './lib/pantry.js'
 import { NUTRITION } from './lib/calories.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
@@ -116,8 +117,10 @@ export default function IngredientsPage() {
     const piece_g = toNumber(form.piece_g) || null
     if (kcal != null || piece_g != null || editing?.own_kcal != null || editing?.own_piece_g != null) Object.assign(entry, { kcal, piece_g })
     try {
-      if (editingId) await update(editingId, entry)
-      else await add(entry)
+      if (editingId) {
+        await update(editingId, entry)
+        if (editing && editing.name !== entry.name) await renamePantryItems(editing.name, entry.name).catch(() => {})
+      } else await add(entry)
       setMessage(null)
       toast(`${editingId ? 'Saved' : 'Added'} ${entry.name}`)
       setForm(EMPTY)
@@ -158,7 +161,7 @@ export default function IngredientsPage() {
         {own.length ? (
           <ul className="catalog">{own.map(row)}</ul>
         ) : (
-          <p className="hint">Local brands and anything missing from the list. Tap + Add your own. Tap one of yours to change it.</p>
+          <p className="hint">Local brands and anything missing from the list. What you put At home that is not in the list shows up here too. Tap + Add your own. Tap one of yours to change it.</p>
         )}
         <p className="hint">Tap an everyday ingredient to give it your own picture (e.g. the local product you buy) or change its calories.</p>
         <h3>Everyday ingredients ({shared.length})</h3>

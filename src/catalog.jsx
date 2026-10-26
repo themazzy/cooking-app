@@ -60,12 +60,15 @@ const CatalogContext = createContext(null)
  */
 export function CatalogProvider({ children }) {
   const [entries, setEntries] = useState(() => readCache() ?? SEED_INGREDIENTS)
+  // Whether the household's own entries are known (from the server, or cached from it)
+  const [loaded, setLoaded] = useState(() => readCache() != null)
 
   const refresh = useCallback(async () => {
     let { data, error } = await supabase.from('ingredients').select(`${COLUMNS}, ${KCAL_COLUMNS}`).order('name')
     if (error?.code === '42703') ({ data, error } = await supabase.from('ingredients').select(COLUMNS).order('name'))
     if (error || !data?.length) return
     setEntries(data)
+    setLoaded(true)
     try {
       localStorage.setItem(CACHE_KEY, JSON.stringify(data))
     } catch {
@@ -113,8 +116,41 @@ export function CatalogProvider({ children }) {
       const e = match(name)
       return e ? (e.base ?? e.name).toLowerCase() : normalizeName(name)
     }
-    return { entries: all, add, update, remove, refresh, match, canonical }
-  }, [entries, add, update, remove, refresh])
+    /** The entry with exactly this name, the household's own first. */
+    const named = (name) => {
+      const key = normalizeName(name)
+      return all.find((e) => e.household_id && normalizeName(e.name) === key) ?? all.find((e) => normalizeName(e.name) === key) ?? null
+    }
+    /**
+     * Makes sure something kept at home is in the ingredient list: a name the
+     * catalog does not have becomes one of the household's own ingredients,
+     * counting as the everyday one it most likely is ("Coca Cola Zero" → Cola).
+     * A picture is filled in when the ingredient has none yet.
+     */
+    const ensure = async (name, { base, aisle, image_data } = {}) => {
+      const have = named(name)
+      if (have) {
+        if (image_data && have.household_id && !have.image_data) await update(have.id, { image_data })
+        return
+      }
+      const like = base ? named(base) : match(name)
+      try {
+        await add({ name: name.trim(), base: like?.base ?? like?.name ?? null, aisle: aisle || like?.aisle || 'Other', image_data: image_data || null })
+      } catch (e) {
+        // Already added from the other phone
+        if (e?.code === '23505' || e?.cause?.code === '23505') await refresh()
+        else throw e
+      }
+    }
+    /** Gives an ingredient (by name) the household's own picture, whichever kind of entry it is. */
+    const setPicture = async (name, image_data) => {
+      const have = named(name)
+      if (have?.household_id) return update(have.id, { image_data })
+      if (have) return add({ name: have.name, base: have.base ?? have.name, aisle: have.aisle, aliases: have.aliases ?? [], image: have.image ?? null, image_data })
+      return ensure(name, { image_data })
+    }
+    return { entries: all, loaded, add, update, remove, refresh, match, canonical, named, ensure, setPicture }
+  }, [entries, loaded, add, update, remove, refresh])
   return <CatalogContext.Provider value={value}>{children}</CatalogContext.Provider>
 }
 
@@ -151,20 +187,30 @@ export function IngredientIcon({ entry, size = 28 }) {
   )
 }
 
-/** A photo from the camera or gallery as a small square WebP data URL for the catalog. */
-export async function photoToIcon(file, size = 128) {
+/**
+ * A photo from the camera or gallery as a small square WebP data URL for the
+ * catalog. `contain` fits the whole picture in (a product shot of a tall
+ * bottle) instead of cropping the middle square.
+ */
+export async function photoToIcon(file, size = 128, { contain = false } = {}) {
   const url = URL.createObjectURL(file)
   try {
     const img = new Image()
     img.src = url
     await img.decode()
-    const side = Math.min(img.naturalWidth, img.naturalHeight)
+    const w = img.naturalWidth
+    const h = img.naturalHeight
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
-    canvas
-      .getContext('2d')
-      .drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size)
+    const ctx = canvas.getContext('2d')
+    if (contain) {
+      const scale = size / Math.max(w, h)
+      ctx.drawImage(img, (size - w * scale) / 2, (size - h * scale) / 2, w * scale, h * scale)
+    } else {
+      const side = Math.min(w, h)
+      ctx.drawImage(img, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size)
+    }
     const webp = canvas.toDataURL('image/webp', 0.8)
     return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL('image/jpeg', 0.8)
   } finally {
