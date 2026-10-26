@@ -56,9 +56,12 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
+      - name: Name the APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/Simmer-${{ github.run_number }}.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
-          name: cooking-app-debug-${{ github.run_number }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Simmer-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/Simmer-${{ github.run_number }}.apk
           retention-days: 30

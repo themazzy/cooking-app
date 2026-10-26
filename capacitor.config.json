@@ -1,6 +1,6 @@
 {
   "appId": "com.themazzy.cookingapp",
-  "appName": "Cooking App",
+  "appName": "Simmer",
   "webDir": "dist",
   "plugins": {
     "CapacitorHttp": {
