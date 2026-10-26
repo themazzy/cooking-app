@@ -4,6 +4,7 @@ import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { toast } from './lib/toast.js'
 import { NUTRITION } from './lib/calories.js'
 import Select from './Select.jsx'
+import Icon from './Icon.jsx'
 
 const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null, kcal: '', piece_g: '' }
 
@@ -186,7 +187,7 @@ export default function IngredientsPage() {
             </div>
             <div className="row">
               <label className={`button${savingPicture ? ' secondary' : ''}`}>
-                📷 Take photo
+                <Icon name="camera" /> Take photo
                 <input
                   type="file"
                   accept="image/*"
@@ -201,7 +202,7 @@ export default function IngredientsPage() {
                 />
               </label>
               <label className="button secondary">
-                🖼 Choose photo
+                <Icon name="image" /> Choose photo
                 <input
                   type="file"
                   accept="image/*"

@@ -977,3 +977,11 @@ body:has(.sheet-backdrop) .toasts { bottom: auto; top: calc(12px + env(safe-area
 .kcal-sum li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.88rem; padding: 3px 0; margin: 0; }
 .kcal-sum li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
 .kcal-sum .note { margin: 6px 0 2px; }
+
+/* Line icons (Icon.jsx) instead of emoji */
+.icon-svg { flex: 0 0 auto; display: inline-block; vertical-align: -0.2em; }
+.tab-icon { display: inline-flex; filter: none; opacity: 1; }
+.tabbar button .tab-icon { color: var(--muted); }
+.tabbar button.active .tab-icon { color: var(--accent); }
+.empty-icon, .login-logo { color: var(--accent); opacity: 0.85; }
+.card-facts .icon-svg { vertical-align: -2px; }

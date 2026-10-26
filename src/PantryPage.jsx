@@ -10,6 +10,7 @@ import { RowsSkeleton } from './Skeleton.jsx'
 import { toast } from './lib/toast.js'
 import { STOCK_UNITS, defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
 import Select from './Select.jsx'
+import Icon from './Icon.jsx'
 
 const SOON = 3 // days
 const QUICK = { g: ['100', '250', '500', '1000'], kg: ['1', '2', '5'], ml: ['250', '500', '1000'], l: ['1', '2'], pcs: ['1', '2', '6', '10'] }
@@ -279,7 +280,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
         <h1>At home</h1>
         <div className="actions">
           <label className="button small secondary">
-            📷 Receipt
+            <Icon name="camera" /> Receipt
             <input type="file" accept="image/*" multiple hidden disabled={!!receipt} onChange={onReceipt} />
           </label>
           <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
@@ -304,7 +305,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
       ) : items.length === 0 ? (
         <div className="empty">
           <div className="empty-icon" aria-hidden="true">
-            🏠
+            <Icon name="home" size={44} />
           </div>
           <p>Nothing here yet.</p>
           <p className="hint">Add what is in your fridge and cupboards. Give staples a minimum to keep, and they go on the shopping list when they run low.</p>

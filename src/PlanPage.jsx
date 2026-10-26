@@ -5,6 +5,7 @@ import { addToPlan, dayKey, dayLabel, planEntries, removeFromPlan, setPlanPortio
 import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
 import { averageRating } from './lib/ratings.js'
+import Icon from './Icon.jsx'
 
 /** Picking a recipe for a day: search, with what is at home and when it was last cooked. */
 function PickSheet({ day, recipes, pantry, onPick, onClose }) {
@@ -27,7 +28,7 @@ function PickSheet({ day, recipes, pantry, onPick, onClose }) {
                 <span className="recipe-title">{r.title || 'Untitled recipe'}</span>
                 <span className="note">
                   {[
-                    home.total ? `🏠 ${home.have}/${home.total}` : null,
+                    home.total ? `${home.have}/${home.total} at home` : null,
                     lastCooked(r) ? `cooked ${cookedAgo(lastCooked(r))}` : null,
                   ]
                     .filter(Boolean)
@@ -128,7 +129,7 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
 
       {planned > 0 && (
         <button className="big plan-shop" disabled={!entries.length} onClick={() => (onShop(entries), setShopped(start))}>
-          {shopped === start ? '✓ On the shopping list' : `🛒 Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}
+          {shopped === start ? '✓ On the shopping list' : <><Icon name="cart" /> {`Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}</>}
         </button>
       )}
       {planned > 0 && <p className="hint">Recipes already on the list get this week&apos;s portions; the rest of the list stays.</p>}
