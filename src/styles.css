@@ -1012,3 +1012,15 @@ ol.step-edit li { background: var(--card); border: 1px solid var(--border); bord
 .step-edit-head button.icon:disabled { opacity: 0.3; }
 .step-no { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 12px; background: var(--accent); color: var(--accent-text); font-size: 0.8rem; font-weight: 700; }
 ol.step-edit textarea { width: 100%; margin: 4px 0 0; min-height: 3.2em; field-sizing: content; resize: none; }
+
+/* Unit picking: chips under an amount, a sheet with every unit by kind */
+.unit-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: -2px 0 10px; padding-bottom: 2px; }
+.unit-chips::-webkit-scrollbar { display: none; }
+.unit-chips .chip-btn.add { display: inline-flex; align-items: center; gap: 4px; }
+.unit-sheet section h3 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 12px 0 6px; }
+.unit-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.unit-grid .chip-btn { min-width: 3.4em; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.unit-own { display: flex; gap: 8px; margin-top: 16px; }
+.unit-own input { flex: 1 1 auto; }
+button.unit-btn { font: inherit; font-size: 15px; font-weight: 400; color: var(--text); background: var(--sunken); border: 1px solid transparent; border-radius: 10px; min-height: 44px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.unit-btn.empty { color: var(--muted); }

@@ -8,8 +8,8 @@ import { readReceipt } from './lib/receipt.js'
 import ReceiptSheet from './ReceiptSheet.jsx'
 import { RowsSkeleton } from './Skeleton.jsx'
 import { toast } from './lib/toast.js'
-import { STOCK_UNITS, defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
-import Select from './Select.jsx'
+import { defaultUnit, joinAmount, splitAmount } from './lib/defaultUnit.js'
+import { UnitChips, convertQty } from './UnitPicker.jsx'
 import Icon from './Icon.jsx'
 
 const SOON = 3 // days
@@ -29,12 +29,17 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
   useEffect(() => {
     qtyRef.current?.focus()
   }, [])
-  const unitSelect = (value, set, label) => (
-    <Select aria-label={label} value={value} onChange={(e) => set(e.target.value)}>
-      {(STOCK_UNITS.includes(value) ? STOCK_UNITS : [value, ...STOCK_UNITS]).map((u) => (
-        <option key={u}>{u}</option>
-      ))}
-    </Select>
+  // Another unit of the same kind converts the amount (500 g → 0,5 kg)
+  const unitChips = (value, set, amount, setAmount, title) => (
+    <UnitChips
+      title={title}
+      value={value}
+      usual={unitDefault}
+      onChange={(u) => {
+        setAmount(convertQty(amount, value, u))
+        set(u)
+      }}
+    />
   )
   const save = () => onSave({ amount: joinAmount(qty, unit), min_amount: joinAmount(minQty, minUnit), expires_on: expires || null })
 
@@ -60,8 +65,8 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
             onChange={(e) => setQty(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
-          {unitSelect(unit, setUnit, 'Unit')}
         </div>
+        {unitChips(unit, setUnit, qty, setQty, 'Unit')}
         {QUICK[unit] && (
           <div className="quick">
             {QUICK[unit].map((q) => (
@@ -77,8 +82,8 @@ function ItemSheet({ item, entry, onSave, onRemove, onClose, message }) {
             <label className="field">Always keep at least (staple)</label>
             <div className="amount-row">
               <input inputMode="decimal" placeholder="Not a staple" aria-label="Minimum amount" value={minQty} onChange={(e) => setMinQty(e.target.value)} />
-              {unitSelect(minUnit, setMinUnit, 'Minimum unit')}
             </div>
+            {unitChips(minUnit, setMinUnit, minQty, setMinQty, 'Minimum unit')}
             <label className="field">Use by</label>
             <div className="amount-row">
               <input type="date" aria-label="Use by" value={expires} onChange={(e) => setExpires(e.target.value)} />
