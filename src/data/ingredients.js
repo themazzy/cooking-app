@@ -79,7 +79,7 @@ Surimi | Fish |  | crab sticks
 Eggs | Dairy & eggs | Eggs | egg, large eggs, free-range eggs, quail eggs, duck eggs
 Egg yolks | Dairy & eggs | Egg Yolks | egg yolk, yolks
 Egg whites | Dairy & eggs | Egg White | egg white
-Milk | Dairy & eggs | Milk | whole milk, semi-skimmed milk, skim milk
+Milk | Dairy & eggs | Milk | whole milk, semi-skimmed milk, skim milk, full cream milk, full-fat milk, fresh milk
 Butter | Dairy & eggs | Butter | unsalted butter, salted butter, cold butter, melted butter
 Cream | Dairy & eggs | Double Cream | cooking cream
 Sour cream | Dairy & eggs | Sour Cream | soured cream
@@ -475,7 +475,7 @@ Sriracha | Oils & sauces |  |  | Hot sauce
 Teriyaki sauce | Oils & sauces |  | teriyaki
 Hoisin sauce | Oils & sauces |  | hoisin
 Dark soy sauce | Oils & sauces | Dark Soy Sauce |  | Soy sauce
-Mirin | Oils & sauces | Mirin |
+Mirin | Oils & sauces | Mirin | mirim
 Rice vinegar | Oils & sauces |  | rice wine vinegar | Vinegar
 Apple cider vinegar | Oils & sauces | Apple Cider Vinegar | cider vinegar | Vinegar
 Red wine vinegar | Oils & sauces | Red Wine Vinegar |  | Vinegar
@@ -504,7 +504,7 @@ Rapeseed oil | Oils & sauces | Rapeseed Oil | canola oil | Vegetable oil
 Peanut oil | Oils & sauces | Peanut Oil | groundnut oil
 Coconut oil | Oils & sauces |  |
 Truffle oil | Oils & sauces | Truffle Oil |
-Lard | Oils & sauces | Lard | shortening, vegetable shortening
+Lard | Oils & sauces | Lard | pork lard, shortening, vegetable shortening
 Duck fat | Oils & sauces | Duck Fat | goose fat
 Suet | Oils & sauces | Suet |
 Cooking spray | Oils & sauces |  | oil spray

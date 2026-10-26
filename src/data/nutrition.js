@@ -304,7 +304,7 @@ Sumac|240||0.5|5|40|5
 Jerk seasoning|280||0.5|8|58|6
 Sharena sol|200||0.6|5|35|5
 Cinnamon sticks|250|3||4|55|1.2
-Vanilla|290||1|0.1|13|0.1
+Vanilla|290|2|1|0.1|13|0.1
 Flour|364||0.54|10|76|1
 Self-raising flour|350||0.53|9|74|1.2
 Wholemeal flour|340||0.5|13|65|2.5
@@ -661,7 +661,7 @@ Kinako|450||0.4|37|28|26
 Matcha|320||0.4|30|39|5
 Agar|25||0.5|0.5|0|0
 Red bean paste|240||1.2|5|52|0.5
-Mochi|240|40||4|55|0.5
+Mochi|240|40|0.65|4|55|0.5
 Glass noodles|350|50||0.2|86|0.1
 Soba noodles|340|90||14|67|2
 Ramen|440|80||10|60|17

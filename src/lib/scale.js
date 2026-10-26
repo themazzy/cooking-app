@@ -1,4 +1,4 @@
-import { UNIT_LOOKUP, parseQuantity } from './ingredients.js'
+import { UNIT_LOOKUP, parseQuantity, tidyIngredient } from './ingredients.js'
 
 // Scaling recipes and adding up shopping lists. Amounts are the editable
 // text fields of a recipe ("400", "1,5–2", "½"), units are free text.
@@ -102,6 +102,20 @@ export function weighed(entry) {
 /** Whether an ingredient is poured (milk, stock, oil, juice), so ounces of it are fluid ounces. */
 export const poured = (entry) => entry?.density != null && !weighed(entry) && entry.density < 1.25
 
+// "For the filling" saved as an ingredient by an older import
+const HEADING_ROW = /^(?:for|na|pro|за|für|para|pour)\s+\p{L}/iu
+
+/**
+ * A saved ingredient row as the sums need it: a unit left in its name moved
+ * out ("1" + "tablespoon of cornstarch" → 1 tbsp cornstarch), or null for a
+ * heading saved as a row ("For the custard filling").
+ */
+export function sumRow(ing) {
+  const name = String(ing?.name ?? '').trim()
+  if (!name || (!parseAmount(ing.qty) && HEADING_ROW.test(name) && name.split(/\s+/).length <= 5)) return null
+  return tidyIngredient(ing)
+}
+
 // Units that add up with each other, in their base unit
 export const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], oz: ['g', 28.35], lb: ['g', 453.6], floz: ['ml', 29.57], pint: ['ml', 473.2], quart: ['ml', 946.4], cup: ['ml', 240] }
 
@@ -155,9 +169,8 @@ function foldTotals(totals, entry) {
 export function buildShoppingList(selection, match = () => null) {
   const items = new Map()
   for (const { recipe, factor } of selection) {
-    for (const ing of recipe.ingredients ?? []) {
+    for (const ing of (recipe.ingredients ?? []).map(sumRow).filter(Boolean)) {
       const name = String(ing.name ?? '').trim()
-      if (!name) continue
       const entry = match(name)
       const key = entry ? entry.name.toLowerCase() : nameKey(name)
       const item = items.get(key) ?? {

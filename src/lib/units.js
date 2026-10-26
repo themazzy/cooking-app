@@ -63,8 +63,10 @@ export function convertIngredient(ing, system, match) {
   const a = parseAmount(ing.qty)
   if (!a) return ing
   const conv = dry ? (n, u) => toGrams(n, u, entry) : fluid ? fluidOunces : system === 'metric' ? toMetric : toImperial
-  const [min, u] = conv(a.min, unit)
-  const max = a.max != null ? conv(a.max, unit)[0] : null
+  // Both ends of a range in the unit the larger one needs: 905 g–1,4 kg reads as 0,9–1,4 kg
+  const [top, u] = conv(a.max ?? a.min, unit)
+  const min = a.max != null ? (top * a.min) / a.max : top
+  const max = a.max != null ? top : null
   const fmt = (n) => (['oz', 'lb', 'quart'].includes(u) ? formatAmount(quarter(n), 'cup') : formatAmount(n, u))
   const last = fmt(max ?? min)
   return { ...ing, qty: max != null ? `${fmt(min)}–${last}` : last, unit: label(u, last) }
