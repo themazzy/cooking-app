@@ -11,8 +11,8 @@ const UNITS = {
   ml: ['ml', 'mililitr', 'mililitry', 'mililitrů', 'мл', 'милилитър', 'милилитра', 'millilitri', 'мл.'],
   dl: ['dl', 'decilitr', 'decilitry', 'decilitrů', 'дл'],
   l: ['l', 'litr', 'litry', 'litrů', 'liter', 'liters', 'litre', 'litres', 'л', 'литър', 'литра', 'litro', 'litri', 'litros', 'литр'],
-  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек', 'c. à soupe', 'c.à.s', 'c. a soupe', 'cuil. à soupe', 'cuchara', 'cucharadas soperas', 'cucchiai rasi', 'столовой ложки', 'ст. ложка', 'ст. ложки', 'ст.ложки'],
-  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек', 'c. à café', 'c. à thé', 'c.à.c', 'c. a café', 'cuil. à café', 'cucharaditas rasas', 'cucchiaini rasi', 'ч. ложка', 'ч. ложки', 'ч.ложки', 'чайной ложки'],
+  tbsp: ['polévková lžíce', 'polévkové lžíce', 'polévkovou lžíci', 'polévkových lžic', 'lžíce', 'lžic', 'lžíci', 'lž', 'pl', 'tbsp', 'tbs', 'tablespoon', 'tablespoons', 'с.л', 'с. л', 'сл', 'супена лъжица', 'супени лъжици', 'лъжица', 'лъжици', 'el', 'esslöffel', 'cucharada', 'cucharadas', 'cucchiaio', 'cucchiai', 'cuillère à soupe', 'cuillères à soupe', 'c. à s', 'càs', 'łyżka', 'łyżki', 'łyżek', 'ст.л', 'ст. л', 'столовая ложка', 'столовые ложки', 'столовых ложек', 'c. à soupe', 'c.à.s', 'c. a soupe', 'cuil. à soupe', 'cuchara', 'cucharadas soperas', 'cucchiai rasi', 'столовой ложки', 'ст. ложка', 'ст. ложки', 'ст.ложки', 'polievková lyžica', 'polievkové lyžice', 'polievkovú lyžicu', 'lyžica', 'lyžice', 'lyžicu', 'lyžíc', 'cda', 'cdas', 'cucharada sopera', 'cucharadas soperas', 'c.s', 'cs'],
+  tsp: ['kávová lžička', 'kávové lžičky', 'kávovou lžičku', 'kávových lžiček', 'čajová lžička', 'čajové lžičky', 'čajovou lžičku', 'čajových lžiček', 'lžička', 'lžičky', 'lžiček', 'lžičku', 'lžl', 'kl', 'tsp', 'teaspoon', 'teaspoons', 'ч.л', 'ч. л', 'чл', 'к.л', 'к. л', 'чаена лъжичка', 'чаени лъжички', 'кафена лъжичка', 'кафени лъжички', 'лъжичка', 'лъжички', 'tl', 'teelöffel', 'cucharadita', 'cucharaditas', 'cucchiaino', 'cucchiaini', 'cuillère à café', 'cuillères à café', 'c. à c', 'càc', 'łyżeczka', 'łyżeczki', 'łyżeczek', 'чайная ложка', 'чайные ложки', 'чайных ложек', 'c. à café', 'c. à thé', 'c.à.c', 'c. a café', 'cuil. à café', 'cucharaditas rasas', 'cucchiaini rasi', 'ч. ложка', 'ч. ложки', 'ч.ложки', 'чайной ложки', 'kávová lyžička', 'kávové lyžičky', 'kávovú lyžičku', 'čajová lyžička', 'čajové lyžičky', 'lyžička', 'lyžičky', 'lyžičku', 'lyžičiek', 'cdta', 'cdtas', 'cdita', 'cditas', 'c.c'],
   cup: ['hrnek', 'hrnky', 'hrnku', 'hrnků', 'cup', 'cups', 'ч.ч', 'ч. ч', 'чч', 'чаена чаша', 'чаени чаши', 'водна чаша', 'водни чаши', 'чаша', 'чаши', 'tasse', 'tasses', 'taza', 'tazas', 'tazza', 'tazze', 'szklanka', 'szklanki', 'szklanek', 'стакан', 'стакана', 'стаканов', 'vaso', 'vasos', 'bicchiere', 'bicchieri', 'verre', 'verres', 'Tasse', 'Tassen'],
   pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт', 'pezzo', 'pezzi', 'pieza', 'piezas', 'pièce', 'pièces', 'sztuka', 'sztuki', 'штука', 'штуки', 'штук'],
   clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката', 'Zehe', 'Zehen', 'spicchio', 'spicchi', 'diente', 'dientes', 'gousse', 'gousses', 'ząbek', 'ząbki', 'ząbków', 'зубчик', 'зубчика', 'зубчиков'],
@@ -162,9 +162,14 @@ const wordAmount = (s) => {
   return m && /^\p{L}{3}/u.test(t.slice(m[0].length)) && unitOf(t.slice(m[0].length).match(new RegExp(`^(?:${UNIT_RE})`, 'iu'))?.[0] ?? '') ? `1 ${t.slice(m[0].length)}` : t
 }
 
+// In English recipes a capital "T" is a tablespoon and a small "t" a teaspoon, so these go before
+// units are matched without regard to case
+const SPOON_LETTER = new RegExp(`^(${NUM}(?:\\s*(?:-|–|to)\\s*${NUM})?)\\s*([Tt])\\.?\\s+(?=\\p{L})`, 'u')
+const spoonLetter = (s) => s.replace(SPOON_LETTER, (all, qty, t) => `${qty} ${t === 'T' ? 'tbsp' : 'tsp'} `)
+
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
-  const text = wordAmount(cleanLine(line))
+  const text = spoonLetter(wordAmount(cleanLine(line)))
   if (!text) return null
   let m = text.match(QTY_FIRST)
   if (m) {
