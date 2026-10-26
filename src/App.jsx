@@ -44,6 +44,8 @@ import Select from './Select.jsx'
 import Icon from './Icon.jsx'
 
 const SETTINGS_KEY = 'cooking-app:settings'
+// Shared household data kept inside the shopping list row, not on the list itself
+const SHARED_WITH_LIST = ['plan', 'aisles']
 const HISTORY_KEY = 'cooking-app:history'
 const SHOPPING_KEY = 'cooking-app:shopping'
 
@@ -467,9 +469,9 @@ export default function App() {
 
   const shoppingTimer = useRef(null)
   const updateShopping = (list) => {
-    // The meal plan travels with the list; lists rebuilt from recipes keep it
-    const plan = list && 'plan' in list ? list.plan : shoppingRef.current?.plan
-    const stamped = list ? { ...list, ...(plan ? { plan } : {}), updatedAt: Date.now() } : list
+    // The meal plan and the shop's order travel with the list; lists rebuilt from recipes keep them
+    const kept = Object.fromEntries(SHARED_WITH_LIST.flatMap((k) => (list && k in list ? [] : shoppingRef.current?.[k] ? [[k, shoppingRef.current[k]]] : [])))
+    const stamped = list ? { ...list, ...kept, updatedAt: Date.now() } : list
     setShopping(stamped)
     shoppingRef.current = stamped
     writeStore(SHOPPING_KEY, stamped)
