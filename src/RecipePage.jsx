@@ -108,7 +108,9 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
   const translate = async () => {
     setTranslating('busy')
     try {
-      const t = await translateRecipe(recipe, translateTo, { onStep: () => {} })
+      // Translating again starts from the original text
+      const source = recipe.original && recipe.lang === translateTo ? swapOriginal(recipe) : recipe
+      const t = await translateRecipe({ ...source, original: null }, translateTo, { from: recipe.original ? source.lang : null })
       if (t) changeText(t)
       setTranslating(t ? null : `This recipe already looks like ${languageName(translateTo)}.`)
     } catch (err) {
@@ -121,6 +123,15 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
       <button className="link" onClick={() => changeText(swapOriginal(recipe))}>
         Show in {languageName(recipe.original.lang)}
       </button>
+      {translateTo && (recipe.lang === translateTo || recipe.original.lang === translateTo) && (
+        <>
+          {' · '}
+          <button className="link" disabled={translating === 'busy'} onClick={translate}>
+            {translating === 'busy' ? 'Translating…' : 'Translate again'}
+          </button>
+        </>
+      )}
+      {translating && translating !== 'busy' && <span className="note"> {translating}</span>}
     </div>
   ) : translateTo ? (
     <div className="language-bar">
