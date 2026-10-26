@@ -4,6 +4,8 @@ import { deleteRecipe, getRecipe, getVideo, listRecipes, putRecipe, putVideo } f
 // Keeps the recipes on this phone and the household's recipes in Supabase in
 // step. The phone stays the working copy (it works offline); each sync
 // pushes what changed here and pulls what changed elsewhere, newest wins.
+// Saved videos stay on the phone that saved them; only older recipes may
+// still have one in the household's storage (videoPath), which can be played.
 
 const LAST_PULL_KEY = 'cooking-app:last-pull'
 const DELETED_KEY = 'cooking-app:deleted'
@@ -50,24 +52,14 @@ export function markDeleted(id) {
   write(DELETED_KEY, [...new Set([...read(DELETED_KEY, []), id])])
 }
 
-const videoPath = (hid, recipe) => `${hid}/${recipe.id}.${recipe.video?.type?.includes('mp4') ? 'mp4' : 'webm'}`
-
 async function pushRecipe(hid, recipe, userId) {
-  const { syncedAt: _s, ...data } = recipe
-  let path = recipe.videoPath ?? null
-  if (recipe.video && !recipe.videoUploaded) {
-    const blob = await getVideo(recipe.id)
-    if (blob) {
-      path = videoPath(hid, recipe)
-      const { error } = await supabase.storage.from('recipe-videos').upload(path, blob, { upsert: true, contentType: blob.type || 'video/webm' })
-      if (error) throw error
-    }
-  }
+  const { syncedAt: _s, videoUploaded: _u, ...data } = recipe
+  const path = recipe.videoPath ?? null
   const row = {
     id: recipe.id,
     household_id: hid,
     title: recipe.title ?? '',
-    data: { ...data, videoPath: path, videoUploaded: !!path },
+    data: { ...data, videoPath: path },
     video_path: path,
     deleted: false,
     updated_at: new Date(recipe.updatedAt ?? Date.now()).toISOString(),
@@ -75,7 +67,7 @@ async function pushRecipe(hid, recipe, userId) {
   }
   const { error } = await supabase.from('recipes').upsert(row)
   if (error) throw error
-  await putRecipe({ ...recipe, videoPath: path, videoUploaded: !!path, syncedAt: recipe.updatedAt })
+  await putRecipe({ ...recipe, syncedAt: recipe.updatedAt })
 }
 
 /**
@@ -127,7 +119,7 @@ export async function syncRecipes() {
 
   // 3. Recipes saved or changed here since their last sync
   for (const recipe of await listRecipes()) {
-    if (recipe.syncedAt === recipe.updatedAt && (!recipe.video || recipe.videoUploaded)) continue
+    if (recipe.syncedAt === recipe.updatedAt) continue
     await pushRecipe(hid, recipe, user.id)
     pushed++
   }
