@@ -21,24 +21,24 @@ Silken tofu | Dairy & eggs |  | soft tofu, 嫩豆腐, kinugoshi | Tofu
 Fried tofu | Dairy & eggs |  | aburaage, abura-age, inari tofu, tofu puffs, 油豆腐 | Tofu
 Tofu skin | Dairy & eggs |  | yuba, bean curd sheet, bean curd skin, 腐竹 | Tofu
 Fermented tofu | Oils & sauces |  | fermented bean curd, furu, 腐乳
-Smoked meat | Meat |  | uzené, uzene, uzené maso, uzene maso, smoked pork, kasseler, uzená krkovice
-Špekáčky | Meat |  | spekacky, špekáček, spekacek | Sausages
-Párky | Meat |  | parky, párek, vídeňské párky, viennese sausages | Sausages
-Klobása | Meat |  | klobasa, klobásy, kabanos, debrecínka | Sausages
-Jitrnice | Meat |  | jitrnice, liver sausage
-Head cheese | Meat |  | tlačenka, tlacenka, brawn
-Smoked bacon | Meat |  | uzená slanina, uzena slanina, anglická slanina, slanina | Bacon
-Pork neck | Meat |  | krkovice, vepřová krkovice, свински врат | Pork
-Pork shoulder | Meat |  | vepřová plec, veprova plec, plec | Pork
-Beef sirloin | Meat |  | svíčková, svickova, hovězí svíčková, roštěnec, rostenec | Beef
-Beef chuck | Meat |  | hovězí kližka, klizka, hovězí plec, beef shoulder | Beef
-Sujuk | Meat |  | sudzhuk, суджук, sucuk
-Pastarma | Meat |  | пастърма, pastirma, pastrami
-Elenski but | Meat |  | еленски бут, bulgarian cured ham | Prosciutto
-Chinese sausage | Meat |  | lap cheong, lup cheong, lap chong, 腊肠
-Char siu | Meat |  | chinese bbq pork, cha siu, 叉烧 | Pork
-Pork belly | Meat |  | vepřový bůček, bucek, bůček, samgyeopsal, 五花肉 | Pork
-Duck breast | Meat |  | kachní prsa | Duck
+Smoked meat | Meat | /ingredients/smoked-meat.svg | uzené, uzene, uzené maso, uzene maso, smoked pork, kasseler, uzená krkovice
+Špekáčky | Meat | /ingredients/spekacky.svg | spekacky, špekáček, spekacek | Sausages
+Párky | Meat | /ingredients/parky.svg | parky, párek, vídeňské párky, viennese sausages | Sausages
+Klobása | Meat | /ingredients/klobasa.svg | klobasa, klobásy, kabanos, debrecínka | Sausages
+Jitrnice | Meat | /ingredients/jitrnice.svg | jitrnice, liver sausage
+Head cheese | Meat | /ingredients/head-cheese.svg | tlačenka, tlacenka, brawn
+Smoked bacon | Meat | /ingredients/smoked-bacon.svg | uzená slanina, uzena slanina, anglická slanina, slanina | Bacon
+Pork neck | Meat | /ingredients/pork-neck.svg | krkovice, vepřová krkovice, свински врат | Pork
+Pork shoulder | Meat | /ingredients/pork-shoulder.svg | vepřová plec, veprova plec, plec | Pork
+Beef sirloin | Meat | /ingredients/beef-sirloin.svg | svíčková, svickova, hovězí svíčková, roštěnec, rostenec, sirloin, sirloin steak, striploin, strip steak | Beef
+Beef chuck | Meat | /ingredients/beef-chuck.svg | hovězí kližka, klizka, hovězí plec, beef shoulder | Beef
+Sujuk | Meat | /ingredients/sujuk.svg | sudzhuk, суджук, sucuk
+Pastarma | Meat | /ingredients/pastarma.svg | пастърма, pastirma, pastrami
+Elenski but | Meat | /ingredients/elenski-but.svg | еленски бут, bulgarian cured ham | Prosciutto
+Chinese sausage | Meat | /ingredients/chinese-sausage.svg | lap cheong, lup cheong, lap chong, 腊肠
+Char siu | Meat | /ingredients/char-siu.svg | chinese bbq pork, cha siu, 叉烧 | Pork
+Pork belly | Meat | /ingredients/pork-belly.svg | vepřový bůček, bucek, bůček, samgyeopsal, 五花肉 | Pork
+Duck breast | Meat | /ingredients/duck-breast.svg | kachní prsa | Duck
 Fish cake | Fish |  | kamaboko, narutomaki, chikuwa, fish balls | Surimi
 Dried shrimp | Fish |  | 虾米, ebi, sakura ebi | Prawns
 Dried scallops | Fish |  | conpoy, 干贝 | Scallops
@@ -95,7 +95,58 @@ Medium-coarse flour | Baking |  | polohrubá mouka, polohruba mouka, polohrubá 
 Coarse flour | Baking |  | hrubá mouka, hruba mouka | Flour
 Fine flour | Baking |  | hladká mouka, hladka mouka, hladká | Plain flour
 Rum flavouring | Baking |  | rumové aroma, rumove aroma, tuzemák, tuzemak, rum aroma
-Lard cracklings | Meat |  | škvarky, skvarky, pork cracklings, pork scratchings
+Lard cracklings | Meat | /ingredients/lard-cracklings.svg | škvarky, skvarky, pork cracklings, pork scratchings
+Ribeye steak | Meat | /ingredients/ribeye-steak.svg | ribeye, rib eye, rib-eye, rib eye steak, entrecote, vysoký roštěnec | Steak
+Rump steak | Meat | /ingredients/rump-steak.svg | rump, hovězí květová špička, květová špička | Steak
+Flank steak | Meat | /ingredients/flank-steak.svg | flank, bavette | Steak
+Skirt steak | Meat | /ingredients/skirt-steak.svg | skirt, hanger steak, onglet | Steak
+T-bone steak | Meat | /ingredients/t-bone-steak.svg | t bone, t bone steak, porterhouse, porterhouse steak | Steak
+Beef short ribs | Meat | /ingredients/beef-short-ribs.svg | short ribs, beef ribs, hovězí žebra, hovězí žebro | Beef
+Beef cheeks | Meat | /ingredients/beef-cheeks.svg | beef cheek, ox cheek, ox cheeks, hovězí líčka, hovezi licka | Beef
+Stewing beef | Meat | /ingredients/stewing-beef.svg | stewing steak, beef chunks, beef cubes, diced beef, goulash meat, gulášové maso, hovězí na guláš, hovězí přední | Beef
+Beef round | Meat | /ingredients/beef-round.svg | topside, silverside, beef round, hovězí kýta, hovezi kyta, hovězí ořech | Beef
+Roast beef | Meat | /ingredients/roast-beef.svg | rare roast beef, sliced roast beef, rostbíf | Beef
+Corned beef | Meat | /ingredients/corned-beef.svg | salt beef | Beef
+Beef liver | Meat | /ingredients/beef-liver.svg | ox liver, hovězí játra
+Calf liver | Meat | /ingredients/calf-liver.svg | calf's liver, calves liver, veal liver, telecí játra
+Beef tongue | Meat | /ingredients/beef-tongue.svg | ox tongue, tongue, hovězí jazyk, jazyk
+Tripe | Meat | /ingredients/tripe.svg | honeycomb tripe, dršťky, drstky, шкембе
+Bone marrow | Meat | /ingredients/bone-marrow.svg | marrow bones, marrow bone, morkové kosti, morek
+Veal shank | Meat | /ingredients/veal-shank.svg | osso buco, ossobuco, veal shanks, telecí kolínko | Veal
+Pork chops | Meat | /ingredients/pork-chops.svg | pork chop, pork cutlets, vepřová kotleta, vepřové kotlety, kotlety, kotleta | Pork
+Pork loin | Meat | /ingredients/pork-loin.svg | pork loin roast, vepřová pečeně, vepřová kotleta bez kosti, karé | Pork
+Pork leg | Meat | /ingredients/pork-leg.svg | leg of pork, fresh ham, vepřová kýta, veprova kyta | Pork
+Pork cheeks | Meat | /ingredients/pork-cheeks.svg | pork cheek, vepřová líčka, veprova licka | Pork
+Pork liver | Meat | /ingredients/pork-liver.svg | pigs liver, vepřová játra
+Gammon | Meat | /ingredients/gammon.svg | gammon steak, gammon joint, gammon steaks | Ham
+Pig trotters | Meat | /ingredients/pig-trotters.svg | pigs trotters, pig's trotters, pork feet, vepřové nožičky
+Chicken wings | Meat | /ingredients/chicken-wings.svg | chicken wing, wings, kuřecí křídla, kureci kridla, křídla, kuřecí křidélka | Chicken
+Chicken drumsticks | Meat | /ingredients/chicken-drumsticks.svg | chicken drumstick, drumsticks, kuřecí paličky, kureci palicky | Chicken
+Chicken legs | Meat | Chicken Legs | chicken leg, chicken leg quarters, chicken quarters, whole chicken legs, kuřecí čtvrtky | Chicken
+Chicken hearts | Meat | /ingredients/chicken-hearts.svg | chicken heart, kuřecí srdce, kureci srdce, кокоши сърца
+Chicken gizzards | Meat | /ingredients/chicken-gizzards.svg | gizzards, chicken gizzard, kuřecí žaludky, kureci zaludky, пилешки воденички
+Turkey breast | Meat | /ingredients/turkey-breast.svg | turkey breasts, turkey breast fillet, turkey steaks, krůtí prsa, kruti prsa | Turkey
+Turkey legs | Meat | /ingredients/turkey-legs.svg | turkey leg, turkey drumsticks, turkey thighs, turkey thigh, krůtí stehno, krůtí stehna | Turkey
+Ground turkey | Meat | Turkey Mince | turkey mince, minced turkey, mleté krůtí maso | Turkey
+Duck legs | Meat | Duck Legs | duck leg, kachní stehna, kachni stehna, kachní stehno | Duck
+Lamb chops | Meat | Lamb Loin Chops | lamb chop, lamb cutlets, lamb loin chops, jehněčí kotletky | Lamb
+Lamb leg | Meat | Lamb Leg | leg of lamb, jehněčí kýta | Lamb
+Lamb shoulder | Meat | Lamb Shoulder | shoulder of lamb, jehněčí plec | Lamb
+Ground lamb | Meat | Lamb Mince | lamb mince, minced lamb, mleté jehněčí | Lamb
+Rack of lamb | Meat | /ingredients/rack-of-lamb.svg | lamb rack, french rack, jehněčí hřbet, jehněčí karé | Lamb
+Lamb shanks | Meat | /ingredients/lamb-shanks.svg | lamb shank, jehněčí kolínko, jehněčí kolínka | Lamb
+Pheasant | Meat | /ingredients/pheasant.svg | bažant, bazant, bažanta
+Hare | Meat | /ingredients/hare.svg | zajíc, zajic, zajíce
+Wild boar | Meat | /ingredients/wild-boar.svg | boar, divočák, divocak, divočáka, kančí, kanci maso, глиган
+Pancetta | Meat | /ingredients/pancetta.svg | pancetta cubes, diced pancetta | Bacon
+Lardons | Meat | /ingredients/lardons.svg | bacon lardons, bacon bits, diced bacon, kostičky slaniny | Bacon
+Pepperoni | Meat | /ingredients/pepperoni.svg | pepperoni slices | Salami
+Serrano ham | Meat | /ingredients/serrano-ham.svg | jamon serrano, jamón serrano, jamón, jamon, iberico ham | Prosciutto
+Speck | Meat | /ingredients/speck.svg | alto adige speck | Prosciutto
+Bresaola | Meat | /ingredients/bresaola.svg | 
+Mortadella | Meat | /ingredients/mortadella.svg | mortadela
+Kielbasa | Meat | /ingredients/kielbasa.svg | polish sausage, kiełbasa, polská klobása | Sausages
+Merguez | Meat | /ingredients/merguez.svg | merguez sausage, merguez sausages | Sausages
 Glutinous rice | Pasta & grains |  | sticky rice, sweet rice, mochigome, 糯米 | Rice
 Glutinous rice flour | Baking |  | sweet rice flour, mochiko, shiratamako, 糯米粉
 Rice flour | Baking |  | rýžová mouka, joshinko
@@ -181,7 +232,8 @@ export const CZECH_ALIASES = `
 Beef | hovězí, hovězí maso, hovezi maso
 Ground beef | mleté hovězí, mleté hovězí maso, hovězí mleté maso, mleté maso, mletého masa
 Veal | telecí, telecí maso
-Pork | vepřové, vepřové maso, veprove maso, vepřová kýta, vepřová panenka, vepřového masa, vepřové maso
+Pork | vepřové, vepřové maso, veprove maso, vepřového masa, vepřové maso
+Pork tenderloin | vepřová panenka, panenka, vepřovou panenku
 Ground pork | mleté vepřové, mleté vepřové maso
 Bacon | slaninu, anglickou slaninu, slaniny
 Ham | šunka, šunku, sunka, šunky
@@ -190,8 +242,8 @@ Chicken | kuře, kuřecí maso, kureci maso, kuřete, kuřecího masa, kuřecí 
 Chicken breast | kuřecí prsa, kureci prsa, kuřecí prsní řízky, kuřecí řízky, kuřecí prsíčka
 Chicken thighs | kuřecí stehna, kuřecí stehýnka, kureci stehna
 Chicken liver | kuřecí játra, kureci jatra, játra
-Turkey | krůtí, krůtí maso, krůtí prsa
-Duck | kachna, kachnu, kachní, kachní stehna
+Turkey | krůtí, krůtí maso
+Duck | kachna, kachnu, kachní
 Goose | husa, husu, husí
 Lamb | jehněčí, jehněčí maso, skopové
 Rabbit | králík, králíka, kralik

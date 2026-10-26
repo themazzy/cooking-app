@@ -233,6 +233,57 @@ Lamb kidney | агнешки бъбреци
 Chicken liver | пилешки дробчета
 Pork ribs | свински ребра
 Pork tenderloin | свинско филе
+Ribeye steak | рибай стек
+Rump steak | ръмп стек
+Flank steak | фланк стек
+Skirt steak | скърт стек
+T-bone steak | ти бон стек
+Beef short ribs | телешки ребра
+Beef cheeks | телешки бузи
+Stewing beef | телешко за яхния
+Beef round | телешки бут
+Roast beef | розбиф
+Corned beef | корнед биф
+Beef liver | говежди дроб
+Calf liver | телешки дроб
+Beef tongue | телешки език
+Tripe | шкембе
+Bone marrow | телешки кокали
+Veal shank | телешки джолан
+Pork chops | свински котлети
+Pork loin | свинско каре
+Pork leg | свински бут
+Pork cheeks | свински бузи
+Pork liver | свински дроб
+Gammon | пушен свински бут
+Pig trotters | свински крачета
+Chicken wings | пилешки крилца
+Chicken drumsticks | пилешки долни бутчета
+Chicken legs | пилешки бутчета
+Chicken hearts | пилешки сърца
+Chicken gizzards | пилешки воденички
+Turkey breast | пуешко филе
+Turkey legs | пуешки бут
+Ground turkey | пуешка кайма
+Duck legs | патешки бут
+Lamb chops | агнешки котлети
+Lamb leg | агнешки бут
+Lamb shoulder | агнешка плешка
+Ground lamb | агнешка кайма
+Rack of lamb | агнешко каре
+Lamb shanks | агнешки джолан
+Pheasant | фазан
+Hare | заек
+Wild boar | глиган
+Pancetta | панчета
+Lardons | бекон на кубчета
+Pepperoni | пеперони
+Serrano ham | серано
+Speck | шпек
+Bresaola | брезаола
+Mortadella | мортадела
+Kielbasa | полска наденица
+Merguez | мергез
 Pork knuckle | свински джолан
 Salami | салам
 Black pudding | кървавица

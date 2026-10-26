@@ -101,6 +101,10 @@ export function matchIngredient(index, name) {
   return found
 }
 
-/** TheMealDB's small picture for a catalog entry. */
-export const imageUrl = (entry) =>
-  entry?.image ? `https://www.themealdb.com/images/ingredients/${encodeURIComponent(entry.image.toLowerCase().replace(/ /g, '_'))}-small.png` : null
+/** The picture for a catalog entry: TheMealDB's small PNG, or one of our own drawings. */
+export const imageUrl = (entry) => {
+  if (!entry?.image) return null
+  // Our own drawings ship with the app (public/ingredients)
+  if (entry.image.startsWith('/')) return `${import.meta.env.BASE_URL}${entry.image.slice(1)}`
+  return `https://www.themealdb.com/images/ingredients/${encodeURIComponent(entry.image.toLowerCase().replace(/ /g, '_'))}-small.png`
+}

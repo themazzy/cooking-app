@@ -12,45 +12,45 @@ import { BULGARIAN, BULGARIAN_ALIASES, SEARCH_ONLY } from './bulgarian.js'
 import { CZECH_ALIASES, WORLD_LINES } from './worldIngredients.js'
 
 const LINES = `
-Beef | Meat | Beef | beef meat, stewing beef, beef chunks
+Beef | Meat | Beef | beef meat
 Ground beef | Meat | Minced Beef | minced beef, beef mince, lean minced beef, lean ground beef, mince, ground meat, minced meat
 Beef brisket | Meat | Beef Brisket | brisket
 Beef fillet | Meat | Beef Fillet | beef tenderloin, fillet steak
-Steak | Meat | Beef Fillet | sirloin, ribeye, rib eye, flank steak, rump steak
+Steak | Meat | /ingredients/steak.svg | 
 Beef shin | Meat | Beef Shin | shin of beef
 Veal | Meat | Veal | veal cutlet, veal mince, minced veal, ground veal
-Pork | Meat | Pork | pork loin, pork chops
+Pork | Meat | Pork | 
 Ground pork | Meat | Minced Pork | minced pork, pork mince
-Bacon | Meat | Bacon | streaky bacon, bacon strips, pancetta, lardons
+Bacon | Meat | Bacon | streaky bacon, bacon strips
 Ham | Meat | Ham | cooked ham
-Prosciutto | Meat | Prosciutto | parma ham, serrano ham, cured ham
+Prosciutto | Meat | Prosciutto | parma ham, cured ham
 Sausages | Meat | Sausages | sausage, bratwurst, frankfurters, hot dogs
 Chorizo | Meat | Chorizo | chorizo sausage
 Chicken | Meat | Chicken | whole chicken, chicken meat
 Chicken breast | Meat | Chicken Breast | chicken breasts, chicken fillet, chicken fillets, boneless chicken breast
-Chicken thighs | Meat | Chicken Thighs | chicken thigh, boneless chicken thighs, chicken legs, chicken drumsticks, drumsticks, chicken wings
+Chicken thighs | Meat | Chicken Thighs | chicken thigh, boneless chicken thighs
 Ground chicken | Meat | Turkey Mince | minced chicken, chicken mince
-Turkey | Meat | Turkey Mince | turkey breast, ground turkey, turkey mince, minced turkey
-Duck | Meat | Duck | duck legs
-Lamb | Meat | Lamb | lamb leg, lamb shoulder, lamb chops, lamb mince, ground lamb, mutton
+Turkey | Meat | /ingredients/turkey.svg | 
+Duck | Meat | Duck | 
+Lamb | Meat | Lamb | mutton
 Oxtail | Meat | Oxtail | ox tail
 Beef kidney | Meat | Beef Kidney |
 Lamb kidney | Meat | Lamb Kidney |
-Chicken liver | Meat |  |
-Pork ribs | Meat |  | spare ribs, baby back ribs, ribs
-Pork tenderloin | Meat |  | pork fillet
-Pork knuckle | Meat |  | ham hock, pork shank
-Salami | Meat |  | pepperoni
+Chicken liver | Meat | /ingredients/chicken-liver.svg | 
+Pork ribs | Meat | /ingredients/pork-ribs.svg | spare ribs, baby back ribs, ribs
+Pork tenderloin | Meat | /ingredients/pork-tenderloin.svg | pork fillet
+Pork knuckle | Meat | /ingredients/pork-knuckle.svg | ham hock, pork shank
+Salami | Meat | /ingredients/salami.svg | 
 Black pudding | Meat | Black Pudding | blood sausage
 Doner meat | Meat | Doner Meat | kebab meat, gyros meat
 Italian sausage | Meat | Italian Fennel Sausages | italian fennel sausages, salsiccia
-Lukanka | Meat |  |
-Kebapche | Meat |  | kebapcheta
-Meatballs | Meat |  | kyufte, kofta
-Rabbit | Meat |  |
-Venison | Meat |  | deer
-Goose | Meat |  |
-Quail | Meat |  |
+Lukanka | Meat | /ingredients/lukanka.svg | 
+Kebapche | Meat | /ingredients/kebapche.svg | kebapcheta
+Meatballs | Meat | /ingredients/meatballs.svg | kyufte, kofta
+Rabbit | Meat | /ingredients/rabbit.svg | 
+Venison | Meat | /ingredients/venison.svg | deer
+Goose | Meat | /ingredients/goose.svg | 
+Quail | Meat | /ingredients/quail.svg | 
 Salmon | Fish | Salmon | salmon fillet, salmon fillets, smoked salmon
 Tuna | Fish | Tuna | canned tuna, tuna steak
 White fish | Fish | White Fish Fillets | white fish fillets, hake, pollock, tilapia, sea bass
