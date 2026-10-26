@@ -105,3 +105,14 @@ export function planCooking(ingredients, pantry, canonical) {
   }
   return [...plan.values()]
 }
+
+/**
+ * How much of a recipe is at home: { have, total, missing } over its named
+ * ingredients. `canonical` maps a name to its catalog name.
+ */
+export function homeMatch(recipe, pantry, canonical) {
+  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  const names = (recipe.ingredients ?? []).map((i) => i.name?.trim()).filter(Boolean)
+  const missing = names.filter((n) => !atHome.has(canonical(n)))
+  return { have: names.length - missing.length, total: names.length, missing }
+}

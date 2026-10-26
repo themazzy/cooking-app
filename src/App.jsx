@@ -17,9 +17,11 @@ import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
 import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
-import { addTo, parseStock, shortfall } from './lib/stock.js'
+import { addTo, isOut, parseStock, shortfall } from './lib/stock.js'
 import { loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import ShoppingList from './ShoppingList.jsx'
+import PlanPage from './PlanPage.jsx'
+import { prunePlan } from './lib/plan.js'
 import { addToList, makeList } from './lib/shopping.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
@@ -58,7 +60,7 @@ function sharedTextFromUrl(url) {
   }
 }
 
-/** #/ (recipes), #/import, #/settings, #/recipe/<id>, #/new (unsaved recipe), #/shopping, #/ingredients */
+/** #/ (recipes), #/import, #/settings, #/recipe/<id>, #/new (unsaved recipe), #/plan, #/shopping, #/pantry, #/ingredients */
 function parseRoute() {
   const [, page = '', id] = window.location.hash.replace(/^#/, '').split('/')
   return { page: page || 'home', id: id ? decodeURIComponent(id) : null }
@@ -306,7 +308,8 @@ export default function App() {
       ...recipe,
       id,
       thumb,
-      video: keepVideo ? recipe.video : null,
+      // A saved recipe whose video could not be loaded (offline) keeps it
+      video: keepVideo || (recipe.id && !videoBlob) ? recipe.video : null,
       ...(newVideo ? { videoUploaded: false } : {}),
       createdAt: recipe.createdAt ?? now,
       updatedAt: now,
@@ -332,13 +335,29 @@ export default function App() {
 
   const shoppingTimer = useRef(null)
   const updateShopping = (list) => {
-    const stamped = list ? { ...list, updatedAt: Date.now() } : list
+    // The meal plan travels with the list; lists rebuilt from recipes keep it
+    const plan = list && 'plan' in list ? list.plan : shoppingRef.current?.plan
+    const stamped = list ? { ...list, ...(plan ? { plan } : {}), updatedAt: Date.now() } : list
     setShopping(stamped)
     shoppingRef.current = stamped
     writeStore(SHOPPING_KEY, stamped)
     // Ticking items quickly sends one update, not one per tap
     clearTimeout(shoppingTimer.current)
     shoppingTimer.current = setTimeout(() => runSyncRef.current?.(), 1500)
+  }
+
+  const updatePlan = (plan) => updateShopping({ ...(shoppingRef.current ?? { createdAt: Date.now(), recipes: [], items: [] }), plan: prunePlan(plan) })
+
+  /** Puts the planned recipes on the list; ingredients at home start left out, as in Add to list. */
+  const shopPlan = (entries) => {
+    const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => catalog.canonical(p.name)))
+    const byId = new Map(recipes.map((r) => [r.id, r]))
+    const planned = entries.map((e) => ({
+      ...e,
+      skip: (byId.get(e.id)?.ingredients ?? []).flatMap((i, n) => (i.name?.trim() && atHome.has(catalog.canonical(i.name)) ? [n] : [])),
+    }))
+    const others = (shopping?.recipes ?? []).filter((r) => !entries.some((e) => e.id === r.id))
+    updateShopping(makeList([...others, ...planned], recipes, catalog.match, shopping))
   }
 
   const makeShoppingList = () => {
@@ -643,6 +662,15 @@ export default function App() {
     return (
       <main className="tabbed">
         <PantryPage items={pantry} onChanged={() => loadPantry().then(setPantry)} />
+        {tabbar}
+      </main>
+    )
+  }
+
+  if (route.page === 'plan') {
+    return (
+      <main className="tabbed">
+        <PlanPage plan={shopping?.plan ?? {}} recipes={recipes} pantry={pantry} onChange={updatePlan} onShop={shopPlan} onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)} />
         {tabbar}
       </main>
     )
@@ -981,6 +1009,7 @@ export default function App() {
 
       <RecipeList
         recipes={recipes}
+        pantry={pantry}
         onOpen={(id) => go(`#/recipe/${encodeURIComponent(id)}`)}
         selection={selection}
         onSelect={(id, portions) => setSelection((s) => ({ ...s, [id]: portions }))}

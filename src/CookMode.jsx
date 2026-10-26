@@ -24,7 +24,7 @@ function beep() {
 }
 
 /** One step at a time in big text, with the step's ingredients and timers. Keeps the screen on. */
-export default function CookMode({ title, ingredients, steps: stepsText, stockPlan = [], onUseStock, onClose }) {
+export default function CookMode({ title, ingredients, steps: stepsText, stockPlan = [], onUseStock, onCooked, onClose }) {
   const { match } = useCatalog()
   const steps = splitSteps(stepsText)
   const [at, setAt] = useState(0) // steps.length means "done"
@@ -32,6 +32,8 @@ export default function CookMode({ title, ingredients, steps: stepsText, stockPl
   const [timers, setTimers] = useState([]) // { id, label, endsAt, done }
   const [now, setNow] = useState(Date.now())
   const [stockDone, setStockDone] = useState(null) // null, 'saving', 'done', or an error
+  const [cookedNote, setCookedNote] = useState('')
+  const [logged, setLogged] = useState(false)
   const touch = useRef(null)
 
   // Screen stays on while cooking
@@ -165,6 +167,27 @@ export default function CookMode({ title, ingredients, steps: stepsText, stockPl
         ) : (
           <div className="cook-done">
             <div className="cook-step">Enjoy your meal!</div>
+            {onCooked && (
+              <div className="card stock-plan">
+                <h2>Add to the cooking history?</h2>
+                {logged ? (
+                  <p className="hint">Saved as cooked today.</p>
+                ) : (
+                  <>
+                    <textarea rows="2" placeholder="A note for next time (optional)" value={cookedNote} onChange={(e) => setCookedNote(e.target.value)} />
+                    <button
+                      className="secondary"
+                      onClick={() => {
+                        onCooked(cookedNote)
+                        setLogged(true)
+                      }}
+                    >
+                      ✓ Cooked it today
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
             {stockPlan.length > 0 && onUseStock && (
               <div className="card stock-plan">
                 <h2>Take it out of the stock?</h2>
