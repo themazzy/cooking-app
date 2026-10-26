@@ -188,7 +188,7 @@ export default function App() {
       try {
         videoBlob = recipe.video || recipe.videoPath ? await loadVideo(recipe) : null
       } catch {
-        videoBlob = null // offline, or the video is not uploaded yet
+        videoBlob = null // offline, or the video is only on the other phone
       }
       if (cancelled) return
       setEditing({ recipe, videoBlob, dirty: false })
@@ -262,7 +262,7 @@ export default function App() {
         if (id) {
           await putVideo(id, small)
           const stored = await getRecipe(id)
-          if (stored) await putRecipe({ ...stored, video, videoUploaded: false })
+          if (stored) await putRecipe({ ...stored, video })
           refreshRecipes()
           runSyncRef.current?.()
         }
@@ -302,7 +302,6 @@ export default function App() {
     const id = recipe.id ?? newId()
     const now = Date.now()
     const keepVideo = !!videoBlob && settings.saveVideos
-    const newVideo = keepVideo && !recipe.id
     const thumb = recipe.thumb ?? (keepVideo ? await videoThumb(videoBlob) : null)
     const stored = {
       ...recipe,
@@ -310,7 +309,6 @@ export default function App() {
       thumb,
       // A saved recipe whose video could not be loaded (offline) keeps it
       video: keepVideo || (recipe.id && !videoBlob) ? recipe.video : null,
-      ...(newVideo ? { videoUploaded: false } : {}),
       createdAt: recipe.createdAt ?? now,
       updatedAt: now,
     }
@@ -751,7 +749,7 @@ export default function App() {
             <p className="hint">The speech model downloads once on first use, then works offline.</p>
             <label>
               <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}
-              Save a copy of the video with each recipe
+              Save a copy of the video with each recipe (on this phone only)
             </label>
             {settings.saveVideos && (
               <label>

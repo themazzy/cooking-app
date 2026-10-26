@@ -145,8 +145,12 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
         </div>
       )}
     </div>
-  ) : picture ? (
-    <img className="hero" src={picture} alt="" onError={() => picture === recipe.image && setImageBroken(true)} />
+  ) : picture || recipe.video ? (
+    <>
+      {picture && <img className="hero" src={picture} alt="" onError={() => picture === recipe.image && setImageBroken(true)} />}
+      {/* Videos are kept on the phone that saved them */}
+      {recipe.video && <p className="hint video-elsewhere">🎬 The video is saved on the other phone{recipe.sourceUrl ? '; the source link opens the original.' : '.'}</p>}
+    </>
   ) : null
 
   const sources = (raw.description || raw.transcript || comments.length > 0) && (

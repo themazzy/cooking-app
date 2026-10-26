@@ -34,7 +34,7 @@ export default function Account({ user, onChanged }) {
     return (
       <div className="account">
         <strong>Sync between phones</strong>
-        <p className="hint">Sign in to keep recipes, videos and the shopping list in your household's shared storage.</p>
+        <p className="hint">Sign in to share recipes, the meal plan and the shopping list with your household. Saved videos stay on the phone that saved them.</p>
         <input type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input type="password" autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
         <div className="row">
