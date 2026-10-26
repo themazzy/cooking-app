@@ -342,11 +342,11 @@ export default function PantryPage({ items, loading = false, onChanged }) {
 
   // A scanned product: its amount added to what is at home, and the barcode remembered.
   // Returns true, or what went wrong for the scan sheet to show.
-  const addScanned = async ({ code, ingredient, own, base, aisle, picture, product, pack, amount }) => {
+  const addScanned = async ({ code, ingredient, own, base, aisle, picture, kcal, product, pack, amount }) => {
     let remembered = true
     try {
       // A product kept under its own name is one of the household's ingredients, with the pack photo
-      if (own) await ensure(ingredient, { base, aisle, image_data: picture })
+      if (own) await ensure(ingredient, { base, aisle, image_data: picture, kcal })
       const key = ingredient.toLowerCase()
       const have = items.find((i) => (match(i.name)?.name ?? i.name).toLowerCase() === key)
       if (have) await updatePantryItem(have.id, { amount: amount ? addTo(have.amount, ...amount.match(/^(\S+)\s*(.*)$/).slice(1)) : have.amount })

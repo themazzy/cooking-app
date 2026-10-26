@@ -128,6 +128,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
       base: own ? base || null : null,
       aisle: found.entry?.aisle ?? found.aisle,
       picture,
+      kcal: own ? (found.kcal ?? null) : null,
       product: found.product,
       pack,
       amount: total,
@@ -233,7 +234,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
             </div>
             <p className="hint">
               {ownName.trim()
-                ? `Shown in Ingredients as your own, with ${picture ? 'the pack photo' : 'its own picture'}${baseName ? `. Counts as ${baseName} in recipes and shopping.` : '.'}`
+                ? `Shown in Ingredients as your own, with ${picture ? 'the pack photo' : 'its own picture'}${found.kcal != null ? ` and its own calories (${found.kcal} kcal per 100 g)` : ''}${baseName ? `. Counts as ${baseName} on the shopping list.` : '.'}`
                 : `Kept at home as ${baseName || 'the ingredient you pick'}.`}
             </p>
             <label className="field">{ownName.trim() ? 'Counts as' : 'What it is'}</label>

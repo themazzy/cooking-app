@@ -5,7 +5,7 @@ import { buildCatalogIndex, matchIngredient } from './catalog.js'
 vi.mock('./supabase.js', () => ({ supabase: {} }))
 vi.mock('./sync.js', () => ({ getHousehold: async () => ({ id: 'h1' }) }))
 
-const { guessIngredient, isValidBarcode, normalizeBarcode, packAmount, productAisle, productLabel, productName } = await import('./barcode.js')
+const { guessIngredient, isValidBarcode, normalizeBarcode, packAmount, productAisle, productKcal, productLabel, productName } = await import('./barcode.js')
 
 const index = buildCatalogIndex(SEED_INGREDIENTS)
 const match = (name) => matchIngredient(index, name)
@@ -68,5 +68,11 @@ describe('own ingredient from a product', () => {
     expect(productAisle({ categories_tags: ['en:beverages', 'en:carbonated-drinks', 'en:sodas', 'en:colas'] })).toBe('Drinks')
     expect(productAisle({ categories_tags: ['en:dairies', 'en:fermented-milk-products', 'en:yogurts'] })).toBe('Dairy & eggs')
     expect(productAisle({ categories_tags: [] })).toBe('Other')
+  })
+  it('reads its own calories, so Cola Zero is not Cola', () => {
+    expect(productKcal({ nutriments: { 'energy-kcal_100g': 0.3 } })).toBe(0.3)
+    expect(productKcal({ nutriments: { 'energy-kcal_100g': 0 } })).toBe(0)
+    expect(productKcal({ nutriments: { energy_100g: 180 } })).toBe(43)
+    expect(productKcal({ nutriments: {} })).toBe(null)
   })
 })

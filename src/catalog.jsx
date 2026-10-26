@@ -127,15 +127,29 @@ export function CatalogProvider({ children }) {
      * counting as the everyday one it most likely is ("Coca Cola Zero" → Cola).
      * A picture is filled in when the ingredient has none yet.
      */
-    const ensure = async (name, { base, aisle, image_data } = {}) => {
+    const ensure = async (name, { base, aisle, image_data, kcal } = {}) => {
+      // The product's own calories (kcalHint: the columns may not exist yet, then it is saved without)
+      const own = kcal != null ? { kcal } : {}
+      const save = async (fn, patch) => {
+        try {
+          await fn({ ...patch, ...own })
+        } catch (e) {
+          if (!own.kcal && own.kcal !== 0) throw e
+          if (!/kcal/.test(e?.message ?? '')) throw e
+          await fn(patch)
+        }
+      }
       const have = named(name)
       if (have) {
-        if (image_data && have.household_id && !have.image_data) await update(have.id, { image_data })
+        if (!have.household_id) return
+        const patch = image_data && !have.image_data ? { image_data } : {}
+        if (have.own_kcal == null && kcal != null) await save((p) => update(have.id, p), patch)
+        else if (patch.image_data) await update(have.id, patch)
         return
       }
       const like = base ? named(base) : match(name)
       try {
-        await add({ name: name.trim(), base: like?.base ?? like?.name ?? null, aisle: aisle || like?.aisle || 'Other', image_data: image_data || null })
+        await save(add, { name: name.trim(), base: like?.base ?? like?.name ?? null, aisle: aisle || like?.aisle || 'Other', image_data: image_data || null })
       } catch (e) {
         // Already added from the other phone
         if (e?.code === '23505' || e?.cause?.code === '23505') await refresh()
