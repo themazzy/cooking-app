@@ -86,6 +86,8 @@ export default function App() {
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
+  // Recipe photos waiting to be read: [{ file, url }]
+  const [photoPages, setPhotoPages] = useState([])
   const [recipes, setRecipes] = useState([])
   // The recipe on screen: { recipe, videoBlob, dirty }
   const [editing, setEditing] = useState(null)
@@ -547,10 +549,20 @@ export default function App() {
     }
   }
 
-  // Photos of a printed (or neatly handwritten) recipe, read on the phone
-  const onPhotos = async (e) => {
+  // Photos of a printed (or neatly handwritten) recipe, read on the phone.
+  // Taken or picked photos collect as pages first, so a recipe can be shot page by page.
+  const addPhotoPages = (e) => {
     const files = [...(e.target.files ?? [])]
     e.target.value = ''
+    if (files.length) setPhotoPages((pages) => [...pages, ...files.map((file) => ({ file, url: URL.createObjectURL(file) }))])
+  }
+  const removePhotoPage = (n) =>
+    setPhotoPages((pages) => {
+      URL.revokeObjectURL(pages[n].url)
+      return pages.filter((_, i) => i !== n)
+    })
+  const readPhotoPages = async () => {
+    const files = photoPages.map((p) => p.file)
     if (!files.length) return
     setBusy(true)
     setLog([])
@@ -566,6 +578,8 @@ export default function App() {
       const r = { url: null, platform: 'photo', description: text, at: Date.now() }
       remember(r)
       openDraft(r, null, { thumb: await photoThumb(files[0]) })
+      for (const p of photoPages) URL.revokeObjectURL(p.url)
+      setPhotoPages([])
     } catch (err) {
       step(err?.message ?? String(err), 'error')
     } finally {
@@ -814,7 +828,7 @@ export default function App() {
         <section className="card">
           <label>From photos</label>
           <p className="hint top">
-            A cookbook page, a recipe card or a screenshot. Pick several photos for a recipe over more pages, in order; where they overlap, the repeated lines are kept once. Neat handwriting may work too.
+            A cookbook page, a recipe card or a screenshot. Add a photo for each page, in order; where they overlap, the repeated lines are kept once. Neat handwriting may work too.
           </p>
           <div className="segmented" role="group" aria-label="Text in the photos">
             {[
@@ -826,10 +840,34 @@ export default function App() {
               </button>
             ))}
           </div>
-          <label className="button">
-            📷 Take or pick photos
-            <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={onPhotos} />
-          </label>
+          {photoPages.length > 0 && (
+            <ol className="photo-pages">
+              {photoPages.map((p, n) => (
+                <li key={p.url}>
+                  <img src={p.url} alt={`Page ${n + 1}`} />
+                  <span className="page-no">{n + 1}</span>
+                  <button className="remove" aria-label={`Remove page ${n + 1}`} disabled={busy} onClick={() => removePhotoPage(n)}>
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ol>
+          )}
+          <div className="row">
+            <label className={`button${photoPages.length ? ' secondary' : ''}`}>
+              📷 {photoPages.length ? 'Take another' : 'Take photo'}
+              <input type="file" accept="image/*" capture="environment" hidden disabled={busy} onChange={addPhotoPages} />
+            </label>
+            <label className="button secondary">
+              🖼 {photoPages.length ? 'Add from gallery' : 'Pick from gallery'}
+              <input type="file" accept="image/*" multiple hidden disabled={busy} onChange={addPhotoPages} />
+            </label>
+          </div>
+          {photoPages.length > 0 && (
+            <button className="big read-pages" disabled={busy} onClick={readPhotoPages}>
+              Read {photoPages.length} photo{photoPages.length > 1 ? 's' : ''}
+            </button>
+          )}
         </section>
 
         <section className="card">
