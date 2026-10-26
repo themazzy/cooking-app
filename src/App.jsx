@@ -21,6 +21,8 @@ import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
 import { addTo, isOut, shortfall, usesUp } from './lib/stock.js'
 import { loadPhoto, loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
+import { mergeRecipe } from './lib/recipeMerge.js'
+import { raterId } from './lib/ratings.js'
 import { storePhoto } from './lib/photos.js'
 import ShoppingList from './ShoppingList.jsx'
 import PlanPage from './PlanPage.jsx'
@@ -75,7 +77,7 @@ function parseRoute() {
 }
 /** What a single change saved from the reading view was, for the toast. */
 const savedWhat = (patch) =>
-  'rating' in patch ? 'Rating saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
+  'ratings' in patch ? 'Rating saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
 
 // Order of the tabs, so switching slides the right way
 const TAB_ORDER = ['home', 'plan', 'shopping', 'pantry', 'ingredients']
@@ -120,8 +122,11 @@ export default function App() {
   const [photoPages, setPhotoPages] = useState([])
   const [recipes, setRecipes] = useState([])
   const [recipesLoaded, setRecipesLoaded] = useState(false)
-  // The recipe on screen: { recipe, videoBlob, dirty }
+  // The recipe on screen: { recipe, videoBlob, dirty, base }; `base` is the
+  // stored version it was opened from, to join with a change synced meanwhile
   const [editing, setEditing] = useState(null)
+  const editingRef = useRef(null)
+  editingRef.current = editing
   const [shrink, setShrink] = useState(null)
   const [shopping, setShopping] = useState(() => readStore(SHOPPING_KEY, null))
   const [selection, setSelection] = useState(null) // { recipeId: portions } while picking for a list
@@ -191,6 +196,7 @@ export default function App() {
         syncAgain.current = false
         const recipesDone = await syncRecipes()
         await refreshRecipes()
+        await reloadOpenRecipe()
         setPantry(await loadPantry())
         setPantryReady(true)
         const sent = shoppingRef.current
@@ -279,7 +285,7 @@ export default function App() {
       if (cancelled) return
       const photo = await loadRecipePhoto(recipe)
       if (cancelled) return
-      setEditing({ recipe: photo ? { ...recipe, photo } : recipe, videoBlob, dirty: false })
+      setEditing({ recipe: photo ? { ...recipe, photo } : recipe, videoBlob, dirty: false, base: recipe })
       // Recipes saved before thumbnails existed get one the first time they open
       if (videoBlob && !recipe.thumb) {
         const thumb = await videoThumb(videoBlob)
@@ -416,9 +422,15 @@ export default function App() {
   }
   const saveRecipe = async (patch) => {
     const { videoBlob } = editing
-    const recipe = { ...editing.recipe, ...patch }
-    const id = recipe.id ?? newId()
     const now = Date.now()
+    let recipe = { ...editing.recipe, ...patch }
+    // The other phone's change arrived while this was open: both stay
+    const current = recipe.id ? await getRecipe(recipe.id) : null
+    if (current) {
+      if (editing.base && current.updatedAt !== editing.base.updatedAt) recipe = { ...mergeRecipe(editing.base, { ...recipe, updatedAt: now }, current), id: recipe.id }
+      recipe = { ...recipe, syncedAt: current.syncedAt, syncBase: current.syncBase }
+    }
+    const id = recipe.id ?? newId()
     const keepVideo = !!videoBlob && settings.saveVideos
     const thumb = recipe.thumb ?? (keepVideo ? await videoThumb(videoBlob) : null)
     // The photo goes to its own store; the recipe keeps which one it has
@@ -434,7 +446,7 @@ export default function App() {
     await putRecipe(stored)
     if (keepVideo && !recipe.id) await putVideo(id, videoBlob)
     if (recipe.key) savedIds.current[recipe.key] = id
-    setEditing({ recipe: recipe.photo ? { ...stored, photo: recipe.photo } : stored, videoBlob: keepVideo ? videoBlob : null, dirty: false })
+    setEditing({ recipe: recipe.photo ? { ...stored, photo: recipe.photo } : stored, videoBlob: keepVideo ? videoBlob : null, dirty: false, base: stored })
     refreshRecipes()
     runSync()
     go(`#/recipe/${encodeURIComponent(id)}`, { replace: route.page === 'new' })
@@ -495,6 +507,24 @@ export default function App() {
     tabGo('#/shopping')
   }
 
+  /** Shows what a sync brought for the recipe on screen; one being edited is joined when saved. */
+  const reloadOpenRecipe = async () => {
+    const id = editingRef.current?.recipe.id
+    if (!id) return
+    const stored = await getRecipe(id)
+    if (!stored || stored.updatedAt === editingRef.current?.base?.updatedAt) return
+    if (editingRef.current.dirty) return
+    const photoChanged = stored.photoKey !== editingRef.current.recipe.photoKey
+    setEditing((e) => {
+      if (e?.recipe.id !== id || e.dirty) return e
+      const photo = photoChanged ? undefined : e.recipe.photo
+      return { ...e, recipe: photo !== undefined ? { ...stored, photo } : stored, base: stored }
+    })
+    if (!photoChanged) return
+    const photo = await loadRecipePhoto(stored)
+    if (photo) setEditing((e) => (e?.recipe.id === id && e.recipe.photoKey === stored.photoKey && !e.dirty ? { ...e, recipe: { ...e.recipe, photo } } : e))
+  }
+
   // Discarding a new recipe drops it; on a saved one it goes back to the saved version
   const discardEditing = async () => {
     const id = editing?.recipe.id
@@ -505,7 +535,7 @@ export default function App() {
     const stored = await getRecipe(id)
     if (!stored) return
     const photo = await loadRecipePhoto(stored)
-    setEditing((e) => ({ ...e, recipe: photo ? { ...stored, photo } : stored, dirty: false }))
+    setEditing((e) => ({ ...e, recipe: photo ? { ...stored, photo } : stored, dirty: false, base: stored }))
   }
 
   // Tabs: from Recipes they open on top of it, so Back returns there; between tabs they replace each other
@@ -773,6 +803,7 @@ export default function App() {
     return (
       <main data-dir={dir}>
         <RecipePage
+          me={raterId(user?.id, settings.myName ?? '')}
           recipe={editing.recipe}
           videoBlob={editing.videoBlob}
           shrink={shrink?.key && shrink.key === editing.recipe.key ? shrink : null}
@@ -874,6 +905,18 @@ export default function App() {
               setHouseholdRev((n) => n + 1)
             }}
           />
+          {user && (
+            <label>
+              Your name on this phone
+              <input
+                type="text"
+                placeholder="e.g. Jan"
+                value={settings.myName ?? ''}
+                onChange={(e) => setSettings({ ...settings, myName: e.target.value.replace(':', '') })}
+              />
+              <span className="hint">Ratings and cooked entries are kept per person. Set a name when you share one login, so each of you rates separately.</span>
+            </label>
+          )}
         </section>
         <section className="card">
           <h3>Look</h3>

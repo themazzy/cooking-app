@@ -1,6 +1,19 @@
-// When a recipe was cooked, with a note each time: recipe.cooked = [{ at, note }], newest last.
+// When a recipe was cooked, with a note each time: recipe.cooked = [{ at, note, by }], newest last.
+// `at` names the entry (phones join their histories by it); `by` is who added it (ratings.js raterId).
 
-export const addCooked = (recipe, at = Date.now(), note = '') => [...(recipe.cooked ?? []), { at, ...(note.trim() ? { note: note.trim() } : {}) }]
+export const addCooked = (recipe, at = Date.now(), note = '', by = null) => {
+  const taken = new Set((recipe.cooked ?? []).map((c) => c.at))
+  while (taken.has(at)) at++
+  return [...(recipe.cooked ?? []), { at, ...(note.trim() ? { note: note.trim() } : {}), ...(by ? { by } : {}) }]
+}
+
+/** Changes the note of one entry (an empty note removes it). */
+export const editCooked = (recipe, at, note) =>
+  (recipe.cooked ?? []).map((c) => {
+    if (c.at !== at) return c
+    const { note: _old, ...rest } = c
+    return note.trim() ? { ...rest, note: note.trim() } : rest
+  })
 
 export const removeCooked = (recipe, at) => (recipe.cooked ?? []).filter((c) => c.at !== at)
 

@@ -4,6 +4,7 @@ import Stars from './Stars.jsx'
 import { addToPlan, dayKey, dayLabel, planEntries, removeFromPlan, setPlanPortions, weekDays, weekStart } from './lib/plan.js'
 import { homeMatch } from './lib/stock.js'
 import { cookedAgo, lastCooked } from './lib/history.js'
+import { averageRating } from './lib/ratings.js'
 
 /** Picking a recipe for a day: search, with what is at home and when it was last cooked. */
 function PickSheet({ day, recipes, pantry, onPick, onClose }) {
@@ -31,7 +32,7 @@ function PickSheet({ day, recipes, pantry, onPick, onClose }) {
                   ]
                     .filter(Boolean)
                     .join(' · ')}
-                  {r.rating ? <Stars value={r.rating} size="small" /> : null}
+                  {averageRating(r) ? <Stars value={Math.round(averageRating(r))} size="small" /> : null}
                 </span>
               </button>
             </li>
