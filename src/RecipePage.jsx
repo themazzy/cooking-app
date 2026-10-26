@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import RecipeEditor from './RecipeEditor.jsx'
+import RecipeTags from './RecipeTags.jsx'
 import CookMode from './CookMode.jsx'
 import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
@@ -14,6 +15,7 @@ import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
 import { isOut, planCooking } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
+import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
 const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -30,7 +32,7 @@ const hostOf = (url) => {
  * One recipe. Saved recipes open for reading and cooking; Edit (or a new
  * import) shows the editable form with Save.
  */
-export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits }) {
+export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, units = 'original', onUnits, categories = [], cuisines = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -229,6 +231,7 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
               portions
             </label>
           </div>
+          <RecipeTags recipe={recipe} categories={categories} cuisines={cuisines} onChange={set} />
           {video}
           {photoButtons}
           <RecipeEditor
@@ -308,6 +311,39 @@ export default function RecipePage({ recipe, videoBlob, shrink, dirty, report, p
           ) : (
             PLATFORM[recipe.platform] && <span className="meta-chip plain">{PLATFORM[recipe.platform]}</span>
           )}
+          {recipe.cuisine && <span className="meta-chip">{recipe.cuisine}</span>}
+          {(recipe.categories ?? []).map((c) => (
+            <span key={c} className="meta-chip">
+              {c}
+            </span>
+          ))}
+        </div>
+        {totalMinutes(recipe) && (
+          <div className="times">
+            {recipe.prepMin ? (
+              <span>
+                <strong>{formatMinutes(recipe.prepMin)}</strong> prep
+              </span>
+            ) : null}
+            {recipe.cookMin ? (
+              <span>
+                <strong>
+                  {recipe.timesEstimated ? '~' : ''}
+                  {formatMinutes(recipe.cookMin)}
+                </strong>{' '}
+                cook
+              </span>
+            ) : null}
+            <span>
+              <strong>
+                {recipe.timesEstimated ? '~' : ''}
+                {formatMinutes(totalMinutes(recipe))}
+              </strong>{' '}
+              total
+            </span>
+          </div>
+        )}
+        <div className="meta">
           {recipe.servings && <span className="meta-chip plain">{recipe.servings} portions</span>}
           <span className="meta-chip plain">{ingredientCount} ingredients</span>
           {steps.length > 0 && <span className="meta-chip plain">{steps.length} steps</span>}
