@@ -32,11 +32,12 @@ for (const [d, k] of Object.entries(DENSITIES)) {
   await png(sized(combined(16), 48 * k), 48 * k, 48 * k, join(res, `mipmap-${d}/ic_launcher.png`))
   await png(sized(combined(36), 48 * k), 48 * k, 48 * k, join(res, `mipmap-${d}/ic_launcher_round.png`))
   await png(sized(fg, 108 * k), 108 * k, 108 * k, join(res, `mipmap-${d}/ic_launcher_foreground.png`))
+  await png(sized(bg, 108 * k), 108 * k, 108 * k, join(res, `mipmap-${d}/ic_launcher_background.png`))
 }
 
 // Splash screens: the icon in the middle of the background colour
 const SPLASH = { mdpi: [320, 480], hdpi: [480, 800], xhdpi: [720, 1280], xxhdpi: [960, 1600], xxxhdpi: [1280, 1920] }
-const splashBg = '#2e7d55'
+const splashBg = '#FBEEDB'
 for (const [d, [w, h]] of Object.entries(SPLASH)) {
   const icon = Math.round(Math.min(w, h) * 0.5)
   await png(sized(fg, icon), w, h, join(res, `drawable-port-${d}/splash.png`), splashBg)
