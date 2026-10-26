@@ -51,6 +51,9 @@ function withBase(entries) {
 const kcalHint = (error) =>
   /kcal|piece_g/.test(error?.message ?? '') ? Object.assign(new Error('Calories need the new database columns: run supabase-ingredient-kcal.sql in Supabase first.'), { cause: error }) : error
 
+const SEED_ORDER = new Map(SEED_INGREDIENTS.map((e, i) => [e.name.toLowerCase(), i]))
+const seedOrder = (e) => SEED_ORDER.get(e.name.toLowerCase()) ?? SEED_ORDER.size
+
 const CatalogContext = createContext(null)
 
 /**
@@ -109,7 +112,10 @@ export function CatalogProvider({ children }) {
   const value = useMemo(() => {
     const all = withBase(entries)
     // The household's own names are matched first
-    const index = buildCatalogIndex([...all.filter((e) => e.household_id), ...all.filter((e) => !e.household_id)])
+    // The shared list in the order of the built-in one (the server sends it by name), so a word two
+    // entries share ("яйца" for eggs and egg yolks) finds the same one as in the tests
+    const shared = all.filter((e) => !e.household_id).sort((a, b) => seedOrder(a) - seedOrder(b))
+    const index = buildCatalogIndex([...all.filter((e) => e.household_id), ...shared])
     const match = (name) => matchIngredient(index, name)
     /** The same key for an ingredient however it is written, and for a brand and what it stands for. */
     const canonical = (name) => {

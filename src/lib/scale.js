@@ -5,16 +5,21 @@ import { UNIT_LOOKUP, parseQuantity } from './ingredients.js'
 
 /** "1,5–2" → { min: 1.5, max: 2 }, "½" → { min: 0.5, max: null }, "" or "a bit" → null */
 export function parseAmount(text) {
-  const t = String(text ?? '').trim()
+  const t = String(text ?? '')
+    .trim()
+    .replace(/^(\d{1,3}) (\d{3})(?![\d/])/, '$1$2') // "1 000"
+    .replace(/^(\d+)-(\d+\/\d+)$/, '$1 $2') // "1-1/2" is one and a half
   if (!t) return null
   const parts = t.split(/\s*(?:–|-|to|až)\s*/)
   const min = parseQuantity(parts[0])
   if (min == null) return null
   const max = parts[1] ? parseQuantity(parts[1]) : null
+  if (!Number.isFinite(min) || (max != null && !Number.isFinite(max))) return null
   return { min, max }
 }
 
 const FRACTION_GLYPHS = [
+  [0.125, '⅛'],
   [0.25, '¼'],
   [1 / 3, '⅓'],
   [0.5, '½'],
@@ -22,7 +27,13 @@ const FRACTION_GLYPHS = [
   [0.75, '¾'],
 ]
 // Spoons, cups and pieces read better as fractions; grams as whole numbers
-const COUNTED = new Set(['tsp', 'tbsp', 'cup', 'pcs', 'clove', 'can', 'pack', 'head', 'slice', 'bunch', 'handful', 'pinch', ''])
+const COUNTED = new Set(['tsp', 'tbsp', 'cup', 'pcs', 'clove', 'can', 'pack', 'head', 'slice', 'bunch', 'handful', 'pinch', 'stick', ''])
+// Kilograms and litres keep quarters: 1,25 kg and 0,75 l, not 1,3 and 0,8
+const LARGE = new Set(['kg', 'l'])
+const quarters = (n) => {
+  const r = Math.round(n * 100) / 100
+  return Math.abs(r * 20 - Math.round(r * 20)) < 1e-9 ? r : Math.round(n * 10) / 10
+}
 
 /** A friendly number for display, with a decimal comma. */
 export function formatAmount(n, unit = '') {
@@ -33,12 +44,15 @@ export function formatAmount(n, unit = '') {
     const rest = n - whole
     if (rest < 0.08) return whole ? String(whole) : String(Math.round(n * 100) / 100).replace('.', ',')
     if (rest > 0.92) return String(whole + 1)
-    const [, glyph] = FRACTION_GLYPHS.reduce((best, f) => (Math.abs(f[0] - rest) < Math.abs(best[0] - rest) ? f : best))
+    // Eighths only for spoons: ⅛ tsp, but not 2 ⅛ cups
+    const glyphs = u === 'tsp' || u === 'tbsp' ? FRACTION_GLYPHS : FRACTION_GLYPHS.slice(1)
+    const [, glyph] = glyphs.reduce((best, f) => (Math.abs(f[0] - rest) < Math.abs(best[0] - rest) ? f : best))
     return whole ? `${whole} ${glyph}` : glyph
   }
   let r
   if (n >= 100) r = Math.round(n / 5) * 5
   else if (n >= 10) r = Math.round(n)
+  else if (LARGE.has(u) || n < 1) r = quarters(n)
   else r = Math.round(n * 10) / 10
   return String(r).replace('.', ',')
 }
@@ -61,6 +75,33 @@ export function scaleAmount(text, factor, unit) {
 export const scaleIngredients = (ingredients, factor) =>
   ingredients.map((i) => ({ ...i, qty: scaleAmount(i.qty, factor, i.unit) }))
 
+// A stick of butter is 113 g; a cinnamon stick is just one piece
+const STICK_FATS = new Set(['butter', 'vegan butter', 'lard', 'ghee'])
+const named = (entry, set) => !!entry && (set.has(String(entry.name ?? '').toLowerCase()) || set.has(String(entry.base ?? '').toLowerCase()))
+export const stickGrams = (entry) => (named(entry, STICK_FATS) ? 113 : null)
+
+// Fats and soft cheeses that American recipes measure in cups and other kitchens weigh
+const SOLIDS = new Set([...STICK_FATS, 'peanut butter', 'nut butter', 'cream cheese', 'mascarpone', 'quark', 'coconut oil'])
+// In the dry aisles heavier things are weighed too (salt, baking soda, brown sugar), but not flavourings
+const DRY_AISLES = new Set(['Baking', 'Pasta & grains', 'Nuts & seeds', 'Spices', 'Bakery'])
+const KEEP_VOLUME = new Set(['vanilla', 'food colouring', 'rum flavouring', 'ice cream', 'whipped cream'])
+
+/**
+ * Whether an ingredient (a catalog entry with a density) is weighed rather
+ * than measured: flour, sugar, rice, grated cheese, nuts, chopped vegetables
+ * and butter are; milk, oil, stock, honey and syrups are not.
+ */
+export function weighed(entry) {
+  const d = entry?.density
+  if (d == null || named(entry, KEEP_VOLUME)) return false
+  if (named(entry, SOLIDS)) return true
+  if (entry.aisle === 'Drinks') return false
+  return d < 0.9 || (d < 1.3 && DRY_AISLES.has(entry.aisle))
+}
+
+/** Whether an ingredient is poured (milk, stock, oil, juice), so ounces of it are fluid ounces. */
+export const poured = (entry) => entry?.density != null && !weighed(entry) && entry.density < 1.25
+
 // Units that add up with each other, in their base unit
 export const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], oz: ['g', 28.35], lb: ['g', 453.6], floz: ['ml', 29.57], pint: ['ml', 473.2], quart: ['ml', 946.4], cup: ['ml', 240] }
 
@@ -76,6 +117,32 @@ export function display(total, base) {
   if (base === 'g' && total >= 1000) return { qty: formatAmount(total / 1000, 'kg'), unit: 'kg' }
   if (base === 'ml' && total >= 1000) return { qty: formatAmount(total / 1000, 'l'), unit: 'l' }
   return { qty: formatAmount(total, base), unit: base }
+}
+
+const SPOON_ML = { tsp: 4.93, tbsp: 14.79 }
+
+/**
+ * One amount where the units allow it: spoons join millilitres or grams already
+ * on the line (100 ml + 2 tbsp of oil), teaspoons join tablespoons, and flour or
+ * butter measured in cups or ml is weighed with its density (1 cup + 300 g of flour).
+ */
+function foldTotals(totals, entry) {
+  const t = { ...totals }
+  const spoons = Object.keys(SPOON_ML).filter((u) => t[u] != null)
+  if (spoons.length && (t.ml != null || t.g != null)) {
+    for (const u of spoons) {
+      t.ml = (t.ml ?? 0) + t[u] * SPOON_ML[u]
+      delete t[u]
+    }
+  } else if (t.tsp != null && t.tbsp != null) {
+    t.tbsp += t.tsp / 3
+    delete t.tsp
+  }
+  if (t.ml != null && weighed(entry)) {
+    t.g = (t.g ?? 0) + t.ml * entry.density
+    delete t.ml
+  }
+  return t
 }
 
 /**
@@ -105,10 +172,12 @@ export function buildShoppingList(selection, match = () => null) {
       if (!item.from.includes(recipe.title)) item.from.push(recipe.title)
       // What each recipe (and part of it) needs, for the tap-to-see breakdown
       item.uses.push({ recipe: recipe.title ?? '', group: ing.group || '', qty: scaleAmount(ing.qty, factor, ing.unit) ?? '', unit: ing.unit ?? '', name })
+      if (entry && !item.entry) item.entry = entry
       const amount = parseAmount(ing.qty)
       const unit = canonicalUnit(ing.unit)
       if (amount && unit !== null) {
-        const [base, mult] = BASE[unit] ?? [unit, 1]
+        // "2 eggs" and "1 pcs egg" are the same; a stick of butter is grams
+        const [base, mult] = unit === 'pcs' ? ['', 1] : unit === 'stick' && stickGrams(entry) ? ['g', stickGrams(entry)] : (BASE[unit] ?? [unit, 1])
         // Ranges count at their upper end: better one too many than one short
         item.totals[base] = (item.totals[base] ?? 0) + (amount.max ?? amount.min) * mult * factor
       } else {
@@ -118,8 +187,8 @@ export function buildShoppingList(selection, match = () => null) {
       items.set(key, item)
     }
   }
-  return [...items.values()].map(({ totals, ...item }) => {
-    const parts = Object.entries(totals).map(([base, total]) => display(total, base))
+  return [...items.values()].map(({ totals, entry, ...item }) => {
+    const parts = Object.entries(foldTotals(totals, entry)).map(([base, total]) => display(total, base))
     const [first, ...more] = parts
     return {
       ...item,

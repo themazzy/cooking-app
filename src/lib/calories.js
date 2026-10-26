@@ -1,5 +1,5 @@
 import { NUTRITION_LINES } from '../data/nutrition.js'
-import { canonicalUnit, parseAmount } from './scale.js'
+import { canonicalUnit, parseAmount, stickGrams } from './scale.js'
 
 // Estimated calories of a recipe: each ingredient's amount turned into grams,
 // times its kcal per 100 g from the catalog. Ingredients without an amount
@@ -24,7 +24,7 @@ const VOLUME = { ml: 1, dl: 100, l: 1000, tsp: 4.93, tbsp: 14.79, cup: 240, floz
 // Units that weigh about the same whatever the ingredient
 const FIXED = { pinch: 0.4, handful: 30, bunch: 30 }
 // Counted units: one piece of the ingredient (a clove of garlic, a slice of bread, a pack)
-const COUNTED = new Set(['', 'pcs', 'clove', 'slice', 'head', 'pack', 'can'])
+const COUNTED = new Set(['', 'pcs', 'clove', 'slice', 'head', 'pack', 'can', 'stick'])
 
 /** Grams of an ingredient row ({ qty, unit }) for a catalog entry, or null when it can't be told. */
 export function gramsOf(ing, entry) {
@@ -36,6 +36,7 @@ export function gramsOf(ing, entry) {
   if (MASS[unit]) return n * MASS[unit]
   if (VOLUME[unit]) return n * VOLUME[unit] * (entry?.density ?? 1)
   if (FIXED[unit]) return n * FIXED[unit]
+  if (unit === 'stick' && stickGrams(entry)) return n * stickGrams(entry)
   if (COUNTED.has(unit)) {
     if (entry?.piece_g) return n * entry.piece_g
     if (unit === 'can') return n * 400

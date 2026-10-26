@@ -714,6 +714,13 @@ Becherovka | бехеровка
 Slivovice | сливова ракия
 Mead | медовина
 Kvass | квас
+Cream of tartar | винен камък
+Chickpea flour | нахутено брашно
+Nut butter | ядково масло
+Condensed soup | крем супа
+Garlic salt | чеснова сол
+Lemon pepper | лимонов пипер
+Ginger ale | джинджър ейл
 `
 
 export const BULGARIAN = new Map(
@@ -722,3 +729,39 @@ export const BULGARIAN = new Map(
     .map((line) => line.split('|').map((s) => s.trim()))
     .map(([name, bg]) => [name.toLowerCase(), bg ?? '']),
 )
+
+// eBag search words that are not what a Bulgarian recipe means by the word:
+// "сирене" is white brine cheese, "сметана" cream, "извара" quark, "краставица" any cucumber
+export const SEARCH_ONLY = new Set(['cheese', 'clotted cream', 'fromage frais', 'cottage cheese', 'japanese cucumber'])
+
+// How Bulgarian recipes name ingredients, besides the search words above
+// ("масло", "лимон", "гъби"); words ending in -та, -те, -ът are matched without them
+export const BULGARIAN_ALIASES = `
+Butter | масло, краве масло
+Milk | мляко
+Chicken | пиле, пилешко, пилешко месо
+Salt and pepper | сол и пипер
+Cream | сметана, готварска сметана, течна сметана
+Sirene | сирене, саламурено сирене
+Quark | извара
+Cucumber | краставица
+Eggs | яйце
+Egg yolks | жълтък, жълтъци
+Egg whites | белтък, белтъци
+Lemon | лимон
+Lemon juice | лимонов сок, сок от лимон
+Lemon zest | лимонова кора, кора от лимон
+Ground beef | кайма, смляно месо
+Chicken breast | пилешки гърди, пилешко филе
+Mint | джоджен, мента
+Mushrooms | гъби, печурки
+Courgette | тиквичка, тиквички
+Dark chocolate | шоколад, черен шоколад
+Vanilla | ванилин, ванилия
+Chilli | люта чушка, лют пипер
+Cornstarch | нишесте
+Baking soda | сода
+Beef stock | телешки бульон, говежди бульон
+Plant milk | бадемово мляко, овесено мляко, соево мляко
+Coconut milk | кокосово мляко
+`

@@ -18,8 +18,8 @@ const UNITS = {
   pcs: ['ks', 'kus', 'kusy', 'kusů', 'piece', 'pieces', 'pcs', 'бр', 'брой', 'броя', 'stück', 'stk', 'szt', 'шт', 'pezzo', 'pezzi', 'pieza', 'piezas', 'pièce', 'pièces', 'sztuka', 'sztuki', 'штука', 'штуки', 'штук'],
   clove: ['stroužek', 'stroužky', 'stroužků', 'clove', 'cloves', 'скилидка', 'скилидки', 'скилидката', 'Zehe', 'Zehen', 'spicchio', 'spicchi', 'diente', 'dientes', 'gousse', 'gousses', 'ząbek', 'ząbki', 'ząbków', 'зубчик', 'зубчика', 'зубчиков'],
   pinch: ['špetka', 'špetku', 'špetky', 'pinch', 'щипка', 'щипки', 'Prise', 'Prisen', 'Messerspitze', 'pizzico', 'pizzichi', 'pizca', 'pizcas', 'pincée', 'pincées', 'szczypta', 'szczypty', 'щепотка', 'щепотки'],
-  can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins', 'консерва', 'консерви', 'кутия', 'кутии', 'буркан', 'буркана', 'Dose', 'Dosen', 'lata', 'latas', 'barattolo', 'barattoli', 'boîte', 'boîtes', 'puszka', 'puszki', 'банка', 'банки'],
-  pack: ['balení', 'bal', 'balíček', 'balíčky', 'balíčku', 'pack', 'packs', 'packet', 'packets', 'пакет', 'пакета', 'пакетче', 'пакетчета', 'опаковка', 'опаковки', 'Packung', 'Packungen', 'Päckchen', 'Pck', 'Pkg', 'bustina', 'bustine', 'confezione', 'sobre', 'sobres', 'paquete', 'paquetes', 'sachet', 'sachets', 'paquet', 'paczka', 'paczki', 'opakowanie', 'пакетик', 'пакетика', 'упаковка'],
+  can: ['plechovka', 'plechovky', 'plechovku', 'konzerva', 'konzervy', 'can', 'cans', 'tin', 'tins', 'консерва', 'консерви', 'кутия', 'кутии', 'буркан', 'буркана', 'jar', 'jars', 'Dose', 'Dosen', 'lata', 'latas', 'barattolo', 'barattoli', 'boîte', 'boîtes', 'puszka', 'puszki', 'банка', 'банки'],
+  pack: ['kostka', 'kostky', 'kostku', 'kostek', 'кофичка', 'кофички', 'envelope', 'envelopes', 'balení', 'bal', 'balíček', 'balíčky', 'balíčku', 'pack', 'packs', 'packet', 'packets', 'пакет', 'пакета', 'пакетче', 'пакетчета', 'опаковка', 'опаковки', 'Packung', 'Packungen', 'Päckchen', 'Pck', 'Pkg', 'bustina', 'bustine', 'confezione', 'sobre', 'sobres', 'paquete', 'paquetes', 'sachet', 'sachets', 'paquet', 'paczka', 'paczki', 'opakowanie', 'пакетик', 'пакетика', 'упаковка'],
   head: ['hlava', 'hlavy', 'hlav', 'head', 'heads', 'глава', 'глави', 'главичка', 'главички'],
   slice: ['plátek', 'plátky', 'plátků', 'slice', 'slices', 'филия', 'филии', 'резен', 'резена', 'резенчета', 'Scheibe', 'Scheiben', 'fetta', 'fette', 'rebanada', 'rebanadas', 'loncha', 'lonchas', 'tranche', 'tranches', 'plaster', 'plastry', 'ломтик', 'ломтика', 'ломтиков'],
   bunch: ['svazek', 'svazky', 'svazku', 'bunch', 'връзка', 'връзки', 'китка', 'китки', 'Bund', 'mazzetto', 'mazzo', 'manojo', 'botte', 'pęczek', 'pęczki', 'пучок', 'пучка'],
@@ -28,6 +28,7 @@ const UNITS = {
   pint: ['pint', 'pints', 'pt'],
   quart: ['quart', 'quarts', 'qt'],
   oz: ['oz', 'ounce', 'ounces'],
+  stick: ['stick', 'sticks'],
   lb: ['lb', 'lbs', 'pound', 'pounds'],
 }
 
@@ -280,9 +281,28 @@ function parseCjkLine(text) {
   return null
 }
 
+// "1-1/2 cups" is one and a half (as American recipes write it), not one to a half
+const MIXED_DASH = /^(\d+)-(\d+\/\d+)(?=\s|$)/
+// "2 heaping tablespoons", "1 level tsp": the spoon is the unit
+const HEAPED = new RegExp(`^(${NUM})\\s+(?:heaping|heaped|level|rounded|scant|generous|good|big|small)\\s+(?=(?:${UNIT_RE})\\.?(?![\\p{L}]))`, 'iu')
+// "1 (14 oz) can coconut milk": the size of the can is a note
+const SIZE_FIRST = new RegExp(`^(${NUM})\\s*\\([^)]*\\)\\s*(?=\\p{L})`, 'u')
+// "2 x 400 g cans chickpeas" → 2 cans; "2 x 200 g chicken breasts" → 400 g
+const TIMES = /^(\d+)\s*[x×]\s*(\d+(?:[.,]\d+)?)\s*(g|kg|ml|l|oz|г|гр|кг|мл)\.?\s+(\p{L}+)(.*)$/iu
+function multiplied(text) {
+  const m = text.match(TIMES)
+  if (!m) return text
+  const [, n, size, unit, word, rest] = m
+  if (['can', 'pack'].includes(unitOf(word))) return `${n} ${word}${rest}`
+  return `${Number(n) * Number(size.replace(',', '.'))} ${unit} ${word}${rest}`
+}
+
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
-  const text = spoonLetter(wordAmount(cleanLine(line)))
+  const text = multiplied(spoonLetter(wordAmount(cleanLine(line))))
+    .replace(MIXED_DASH, '$1 $2')
+    .replace(HEAPED, '$1 ')
+    .replace(SIZE_FIRST, '$1 ')
   if (!text) return null
   if (CJK.test(text)) {
     const cjk = parseCjkLine(text)
