@@ -231,6 +231,8 @@ describe('the last three wrong imports', () => {
   it('reads a note in brackets when it names the ingredient', () => {
     expect(m('Pork (17.6oz. Mince)')).toBe('Ground pork')
     expect(m('Beef (10.5oz. Mince)')).toBe('Ground beef')
+    expect(m('Veal (7.05oz. Mince)')).toBe('Veal')
+    expect(m('Veal mince')).toBe('Veal')
     expect(m('Tomatoes (14.1oz. Peeled)')).toBe('Tomatoes')
     expect(m('Red onion (Brown. Chopped)')).toBe('Red onion')
   })
