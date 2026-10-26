@@ -115,7 +115,12 @@ public class VoiceCommandsPlugin extends Plugin {
             .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
             .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
             .putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, getContext().getPackageName());
-        if (language != null && !language.isEmpty()) intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, language);
+        if (language != null && !language.isEmpty()) {
+            // Listen in this language, not the phone's own
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, language);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, language);
+            intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, true);
+        }
         try {
             recognizer.startListening(intent);
         } catch (Exception e) {

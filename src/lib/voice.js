@@ -3,7 +3,7 @@
 // recognition (Chrome) uses that. Both are free and need no account.
 import { Capacitor, registerPlugin } from '@capacitor/core'
 
-// What can be said, in English, Czech and Bulgarian; whichever the phone hears
+// What can be said: English first; Czech and Bulgarian words still count if heard
 const COMMANDS = {
   next: ['next', 'next step', 'forward', 'continue', 'go on', 'další', 'dál', 'dále', 'pokračuj', 'pokračovat', 'следваща', 'следващ', 'напред', 'нататък', 'продължи', 'продължавай'],
   back: ['back', 'go back', 'previous', 'last step', 'zpět', 'zpátky', 'předchozí', 'назад', 'предишна', 'предишен', 'обратно', 'върни'],
@@ -44,6 +44,9 @@ const Native = registerPlugin('VoiceCommands')
 const nativeVoice = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('VoiceCommands')
 const BrowserRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition ?? window.webkitSpeechRecognition) : null
 
+// Commands are said in English, whatever language the phone is set to
+const LANGUAGE = 'en-US'
+
 /** True when this phone or browser can listen for commands. */
 export const canListen = nativeVoice || !!BrowserRecognition
 
@@ -61,7 +64,7 @@ export async function listen(onPhrase, onStopped = () => {}) {
     })
     const stopped = await Native.addListener('stopped', ({ error }) => onStopped(error))
     try {
-      await Native.start()
+      await Native.start({ language: LANGUAGE })
     } catch (e) {
       heard.remove()
       stopped.remove()
@@ -77,6 +80,7 @@ export async function listen(onPhrase, onStopped = () => {}) {
   const rec = new BrowserRecognition()
   let on = true
   rec.continuous = true
+  rec.lang = LANGUAGE
   rec.interimResults = false
   rec.maxAlternatives = 3
   rec.onresult = (e) => {
