@@ -2,7 +2,8 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
 import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
-import { canListen, listen, voiceCommand } from './lib/voice.js'
+import { canListen, canSpeak, listen, speak, voiceCommand } from './lib/voice.js'
+import { scrollByBlock } from './lib/blockScroll.js'
 import { toast } from './lib/toast.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, timeLeft } from './lib/cook.js'
 import Icon from './Icon.jsx'
@@ -12,7 +13,7 @@ const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
 const RING_FOR = 2 * 60 * 1000 // then it stays red but quiet
 const VOICE_KEY = 'cooking-app:voice' // listening was on last time, so it starts again
-const SAID = { next: 'Next step', back: 'Back', timer: 'Timer', ingredients: 'Ingredients', steps: 'Steps' }
+const SAID = { next: 'Next step', back: 'Back', timer: 'Timer', ingredients: 'Ingredients', steps: 'Steps', down: 'Scroll down', up: 'Scroll up', read: 'Reading', quiet: 'Quiet' }
 
 const voiceWanted = () => {
   try {
@@ -85,9 +86,11 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
   const [custom, setCustom] = useState(null) // minutes typed for a new timer, while the form is open
   const [customName, setCustomName] = useState('')
   const [voice, setVoice] = useState(false) // listening for "next", "back"…
+  const [reading, setReading] = useState(null) // stop() while a step is read aloud
   const [cookedNote, setCookedNote] = useState('')
   const [logged, setLogged] = useState(false)
   const track = useRef(null)
+  const listRef = useRef(null)
   const rang = useRef({}) // timer id → { first, last } alarm times
   const alarmRef = useRef(alarm)
   alarmRef.current = alarm
@@ -225,10 +228,46 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
     setCustomName('')
   }
 
+  // Read aloud: the step showing now, or the ingredient list while it is open
+  const readingRef = useRef(null)
+  readingRef.current = reading
+  const stopReading = () => {
+    readingRef.current?.()
+    setReading(null)
+  }
+  const readAloud = (n = at) => {
+    let text
+    if (showAll && steps.length > 0) {
+      const list = ingredients.filter((i) => i.name?.trim()).map((i) => [amount(i), i.name].filter(Boolean).join(' '))
+      text = list.length ? `Ingredients. ${list.join('. ')}.` : 'No ingredients.'
+    } else if (steps.length === 0) text = 'This recipe has no steps yet.'
+    else if (n >= steps.length) text = 'Enjoy your meal!'
+    else text = `Step ${n + 1}. ${steps[n]}`
+    const stop = speak(text, () => setReading((r) => (r === stop ? null : r)))
+    setReading(() => stop)
+  }
+  useEffect(() => () => readingRef.current?.(), [])
+  // Reading stops when the step changes by hand
+  const readAt = useRef(at)
+  useEffect(() => {
+    if (readAt.current !== at) readingRef.current?.()
+    readAt.current = at
+  }, [at])
+
+  // "Scroll down" / "scroll up" move what is showing by one piece of content
+  const scrollStep = (dir) => {
+    const el = showList ? listRef.current : track.current?.children[at]
+    if (!scrollByBlock(el, dir)) toast(dir > 0 ? 'Already at the bottom' : 'Already at the top', { kind: 'info', ms: 1200 })
+  }
+
   // Voice commands: what was heard acts on the step showing now
   const onCommandRef = useRef(null)
   onCommandRef.current = (command) => {
-    if (command === 'next' || command === 'back') {
+    if (readingRef.current && command !== 'quiet') return // the phone hearing itself read
+    if (command === 'down' || command === 'up') return scrollStep(command === 'down' ? 1 : -1)
+    if (command === 'read') readAloud()
+    else if (command === 'quiet') stopReading()
+    else if (command === 'next' || command === 'back') {
       setShowAll(false)
       goTo(at + (command === 'next' ? 1 : -1))
     } else if (command === 'ingredients') setShowAll(true)
@@ -297,6 +336,16 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
             <Icon name={voice ? 'mic' : 'micOff'} />
           </button>
         )}
+        {canSpeak && (
+          <button
+            className={`icon-button voice${reading ? ' on' : ''}`}
+            aria-label={reading ? 'Stop reading' : 'Read aloud'}
+            aria-pressed={!!reading}
+            onClick={() => (reading ? stopReading() : readAloud())}
+          >
+            <Icon name={reading ? 'quiet' : 'speak'} />
+          </button>
+        )}
         <button className="link" onClick={() => setCustom((c) => (c == null ? '5' : null))}>
           <Icon name="timer" /> Timer
         </button>
@@ -308,7 +357,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
         <div style={{ width: `${steps.length ? (Math.min(at + 1, steps.length) / steps.length) * 100 : 0}%` }} />
       </div>
 
-      {voice && <p className="cook-voice">Listening. Say “next”, “back”, “timer” or “ingredients”.</p>}
+      {voice && <p className="cook-voice">Listening. Say “next”, “back”, “scroll down”, “scroll up”, “read”, “timer” or “ingredients”.</p>}
 
       {custom != null && (
         <form
@@ -352,7 +401,7 @@ export default function CookMode({ title, ingredients, steps: stepsText, alarm =
       )}
 
       {showList && (
-        <div className="cook-all">
+        <div className="cook-all" ref={listRef}>
           <ul className="cook-ingredients all">
             {ingredients
               .filter((i) => i.name?.trim())

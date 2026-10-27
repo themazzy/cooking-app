@@ -8,6 +8,8 @@ import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.speech.tts.TextToSpeech;
+import android.speech.tts.UtteranceProgressListener;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -19,6 +21,7 @@ import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Hands-free cooking: listens for short commands ("next", "back") with
@@ -26,6 +29,10 @@ import java.util.ArrayList;
  * phone. It listens again after each phrase until stopped, and pauses while
  * the app is in the background. Each phrase heard goes to the web app as a
  * "heard" event; the web app decides what it means.
+ *
+ * It also reads text aloud with the phone's text-to-speech. Listening pauses
+ * while it reads, so the step being read does not count as a command; the web
+ * app gets a "spoken" event when reading ends.
  */
 @CapacitorPlugin(name = "VoiceCommands", permissions = { @Permission(strings = { Manifest.permission.RECORD_AUDIO }, alias = "microphone") })
 public class VoiceCommandsPlugin extends Plugin {
@@ -36,6 +43,12 @@ public class VoiceCommandsPlugin extends Plugin {
     private boolean paused = false; // the app is in the background
     private String language = null;
     private int failures = 0;
+    private TextToSpeech tts;
+    private boolean ttsReady = false;
+    private boolean speaking = false;
+    private String sayText = null; // waiting for text-to-speech to start up
+    private String sayLanguage = null;
+    private String sayId = null; // which text is being read, sent back with "spoken"
 
     @PluginMethod
     public void available(PluginCall call) {
@@ -78,6 +91,76 @@ public class VoiceCommandsPlugin extends Plugin {
         call.resolve();
     }
 
+    @PluginMethod
+    public void speak(PluginCall call) {
+        String text = call.getString("text", "");
+        String lang = call.getString("language");
+        String id = call.getString("id", "");
+        main.post(() -> {
+            sayId = id;
+            if (tts == null) {
+                sayText = text;
+                sayLanguage = lang;
+                tts = new TextToSpeech(getContext(), status -> main.post(() -> {
+                    ttsReady = status == TextToSpeech.SUCCESS;
+                    if (!ttsReady) {
+                        tts = null;
+                        sayText = null;
+                        done();
+                        return;
+                    }
+                    tts.setOnUtteranceProgressListener(progress);
+                    if (sayText != null) say(sayText, sayLanguage);
+                    sayText = null;
+                }));
+                speaking = true;
+                release(); // no listening while reading
+            } else if (ttsReady) {
+                say(text, lang);
+            } else {
+                sayText = text; // still starting up
+                sayLanguage = lang;
+            }
+        });
+        call.resolve();
+    }
+
+    @PluginMethod
+    public void stopSpeaking(PluginCall call) {
+        main.post(() -> {
+            sayText = null;
+            if (tts != null && ttsReady) tts.stop();
+            if (speaking) done();
+        });
+        call.resolve();
+    }
+
+    private void say(String text, String lang) {
+        if (lang != null && !lang.isEmpty()) {
+            int ok = tts.setLanguage(Locale.forLanguageTag(lang));
+            if (ok == TextToSpeech.LANG_MISSING_DATA || ok == TextToSpeech.LANG_NOT_SUPPORTED) tts.setLanguage(Locale.getDefault());
+        }
+        speaking = true;
+        release();
+        if (tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "step") != TextToSpeech.SUCCESS) done();
+    }
+
+    /** Reading ended: tell the web app and listen again. */
+    private void done() {
+        speaking = false;
+        JSObject out = new JSObject();
+        out.put("id", sayId);
+        notifyListeners("spoken", out);
+        if (active && !paused) main.postDelayed(this::listen, 200);
+    }
+
+    private final UtteranceProgressListener progress = new UtteranceProgressListener() {
+        @Override public void onStart(String id) {}
+        @Override public void onDone(String id) { main.post(VoiceCommandsPlugin.this::done); }
+        @Override public void onError(String id) { main.post(VoiceCommandsPlugin.this::done); }
+        @Override public void onStop(String id, boolean interrupted) {} // stopSpeaking already finished it
+    };
+
     @Override
     protected void handleOnPause() {
         paused = true;
@@ -94,6 +177,8 @@ public class VoiceCommandsPlugin extends Plugin {
     protected void handleOnDestroy() {
         active = false;
         release();
+        if (tts != null) tts.shutdown();
+        tts = null;
     }
 
     private void release() {
@@ -105,7 +190,7 @@ public class VoiceCommandsPlugin extends Plugin {
     }
 
     private void listen() {
-        if (!active || paused) return;
+        if (!active || paused || speaking) return;
         if (recognizer == null) {
             recognizer = SpeechRecognizer.createSpeechRecognizer(getContext());
             recognizer.setRecognitionListener(listener);
@@ -130,7 +215,7 @@ public class VoiceCommandsPlugin extends Plugin {
 
     /** Listens again shortly; after many failures in a row it gives up and tells the web app. */
     private void again(boolean failed) {
-        if (!active || paused) return;
+        if (!active || paused || speaking) return;
         failures = failed ? failures + 1 : 0;
         if (failures > 8) {
             active = false;
