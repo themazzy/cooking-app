@@ -354,8 +354,8 @@ export async function recipePdf({ title, meta = '', picture = null, ingredients 
     }
     // A big, faint pot in the middle of the page, over the card, under the text
     if (pot) {
-      const size = 760
-      ctx.globalAlpha = 0.06
+      const size = W
+      ctx.globalAlpha = 0.12
       ctx.drawImage(pot, (W - size) / 2, (H - size) / 2 + 60, size, size)
       ctx.globalAlpha = 1
     }
