@@ -148,6 +148,19 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   ]
     .filter(Boolean)
     .join(' · ')
+  // Calories and macros as on screen, for the PDF
+  const approx = macros.missing.length ? '~' : ''
+  const shareNutrition = hasCalories
+    ? {
+        per: recipe.servings ? 'per portion' : 'in total',
+        values: [
+          [formatKcal(perPortion ?? calories.total * factor), 'kcal'],
+          [`${approx}${formatGrams(macros.protein * macroShare)} g`, 'protein'],
+          [`${approx}${formatGrams(macros.carbs * macroShare)} g`, 'carbs'],
+          [`${approx}${formatGrams(macros.fat * macroShare)} g`, 'fat'],
+        ],
+      }
+    : null
 
   const copyText = async (text) => {
     try {
@@ -784,6 +797,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         <ShareSheet
           title={recipe.title || 'Recipe'}
           meta={shareMeta}
+          nutrition={shareNutrition}
           text={[recipeToText({ ingredients: shown, steps: stepsText }, [recipe.title, shareMeta].filter(Boolean).join('\n')), recipe.note?.trim() ? `Note: ${recipe.note.trim()}` : '', recipe.sourceUrl ?? ''].filter(Boolean).join('\n\n')}
           pictures={[recipe.photo, recipe.image, recipe.photoThumb, recipe.thumb].filter(Boolean)}
           ingredients={shown}
