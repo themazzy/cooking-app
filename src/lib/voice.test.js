@@ -27,3 +27,15 @@ describe('voiceCommand', () => {
     expect(voiceCommand('we can do that next week when we go shopping')).toBe(null)
   })
 })
+
+describe('scroll and read commands', () => {
+  it('hears scrolling, reading and quiet', () => {
+    expect(voiceCommand('scroll down')).toBe('down')
+    expect(voiceCommand('dolů')).toBe('down')
+    expect(voiceCommand('scroll up')).toBe('up')
+    expect(voiceCommand('нагоре')).toBe('up')
+    expect(voiceCommand('read the step')).toBe('read')
+    expect(voiceCommand('přečti')).toBe('read')
+    expect(voiceCommand('stop reading')).toBe('quiet')
+  })
+})

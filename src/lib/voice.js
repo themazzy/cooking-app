@@ -10,6 +10,10 @@ const COMMANDS = {
   timer: ['timer', 'start timer', 'start the timer', 'časovač', 'minutka', 'minutku', 'stopky', 'таймер', 'пусни таймер'],
   ingredients: ['ingredients', 'ingredience', 'suroviny', 'продукти', 'съставки'],
   steps: ['steps', 'show steps', 'postup', 'kroky', 'стъпки'],
+  down: ['scroll down', 'down', 'scroll', 'go down', 'more', 'dolů', 'níž', 'posuň dolů', 'надолу', 'долу'],
+  up: ['scroll up', 'up', 'go up', 'nahoru', 'výš', 'posuň nahoru', 'нагоре', 'горе'],
+  read: ['read', 'read it', 'read step', 'read the step', 'read aloud', 'read out', 'repeat', 'say it again', 'přečti', 'čti', 'přečíst', 'zopakuj', 'прочети', 'чети', 'повтори'],
+  quiet: ['stop reading', 'quiet', 'be quiet', 'silence', 'ticho', 'dost', 'тихо', 'спри'],
 }
 
 const words = (s) =>
@@ -100,5 +104,79 @@ export async function listen(onPhrase, onStopped = () => {}) {
   return () => {
     on = false
     rec.stop()
+  }
+}
+
+/** The language to read a text in, from its letters (the phone's voice for it is used). */
+export function speechLanguage(text) {
+  const s = String(text ?? '')
+  if (/[\u0400-\u04ff]/.test(s)) return /[ыэё]/i.test(s) ? 'ru-RU' : 'bg-BG'
+  if (/[\u3040-\u30ff]/.test(s)) return 'ja-JP'
+  if (/[\uac00-\ud7af]/.test(s)) return 'ko-KR'
+  if (/[\u4e00-\u9fff]/.test(s)) return 'zh-CN'
+  if (/[ěřůťďň]/i.test(s)) return 'cs-CZ'
+  if (/[ľĺŕô]/i.test(s)) return 'sk-SK'
+  if (/[ąęłńśźż]/i.test(s)) return 'pl-PL'
+  if (/[äöüß]/i.test(s)) return 'de-DE'
+  return 'en-US'
+}
+
+const browserVoice = typeof window !== 'undefined' && 'speechSynthesis' in window && typeof window.SpeechSynthesisUtterance === 'function'
+
+/** True when this phone or browser can read text aloud. */
+export const canSpeak = nativeVoice || browserVoice
+
+/**
+ * Reads `text` aloud, replacing whatever was being read. `onDone` is called
+ * when it ends or is stopped. Returns stop(). On Android, listening for
+ * commands pauses while it reads.
+ */
+let readCount = 0
+let reading = null // the text being read now: { drop } forgets it without calling its onDone
+
+export function speak(text, onDone = () => {}) {
+  reading?.drop()
+  const language = speechLanguage(text)
+  let over = false
+  let sub = null
+  const me = {
+    drop: () => {
+      over = true
+      sub?.remove()
+    },
+  }
+  reading = me
+  const end = () => {
+    if (over) return
+    over = true
+    sub?.remove()
+    if (reading === me) reading = null
+    onDone()
+  }
+  if (nativeVoice) {
+    const id = String(++readCount)
+    Native.addListener('spoken', (e) => e?.id === id && end()).then((s) => (over ? s.remove() : (sub = s)))
+    Native.speak({ text, language, id }).catch(end)
+    return () => {
+      if (over) return
+      Native.stopSpeaking().catch(() => {})
+      end()
+    }
+  }
+  if (!browserVoice) {
+    end()
+    return () => {}
+  }
+  const synth = window.speechSynthesis
+  synth.cancel()
+  const u = new window.SpeechSynthesisUtterance(text)
+  u.lang = language
+  u.onend = end
+  u.onerror = end
+  synth.speak(u)
+  return () => {
+    if (over) return
+    synth.cancel()
+    end()
   }
 }

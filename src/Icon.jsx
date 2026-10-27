@@ -46,6 +46,8 @@ import {
   StickyNote,
   Timer,
   User,
+  Volume2,
+  VolumeX,
   WandSparkles,
   X,
 } from 'lucide-react'
@@ -100,6 +102,8 @@ const ICONS = {
   note: StickyNote,
   timer: Timer,
   user: User,
+  speak: Volume2,
+  quiet: VolumeX,
   close: X,
 }
 
