@@ -97,6 +97,8 @@ export function htmlToText(fragment) {
   return decodeEntities(
     fragment
       .replace(/<br\s*\/?>/gi, '\n')
+      // A heading ends with a colon, so "Filling" over a list reads as a sub-list heading, not an ingredient
+      .replace(/([^\s:?!.>])(\s*(?:<[^>]+>\s*)*)<\/h([2-6])>/gi, '$1:$2</h$3>')
       .replace(/<\/(p|div|li|h[1-6]|ul|ol|tr|section|article)>/gi, '\n')
       .replace(/<[^>]+>/g, ''),
   )
