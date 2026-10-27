@@ -58,8 +58,8 @@ const TO_TASTE = new RegExp(`^(.+?)\\s*[:–—-]?\\s+(${TASTE})\\.?$`, 'iu')
 const TASTE_FIRST = new RegExp(`^(${TASTE})\\s+(.+)$`, 'iu')
 const NAME_FIRST = new RegExp(`^(.+?)\\s*[-–:,]?\\s+${QTY}\\s*(?:${UNIT})?\\s*$`, 'iu')
 
-const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти|材料|食材|用料|主料|主材料|재료|필수\s?재료|주재료|기본\s?재료|준비물)(?![\p{L}])/iu
-const STEP_HEADER = /^(postup|příprava|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування|paso a paso|pasos|modo de preparación|procedimiento|passaggi|étapes|作り方|手順|做法|作法|步骤|步驟|制作方法|製作方法|制作步骤|만드는\s?법|조리\s?순서|조리\s?과정|조리\s?방법|조리법)(?![\p{L}])|(?:做法步骤|做法步驟|的做法|的作法)$/iu
+const INGREDIENT_HEADER = /^(ingredients?|ingredience|suroviny|potřebujete|budete potřebovat|co (?:budeš|budete|potřebuješ|potřebujete)(?: potřebovat)?|co (?:na|do|pro) \p{L}+|z čeho|čo (?:budete |potrebujete|potrebuješ)|you('ll)? need|what you need|съставки|продукти|необходими продукти|необходими съставки|нужни продукти|нужни съставки|необходимо|ви трябва|zutaten|ingredientes|ingredienti|ingrédients|składniki|ingrediencie|ингредиенты|продукты|інгредієнти|材料|食材|用料|主料|主材料|재료|필수\s?재료|주재료|기본\s?재료|준비물)(?![\p{L}])/iu
+const STEP_HEADER = /^(postup|příprava|jak na to|jak (?:postupovat|na ně|na něj|na ni)|ako na to|ako postupovať|method|instructions|directions|steps|how to make( it)?|начин на приготвяне|приготвяне|приготовление|изпълнение|стъпки|инструкции|метод|zubereitung|anleitung|preparación|elaboración|modo de preparo|preparazione|procedimento|préparation|étapes|przygotowanie|sposób przygotowania|приготовление|способ приготовления|приготування|paso a paso|pasos|modo de preparación|procedimiento|passaggi|étapes|作り方|手順|做法|作法|步骤|步驟|制作方法|製作方法|制作步骤|만드는\s?법|조리\s?순서|조리\s?과정|조리\s?방법|조리법)(?![\p{L}])|(?:做法步骤|做法步驟|的做法|的作法)$/iu
 // A sub-list heading: "For the sauce", "Na omáčku", "Pro těsto", "За соса", and the same in the languages
 // recipes often come in before they are translated: "Für die Soße", "Para la salsa", "Per il sugo", "Pour la sauce", "Do sosu", "Для соуса"
 const FOR = '(?:for|na|pro|за|für|para|per|pour|do|для)'
@@ -386,6 +386,8 @@ export function parseIngredientLine(line) {
   return null
 }
 
+const DATE_LINE = /^\d{1,2}\.\s?\d{1,2}\.\s?(?:19|20)\d\d\b|^(?:19|20)\d\d-\d\d-\d\d\b/
+const SHARE_LINE = /^(?:(?:share|sdílet|facebook|twitter|x|google\+?|linkedin|pinterest|whatsapp|messenger|telegram|e-?mail|tisk|print)[\s,|·•]*){2,}$/i
 const wordCount = (s) => s.split(/\s+/).filter(Boolean).length
 
 // Words that say how an ingredient is prepared, so "onion, finely chopped, divided" stays one ingredient
@@ -455,7 +457,11 @@ export function parseRecipeText(text) {
       }
     }
 
-    const header = (BRACKETED.exec(line)?.[1] ?? line).replace(/[:：\s]+$/u, '')
+    // "15.10.2026 by Slepice": the blog post's date, not 15 of something
+    if (DATE_LINE.test(line)) continue
+    // "Facebook Twitter Pinterest": the page's share buttons
+    if (SHARE_LINE.test(line)) continue
+    const header = (BRACKETED.exec(line)?.[1] ?? line).replace(/[:：?？\s]+$/u, '')
     // "Prep time: 15 min", "Приготвяне: 20 мин" are times (read elsewhere), not a section
     if (/^[^:–-]{1,30}[:–-]\s*\d/u.test(line) && wordCount(line) <= 6 && Object.values(timesFromText(line)).some((v) => v != null)) continue
     // "For the sauce", "Ingredients for the sauce", "Тесто:" start a sub-list of the ingredients
@@ -468,7 +474,8 @@ export function parseRecipeText(text) {
     }
     // "Ingredients", or "Необходими продукти за 4 порции"
     // A sentence ("Składniki przekładamy do miski.") is not a heading
-    const sentence = /[.!?。！？]$/.test(line)
+    // "Co na knedlíky?", "Jak na to?": short questions are headings on Czech blogs
+    const sentence = /[.!。！]$/.test(line) || (/[?？]$/.test(line) && wordCount(line) > 4)
     if (!sentence && INGREDIENT_HEADER.test(header) && (wordCount(header) <= 4 || (wordCount(header) <= 7 && detectServings(header)))) {
       section = 'ingredients'
       group = null
