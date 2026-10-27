@@ -299,12 +299,18 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
           page(p).ops.push((ctx) => {
             ctx.fillStyle = color
             ctx.beginPath()
-            ctx.arc(RIGHT_X + 17, top + 15, 17, 0, Math.PI * 2)
+            // Level with the middle of the step's first line
+            const cy = top + Math.round(LH / 2) - 1
+            ctx.arc(RIGHT_X + 17, cy, 17, 0, Math.PI * 2)
             ctx.fill()
             font(ctx, 18, 700)
             ctx.fillStyle = '#ffffff'
             const label = String(k + 1)
-            ctx.fillText(label, RIGHT_X + 17 - ctx.measureText(label).width / 2, top + 4)
+            // Centred on the digits' own height, not the font's line box
+            ctx.textBaseline = 'alphabetic'
+            const m = ctx.measureText(label)
+            ctx.fillText(label, RIGHT_X + 17 - m.width / 2, cy + (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2)
+            ctx.textBaseline = 'top'
           })
           for (const line of stepLines) {
             room(LH)
@@ -354,6 +360,15 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
     }
   }
 
+  // The watermark is drawn from the SVG once, already faint, and copied onto each page
+  let faintPot = null
+  if (pot) {
+    faintPot = document.createElement('canvas')
+    faintPot.width = faintPot.height = W
+    const c = faintPot.getContext('2d')
+    c.globalAlpha = 0.16
+    c.drawImage(pot, 0, 0, W, W)
+  }
   const out = []
   for (const [n, p] of pages.entries()) {
     const canvas = document.createElement('canvas')
@@ -404,12 +419,7 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
       ctx.stroke()
     }
     // A big, faint pot in the middle of the page, over the card, under the text
-    if (pot) {
-      const size = W
-      ctx.globalAlpha = 0.16
-      ctx.drawImage(pot, (W - size) / 2, (H - size) / 2 + 60, size, size)
-      ctx.globalAlpha = 1
-    }
+    if (faintPot) ctx.drawImage(faintPot, 0, (H - W) / 2 + 60)
     for (const op of p.ops) op(ctx)
 
     ctx.fillStyle = BORDER
@@ -421,7 +431,8 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
     const [foot = ''] = wrap(ctx, footer, footW)
     ctx.fillText(foot, M, H - M)
     if (label) ctx.fillText(label, W - M - ctx.measureText(label).width, H - M)
-    out.push({ jpeg: await toJpeg(canvas), width: W, height: H })
+    // Pages are encoded together: the browser does that off the main thread
+    out.push(toJpeg(canvas).then((jpeg) => ({ jpeg, width: W, height: H })))
   }
-  return new Blob([jpegPdf(out)], { type: 'application/pdf' })
+  return new Blob([jpegPdf(await Promise.all(out))], { type: 'application/pdf' })
 }
