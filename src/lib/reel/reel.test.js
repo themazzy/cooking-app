@@ -333,3 +333,14 @@ describe('Instagram video rendition', async () => {
     setVideoMinShortSide(0)
   })
 })
+
+describe('shared links', async () => {
+  const { extractUrl, loadReel } = await import('./index.js')
+  it('prefers the reel link over a bare site address', () => {
+    expect(extractUrl('Seen on https://www.facebook.com/ : https://www.facebook.com/share/r/1JzsBpuFty/')).toBe('https://www.facebook.com/share/r/1JzsBpuFty/')
+    expect(extractUrl('look https://www.facebook.com/')).toBe('https://www.facebook.com/')
+  })
+  it('refuses a bare home page', async () => {
+    await expect(loadReel('https://www.facebook.com/')).rejects.toThrow(/home page/)
+  })
+})
