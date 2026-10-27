@@ -22,7 +22,9 @@ export function detectPlatform(url) {
 
 /** First http(s) URL in a piece of shared text ("Check this out https://…"). */
 export function extractUrl(text) {
-  return text?.match(/https?:\/\/[^\s"'<>]+/)?.[0] ?? null
+  const urls = text?.match(/https?:\/\/[^\s"'<>]+/g) ?? []
+  // Shared text can name the site first ("on https://www.facebook.com/ … https://…/share/r/…"): prefer a link with a path
+  return urls.find((u) => /^https?:\/\/[^/]+\/[^?#\s]+/.test(u)) ?? urls[0] ?? null
 }
 
 const FETCHERS = { tiktok: fetchTikTok, instagram: fetchInstagram, facebook: fetchFacebook, youtube: fetchYouTube, web: fetchWebRecipe }
@@ -34,6 +36,9 @@ const FETCHERS = { tiktok: fetchTikTok, instagram: fetchInstagram, facebook: fet
 export async function loadReel(url) {
   const platform = detectPlatform(url)
   if (!platform) throw new Error('That does not look like a web link.')
+  if (platform !== 'web' && /^https?:\/\/[^/]+\/?(?:[?#].*)?$/.test(url)) {
+    throw new Error(`That is the ${platform[0].toUpperCase()}${platform.slice(1)} home page, not a reel. Copy the reel's own link (Share → Copy link) and try again.`)
+  }
   resetTrace()
   return FETCHERS[platform](url)
 }
