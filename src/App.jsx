@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { App as CapApp } from '@capacitor/app'
+import { handleBackButton } from './lib/backButton.js'
 import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
@@ -158,6 +159,8 @@ export default function App() {
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
+  // Back closes the open sheet first, then goes back a page
+  useEffect(() => (native ? handleBackButton(CapApp) : undefined), [native])
   useEffect(() => applyTheme({ theme: settings.theme, accent: settings.accent }), [settings.theme, settings.accent])
   // A saved copy needs a download at least as sharp; without one the smallest is enough
   useEffect(() => {
