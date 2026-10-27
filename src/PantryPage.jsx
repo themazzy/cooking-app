@@ -584,7 +584,10 @@ export default function PantryPage({ items, loading = false, onChanged }) {
           </div>
         </div>
       )}
-      {receipt?.found && <ReceiptSheet found={receipt.found} onAdd={addFromReceipt} onClose={() => setReceipt(null)} />}
+      {/* A receipt read in the background waits until no other sheet is open, so it never shows under one */}
+      {receipt?.found && !scanning && !picking && !editing && !shots && (
+        <ReceiptSheet found={receipt.found} onAdd={addFromReceipt} onClose={() => setReceipt(null)} />
+      )}
       {scanning && (
         <ScanSheet
           onAdd={addScanned}
