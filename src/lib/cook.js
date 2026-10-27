@@ -64,9 +64,9 @@ export function splitSteps(steps) {
 // Numbers a time can be written with: "1 1/2", "1½", "1,5", "½", "half an", "an", Czech "půl", Bulgarian "половин"
 const T_NUM = '(\\d+\\s+\\d\\/\\d|\\d+\\/\\d|\\d+[½¼¾]|\\d+(?:[.,]\\d+)?|[½¼¾]|half\\s+an?|an?|půl|pul|половин)'
 // "ч." is hours, but "ч.л." is a teaspoon
-const T_HOURS = 'hours?|hrs?|h|hodin[auy]?|hod\\.?|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
-const T_MINS = 'minutes?|mins?|minut[ay]?|min\\.?|m|минут[аи]?|мин\\.?'
-const T_SECS = 'seconds?|secs?|s|sekund[ay]?|sek\\.?|секунд[аи]?|сек\\.?'
+const T_HOURS = 'hours?|hrs?|h|hodin[auy]?|hodín|hod\\.?|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
+const T_MINS = 'minutes?|mins?|minut[ayu]?|minút[ayu]?|min\\.?|m|минут[аи]?|мин\\.?'
+const T_SECS = 'seconds?|secs?|s|sekund[ayu]?|sekúnd[ayu]?|sek\\.?|секунд[аи]?|сек\\.?'
 const T_RANGE = '\\s*(?:-|–|to|až|do|до)\\s*'
 const TIME = new RegExp(
   `(?<![\\p{L}\\d/])${T_NUM}(?:${T_RANGE}${T_NUM})?\\s*(${T_HOURS}|${T_MINS}|${T_SECS})(?![\\p{L}])` +

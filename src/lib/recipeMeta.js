@@ -129,8 +129,8 @@ export function durationMinutes(value) {
 }
 
 const NUM = '(\\d+(?:[.,]\\d+)?|½|půl|pul|half an?|an?)'
-const HOURS = 'h|hrs?|hours?|hod(?:in[ay]?|iny)?\\.?|hodin[auy]?|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
-const MINS = 'm|min(?:s|ut[ay]?|utes?|uty)?\\.?|minut[ay]?|мин(?:ути?)?\\.?'
+const HOURS = 'h|hrs?|hours?|hod(?:in[ay]?|iny)?\\.?|hodin[auy]?|hodín|час(?:а|ове)?|ч(?!\\.?\\s*л)\\.?'
+const MINS = 'm|min(?:s|ut[ayu]?|utes?|uty)?\\.?|minut[ayu]?|minút[ayu]?|мин(?:ути?)?\\.?'
 const value = (s) => {
   const v = s.toLowerCase()
   if (v === '½' || v === 'půl' || v === 'pul' || v.startsWith('half')) return 0.5
@@ -162,7 +162,7 @@ export function textDuration(s) {
 
 // Labels that come before a time in a caption or a page ("Prep time: 15 min", "Doba pečení 40 minut")
 const LABELS = {
-  prepMin: ['prep(?:aration)?(?: time)?', 'příprava', 'doba přípravy', 'čas přípravy', 'приготвяне', 'подготовка', 'време за подготовка'],
+  prepMin: ['prep(?:aration)?(?: time)?', 'příprava', 'príprava', 'doba přípravy', 'čas přípravy', 'čas na přípravu', 'čas prípravy', 'doba prípravy', 'приготвяне', 'подготовка', 'време за подготовка'],
   cookMin: ['cook(?:ing)?(?: time)?', 'bak(?:e|ing)(?: time)?', 'vaření', 'doba vaření', 'čas vaření', 'pečení', 'doba pečení', 'čas pečení', 'tepelná úprava', 'готвене', 'печене', 'време за готвене'],
   totalMin: ['total(?: time)?', 'ready in', 'celkem', 'celkový čas', 'celková doba', 'общо', 'общо време'],
 }
@@ -179,7 +179,10 @@ export function timesFromText(text) {
       // Several can share a line: "Prep 10 min | Cook 20 min"
       const re = new RegExp(`(?:^|[\\s|,;•·(])(?:${labels.join('|')})${sep}(?:about\\s+|approx\\.?\\s+|cca\\.?\\s+|asi\\s+|около\\s+|~\\s*)?`, 'giu')
       for (const m of line.matchAll(re)) {
-        const d = textDuration(line.slice(m.index + m[0].length))
+        const after = line.slice(m.index + m[0].length)
+        // "Čas na přípravu: 00:40"
+        const clock = after.match(/^(\d{1,2}):(\d{2})(?!\d)/)
+        const d = clock ? { minutes: Number(clock[1]) * 60 + Number(clock[2]) } : textDuration(after)
         if (d) {
           out[field] = d.minutes
           break
@@ -240,9 +243,9 @@ const COUNT = `(\\d{1,2}|${Object.keys(NUM_WORDS).join('|')})(?:-?(?:ма|ри))
 // \b only knows ASCII letters, so Czech and Bulgarian words need these
 const START = '(?<![\\p{L}\\d])'
 const END = '(?![\\p{L}\\d])'
-const LABEL = 'serves|servings?|portions?|yields?|makes|počet porcí|porce|porcí|porcie|брой порции|порции|порция|portionen|porzioni|raciones|porciones|porcje|porcji|порций|порции'
+const LABEL = 'serves|servings?|portions?|yields?|makes|počet porcí|porce|porcí|porcie|porcií|брой порции|порции|порция|portionen|porzioni|raciones|porciones|porcje|porcji|порций|порции'
 const PEOPLE =
-  'servings?|portions?|people|persons|porc[eíi]|porcie|porciu|osob[ya]?|osôb|lidi|порции|порция|човека|човек|души|personen|portionen|porzioni|persone|raciones|porciones|personas|personnes|parts|porcje|porcji|osoby|osób|порций|персоны|персон|человека|человек'
+  'servings?|portions?|people|persons|porcií|porc[eíi]|porcie|porciu|osob[ya]?|osôb|lidi|порции|порция|човека|човек|души|personen|portionen|porzioni|persone|raciones|porciones|personas|personnes|parts|porcje|porcji|osoby|osób|порций|персоны|персон|человека|человек'
 const SERVINGS = [
   new RegExp(`${START}(?:${LABEL})\\s*[:\\-–]?\\s*(?:about\\s+|cca\\.?\\s+|около\\s+)?${COUNT}${END}`, 'iu'),
   new RegExp(`${START}${COUNT}\\s*(?:${PEOPLE})${END}`, 'iu'),
