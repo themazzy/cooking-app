@@ -52,3 +52,34 @@ it('ignores post dates and share buttons, keeps amounts with dots', () => {
   const r = parseRecipePage('<article><p>15.10.2026</p><p>2026-10-15 by Slepice</p><h2>Suroviny</h2><ul><li>1.5 kg brambor</li><li>2 vejce</li></ul><p>Facebook Twitter Pinterest</p></article>')
   expect(parseRecipeText(r.description).ingredients.map((i) => [i.quantity, i.name])).toEqual([[1.5, 'brambor'], [2, 'vejce']])
 })
+
+// Second post from the same blog (2026-07-08): a two-word "Co na …?" heading
+const devilled = `<html><body><article><h3>Jak na retro ďábelskou směs z mletého masa s topinkami</h3>
+<div>8.7.2026 by Slepice No comment(s)</div><div><a>Chuťovky</a>, <a>Maso a ryby</a></div>
+<p>Retro klasika. Salamandr je gril, který znají i profesionální kuchyně.</p>
+<p><strong>Ďábelská směs na topinky</strong><br>4 porce<br>příprava: 45 minut</p>
+<p><strong>Co na ďábelské topinky?</strong></p>
+<ul><li>8 plátků chleba</li><li>400 g mletého masa (mix hovězí a vepřové)</li><li>2 šalotky</li><li>4 stroužky česneku</li><li>1 lžíce oleje</li><li>2 lžíce rajčatového protlaku</li><li>1 konzerva loupaných rajčat (400 g)</li><li>1 chilli papričku (dle chuti)</li><li>3 lžíce ajvaru</li><li>sůl a pepř</li><li>160 g strouhaného ementálu</li></ul>
+<p><strong>Jak na to?</strong></p>
+<ol><li>Šalotky a česnek oloupej a nakrájej nadrobno, na rozehřátém oleji je osmahni dozlatova. Přidej maso, osol, opepři a opékej, dokud nepustí šťávu a nezezlátne.</li>
+<li>Vmíchej protlak a opékej, až se vše spojí. Přidej loupaná rajčata, promíchej a opékej. Vmíchej nasekanou chilli, pak ajvar a krátce opékej, aby se tekutina odpařila (chvilku to potrvá). Dochuť solí a pepřem a nech vychladnout.</li>
+<li>Připrav topinky a nastrouhej sýr. Směs rozděl na topinky, posyp chilli a sýrem a lehce přitlač prsty. Krátce zapeč v troubě pod grilem, nebo použij domácí salamandr.</li></ol>
+<div>Facebook Twitter Google+ LinkedIn Pinterest</div></article></body></html>`
+it('reads the devilled mince toast recipe', () => {
+  const d = draftFromImport({ platform: 'web', url: 'x', ...parseRecipePage(devilled), comments: [] })
+  expect([d.servings, d.prepMin]).toEqual([4, 45])
+  expect(d.ingredients.map((i) => [i.qty, i.unit, i.name])).toEqual([
+    ['8', 'slice', 'Chleba'],
+    ['400', 'g', 'Mletého masa (mix hovězí a vepřové)'],
+    ['2', '', 'Šalotky'],
+    ['4', 'clove', 'Česneku'],
+    ['1', 'tbsp', 'Oleje'],
+    ['2', 'tbsp', 'Rajčatového protlaku'],
+    ['1', 'can', 'Loupaných rajčat'],
+    ['1', '', 'Chilli papričku (dle chuti)'],
+    ['3', 'tbsp', 'Ajvaru'],
+    ['', '', 'Sůl a pepř'],
+    ['160', 'g', 'Strouhaného ementálu'],
+  ])
+  expect(d.steps.split('\n')).toHaveLength(3)
+})
