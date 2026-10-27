@@ -152,16 +152,68 @@ public class PageReaderPlugin extends Plugin {
         });
     }
 
+    /** Value of one cookie for `url` from the WebViews' shared cookie store. */
+    @PluginMethod
+    public void getCookie(PluginCall call) {
+        String url = call.getString("url");
+        String name = call.getString("name");
+        JSObject ret = new JSObject();
+        String value = cookieValue(url, name);
+        if (value != null) ret.put("value", value);
+        call.resolve(ret);
+    }
+
+    /**
+     * Expires every cookie for `url`. Login cookies are usually set for the
+     * whole domain (.instagram.com), so each is expired both host-only and
+     * for every parent domain, or a host-only expiry would leave them in place.
+     */
+    @PluginMethod
+    public void clearCookies(PluginCall call) {
+        String url = call.getString("url");
+        if (url == null || !url.startsWith("https://")) {
+            call.reject("https url required");
+            return;
+        }
+        CookieManager cm = CookieManager.getInstance();
+        String host = Uri.parse(url).getHost();
+        String cookies = cm.getCookie(url);
+        if (cookies != null && host != null) {
+            String[] labels = host.split("\\.");
+            for (String part : cookies.split(";")) {
+                String name = part.trim().split("=", 2)[0];
+                if (name.isEmpty()) continue;
+                String expired = name + "=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/";
+                cm.setCookie(url, expired);
+                cm.setCookie(url, expired + "; Secure");
+                for (int i = 0; i < labels.length - 1; i++) {
+                    StringBuilder domain = new StringBuilder();
+                    for (int j = i; j < labels.length; j++) domain.append('.').append(labels[j]);
+                    cm.setCookie(url, expired + "; Domain=" + domain);
+                    cm.setCookie(url, expired + "; Domain=" + domain + "; Secure");
+                }
+            }
+        }
+        cm.flush();
+        call.resolve();
+    }
+
     private static boolean hasCookie(String url, String name) {
-        if (name == null) return false;
+        String value = cookieValue(url, name);
+        return value != null && !value.isEmpty();
+    }
+
+    private static String cookieValue(String url, String name) {
+        if (url == null || name == null) return null;
         String cookies = CookieManager.getInstance().getCookie(url);
-        if (cookies == null) return false;
+        if (cookies == null) return null;
         for (String part : cookies.split(";")) {
             String[] kv = part.trim().split("=", 2);
-            if (kv[0].equals(name) && kv.length > 1 && !kv[1].isEmpty()) return true;
+            if (kv[0].equals(name) && kv.length > 1) return kv[1];
         }
-        return false;
+        return null;
     }
+
 
     @SuppressLint("SetJavaScriptEnabled")
     @PluginMethod

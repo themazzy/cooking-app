@@ -1,4 +1,4 @@
-import { Capacitor, CapacitorCookies, CapacitorHttp } from '@capacitor/core'
+import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core'
 
 // Requests to Instagram, TikTok and Facebook only work from the Android app:
 // native HTTP is not subject to CORS and goes out over the phone's own IP.
@@ -10,6 +10,9 @@ export const MOBILE_UA =
   'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36'
 export const DESKTOP_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
+
+// Native plugin (android/.../PageReaderPlugin.java), see pageReader.js
+export const PageReader = registerPlugin('PageReader')
 
 export class FetchError extends Error {
   constructor(message, status) {
@@ -117,14 +120,25 @@ export async function postJson(url, body, { headers = {}, ua = DESKTOP_UA } = {}
   return JSON.parse(text)
 }
 
-/** Value of a cookie the native cookie store holds for `url`. */
+/**
+ * Value of a cookie the native cookie store holds for `url`. Asks Android's
+ * CookieManager directly: CapacitorCookies.getCookies ignores the url and
+ * returns only the app's own document.cookie.
+ */
 export async function getCookie(url, name) {
+  if (!canFetchCrossSite()) return null
   try {
-    const cookies = await CapacitorCookies.getCookies({ url })
-    return cookies?.[name] ?? null
+    const res = await PageReader.getCookie({ url, name })
+    return res?.value ?? null
   } catch {
     return null
   }
+}
+
+/** Removes every cookie the native cookie store holds for `url` (signing out). */
+export async function clearCookies(url) {
+  if (!canFetchCrossSite()) return
+  await PageReader.clearCookies({ url })
 }
 
 /** GET binary data (a video file). Returns an ArrayBuffer. */
