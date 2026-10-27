@@ -9,7 +9,9 @@ const bucket = new Map()
 function query(table) {
   const filters = []
   let op = { kind: 'select' }
-  const rows = () => db[table].filter((r) => filters.every(([k, v, how]) => (how === 'in' ? v.includes(r[k]) : r[k] === v)))
+  const at = (v) => Date.parse(v) + (Number(/\.\d{3}(\d*)/.exec(v)?.[1]?.padEnd(3, '0') ?? 0) / 1000)
+  const test = (how, a, v) => (how === 'in' ? v.includes(a) : how === 'gte' ? at(a) >= at(v) : how === 'lt' ? at(a) < at(v) : a === v)
+  const rows = () => db[table].filter((r) => filters.every(([k, v, how]) => test(how, r[k], v)))
   const run = () => {
     if (op.kind === 'insert') {
       if (db[table].some((r) => r.household_id === op.row.household_id)) return { data: null, error: { code: '23505' } }
@@ -37,6 +39,8 @@ function query(table) {
     select: () => q,
     eq: (k, v) => (filters.push([k, v]), q),
     in: (k, v) => (filters.push([k, v, 'in']), q),
+    gte: (k, v) => (filters.push([k, v, 'gte']), q),
+    lt: (k, v) => (filters.push([k, v, 'lt']), q),
     insert: (row) => ((op = { kind: 'insert', row }), q),
     update: (fields) => ((op = { kind: 'update', fields }), q),
     upsert: (row) => ((op = { kind: 'upsert', row }), q),
@@ -105,6 +109,17 @@ describe('syncRecipes', () => {
     expect(pushed).toBe(1)
     expect(db.recipes[0].data.title).toBe('New')
     expect(local.get('a').syncedAt).toBe(2000)
+  })
+
+  it('pushes an edit to a recipe whose server time has microseconds', async () => {
+    // Changed in the dashboard with now(): 31.427423, which the phone reads as 31.427
+    db.recipes.push({ id: 'a', household_id: 'h1', data: { title: 'Old' }, deleted: false, updated_at: '2026-10-26T19:13:31.427423+00:00', video_path: null })
+    await syncRecipes()
+    const pulled = local.get('a')
+    local.set('a', { ...pulled, title: 'New', updatedAt: pulled.syncedAt + 5000 })
+    const { pushed } = await syncRecipes()
+    expect(pushed).toBe(1)
+    expect(db.recipes[0].data.title).toBe('New')
   })
 
   it('removes recipes deleted on the other phone', async () => {
