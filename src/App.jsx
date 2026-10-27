@@ -43,7 +43,7 @@ import { openLogin } from './lib/pageReader.js'
 import { debugReport, detectPlatform, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
 import { FACEBOOK_LOGIN_URL, isFacebookSignedIn } from './lib/reel/facebook.js'
-import { CapacitorCookies } from '@capacitor/core'
+import { clearCookies } from './lib/http.js'
 import { ACCENTS, THEMES, applyTheme, resolveTheme } from './lib/theme.js'
 import { setWorking, toast } from './lib/toast.js'
 import { RecipeListSkeleton, RecipePageSkeleton, StartSkeleton } from './Skeleton.jsx'
@@ -343,7 +343,7 @@ export default function App() {
 
   const signOutInstagram = async () => {
     try {
-      await CapacitorCookies.clearCookies({ url: 'https://www.instagram.com' })
+      await clearCookies('https://www.instagram.com')
     } finally {
       setIgSignedIn(await isInstagramSignedIn())
     }
@@ -351,7 +351,7 @@ export default function App() {
 
   const signOutFacebook = async () => {
     try {
-      await CapacitorCookies.clearCookies({ url: 'https://www.facebook.com' })
+      await clearCookies('https://www.facebook.com')
     } finally {
       setFbSignedIn(await isFacebookSignedIn())
     }

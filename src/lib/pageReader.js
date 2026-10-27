@@ -1,9 +1,7 @@
-import { registerPlugin } from '@capacitor/core'
-import { canFetchCrossSite, recordTrace } from './http.js'
+import { PageReader, canFetchCrossSite, recordTrace } from './http.js'
 
 // Native plugin (android/.../PageReaderPlugin.java): loads a page in a hidden
 // WebView, runs `fn` there, and returns what it stored in window.__cookingResult.
-const PageReader = registerPlugin('PageReader')
 
 /**
  * Runs `fn(args)` inside `url` in a real browser engine. `fn` must be
