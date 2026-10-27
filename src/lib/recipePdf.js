@@ -134,8 +134,6 @@ const RIGHT_X = M + LEFT_W + GAP
 const RIGHT_W = W - M - RIGHT_X
 const PAD = 26 // inside the ingredients card
 const AMOUNT_W = 128
-const TEXT = 24
-const LH = 33
 const BOTTOM = H - M - 30 // footer below
 
 /**
@@ -151,188 +149,208 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
   const [img, logo, pot] = await Promise.all([loadImage(picture), svg(logoSvg), svg(logoSvg.replace(/<rect width="108"[^>]*\/>/, ''))])
   // Everything is laid out first and drawn per page afterwards, so the
   // ingredients card can be painted under its text once its height is known.
-  const pages = [] // { ops: [fn(ctx)], card: { top, bottom } | null }
   const measure = document.createElement('canvas').getContext('2d')
   const font = (ctx, size, weight = 400) => (ctx.font = `${weight} ${size}px ${FONT}`)
-  const page = (n) => {
-    while (pages.length <= n) pages.push({ ops: [], card: null, top: M + 70 })
-    return pages[n]
-  }
-  const text = (n, str, x, y, size, weight, fill) =>
-    page(n).ops.push((ctx) => {
-      font(ctx, size, weight)
-      ctx.fillStyle = fill
-      ctx.fillText(str, x, y)
-    })
-  const lines = (str, size, weight, width) => {
-    font(measure, size, weight)
-    return wrap(measure, str, width)
-  }
-
-  // Header of the first page: the pot and the name, then the title and the photo
-  page(0)
   const LOGO = 58
   const photoW = img ? 360 : 0
   const photoH = Math.round(photoW * 0.75)
   const titleW = W - 2 * M - (img ? photoW + 32 : 0)
-  let y = M + LOGO + 26
-  const titleLines = lines(title || 'Recipe', 50, 700, titleW)
-  titleLines.forEach((line, i) => text(0, line, M, y + i * 60, 50, 700, INK))
-  y += titleLines.length * 60 + 6
-  if (meta) {
-    for (const line of lines(meta, 24, 400, titleW)) {
-      text(0, line, M, y, 24, 400, MUTED)
-      y += 32
+  // Laid out at text scale `k`; a recipe that would end with a nearly
+  // empty page is tried again a little smaller (see below)
+  const layout = (k) => {
+    const TEXT = Math.round(24 * k)
+    const LH = Math.round(33 * k)
+    const pages = [] // { ops: [fn(ctx)], card: { top, bottom } | null }
+    const page = (n) => {
+      while (pages.length <= n) pages.push({ ops: [], card: null, top: M + 70 })
+      return pages[n]
     }
-  }
-  // Calories and macros as small pills under the meta line: "Per portion (640 kcal) (38 g protein)…"
-  if (nutrition?.values?.length) {
-    y += 10
-    const pill = 40
-    const per = nutrition.per.charAt(0).toUpperCase() + nutrition.per.slice(1)
-    font(measure, 19, 700)
-    text(0, per, M, y + 10, 19, 700, MUTED)
-    let x = M + measure.measureText(per).width + 12
-    for (const [value, label] of nutrition.values) {
-      font(measure, 20, 700)
-      const vw = measure.measureText(value).width
-      font(measure, 18)
-      const w = 14 + vw + 6 + measure.measureText(label).width + 14
-      if (x + w > M + titleW) {
-        x = M
-        y += pill + 8
-      }
-      const [px, py] = [x, y]
-      page(0).ops.push((ctx) => {
-        ctx.fillStyle = CARD
-        box(ctx, px, py, w, pill, pill / 2)
-        ctx.fill()
-        ctx.strokeStyle = BORDER
-        ctx.lineWidth = 2
-        ctx.stroke()
+    const text = (n, str, x, y, size, weight, fill) =>
+      page(n).ops.push((ctx) => {
+        font(ctx, size, weight)
+        ctx.fillStyle = fill
+        ctx.fillText(str, x, y)
       })
-      text(0, value, px + 14, py + 9, 20, 700, INK)
-      text(0, label, px + 14 + vw + 6, py + 11, 18, 400, MUTED)
-      x += w + 8
+    const lines = (str, size, weight, width) => {
+      font(measure, size, weight)
+      return wrap(measure, str, width)
     }
-    y += pill
-  }
-  const headerBottom = Math.max(y, img ? M + LOGO + 26 + photoH : 0) + 30
-  page(0).top = headerBottom + 4
 
-  // Ingredients: a column that runs on to the next pages if it must
-  const list = ingredients.filter((i) => String(i.name ?? '').trim() || String(i.qty ?? '').trim())
-  let leftEnd = { n: 0, y: page(0).top - 30 } // where the ingredients card ends
-  if (list.length) {
-    let n = 0
-    let y = page(0).top + PAD
-    const open = () => (page(n).card = { top: page(n).top, bottom: page(n).top })
-    const room = (h) => {
-      if (y + h <= BOTTOM - PAD) return
-      n++
-      y = page(n).top + PAD
+    // Header of the first page: the pot and the name, then the title and the photo
+    page(0)
+    let y = M + LOGO + 26
+    const titleLines = lines(title || 'Recipe', 50, 700, titleW)
+    titleLines.forEach((line, i) => text(0, line, M, y + i * 60, 50, 700, INK))
+    y += titleLines.length * 60 + 6
+    if (meta) {
+      for (const line of lines(meta, 24, 400, titleW)) {
+        text(0, line, M, y, 24, 400, MUTED)
+        y += 32
+      }
+    }
+    // Calories and macros as small pills under the meta line: "Per portion (640 kcal) (38 g protein)…"
+    if (nutrition?.values?.length) {
+      y += 10
+      const pill = 40
+      const per = nutrition.per.charAt(0).toUpperCase() + nutrition.per.slice(1)
+      font(measure, 19, 700)
+      text(0, per, M, y + 10, 19, 700, MUTED)
+      let x = M + measure.measureText(per).width + 12
+      for (const [value, label] of nutrition.values) {
+        font(measure, 20, 700)
+        const vw = measure.measureText(value).width
+        font(measure, 18)
+        const w = 14 + vw + 6 + measure.measureText(label).width + 14
+        if (x + w > M + titleW) {
+          x = M
+          y += pill + 8
+        }
+        const [px, py] = [x, y]
+        page(0).ops.push((ctx) => {
+          ctx.fillStyle = CARD
+          box(ctx, px, py, w, pill, pill / 2)
+          ctx.fill()
+          ctx.strokeStyle = BORDER
+          ctx.lineWidth = 2
+          ctx.stroke()
+        })
+        text(0, value, px + 14, py + 9, 20, 700, INK)
+        text(0, label, px + 14 + vw + 6, py + 11, 18, 400, MUTED)
+        x += w + 8
+      }
+      y += pill
+    }
+    const headerBottom = Math.max(y, img ? M + LOGO + 26 + photoH : 0) + 30
+    page(0).top = headerBottom + 4
+
+    // Ingredients: a column that runs on to the next pages if it must
+    const list = ingredients.filter((i) => String(i.name ?? '').trim() || String(i.qty ?? '').trim())
+    let leftEnd = { n: 0, y: page(0).top - 30 } // where the ingredients card ends
+    if (list.length) {
+      let n = 0
+      let y = page(0).top + PAD
+      const open = () => (page(n).card = { top: page(n).top, bottom: page(n).top })
+      const room = (h) => {
+        if (y + h <= BOTTOM - PAD) return
+        n++
+        y = page(n).top + PAD
+        open()
+      }
       open()
-    }
-    open()
-    const x = M + PAD
-    const width = LEFT_W - 2 * PAD
-    text(n, 'Ingredients', x, y, 30, 700, INK)
-    y += 48
-    let group = ''
-    for (const i of list) {
-      if ((i.group ?? '') !== group) {
-        group = i.group ?? ''
-        if (group) {
-          const head = lines(group.toUpperCase(), 19, 700, width)
-          room(head.length * 26 + 14 + LH)
-          y += 8
-          for (const line of head) {
-            text(n, line, x, y, 19, 700, color)
-            y += 26
-          }
-          y += 6
-        }
-      }
-      const amount = [i.qty, i.unit].map((s) => String(s ?? '').trim()).filter(Boolean).join(' ')
-      const amountLines = amount ? lines(amount, TEXT, 700, AMOUNT_W - 14) : []
-      const nameLines = lines(i.name ?? '', TEXT, 400, width - AMOUNT_W)
-      const rows = Math.max(amountLines.length, nameLines.length, 1)
-      room(rows * LH)
-      amountLines.forEach((line, k) => text(n, line, x, y + k * LH, TEXT, 700, INK))
-      nameLines.forEach((line, k) => text(n, line, x + AMOUNT_W, y + k * LH, TEXT, 400, INK))
-      y += rows * LH + 6
-      page(n).card.bottom = y + PAD - 6
-    }
-    leftEnd = { n, y: page(n).card.bottom }
-  }
-
-  // Steps and the note on the right
-  if (steps.length || note?.trim()) {
-    let n = 0
-    let y = page(0).top + PAD
-    const room = (h) => {
-      if (y + h <= BOTTOM) return
-      n++
-      y = page(n).top + PAD
-    }
-    const heading = (label) => {
-      room(48 + LH * 2)
-      text(n, label, RIGHT_X, y, 30, 700, INK)
+      const x = M + PAD
+      const width = LEFT_W - 2 * PAD
+      text(n, 'Ingredients', x, y, 30, 700, INK)
       y += 48
-    }
-    const NUM = 40
-    if (steps.length) {
-      heading('Steps')
-      steps.forEach((step, k) => {
-        const stepLines = lines(step, TEXT, 400, RIGHT_W - NUM - 14)
-        // A step may run over a page, but starts with at least two lines
-        room(Math.min(stepLines.length, 2) * LH)
-        const top = y
-        const p = n
-        page(p).ops.push((ctx) => {
-          ctx.fillStyle = color
-          ctx.beginPath()
-          ctx.arc(RIGHT_X + 17, top + 15, 17, 0, Math.PI * 2)
-          ctx.fill()
-          font(ctx, 18, 700)
-          ctx.fillStyle = '#ffffff'
-          const label = String(k + 1)
-          ctx.fillText(label, RIGHT_X + 17 - ctx.measureText(label).width / 2, top + 4)
-        })
-        for (const line of stepLines) {
-          room(LH)
-          text(n, line, RIGHT_X + NUM + 14, y, TEXT, 400, INK)
-          y += LH
+      const heading = (label) => {
+        const head = lines(label.toUpperCase(), 19, 700, width)
+        room(head.length * 26 + 14 + LH)
+        y += 8
+        for (const line of head) {
+          text(n, line, x, y, 19, 700, color)
+          y += 26
         }
-        y += 14
-      })
-    }
-    if (note?.trim()) {
-      // In a sunken box under the steps, else under the ingredients when the
-      // steps filled the page, else as plain text running on
-      const noteBox = (p, x, top, width) => {
-        const noteLines = lines(note.trim(), TEXT, 400, width - 2 * 22)
-        const h = noteLines.length * LH + 36
-        if (top + 48 + h > BOTTOM) return false
-        text(p, 'Note', x, top, 30, 700, INK)
-        top += 48
-        page(p).ops.unshift((ctx) => {
-          ctx.fillStyle = SUNKEN
-          box(ctx, x, top, width, h, 16)
-          ctx.fill()
-        })
-        noteLines.forEach((line, k) => text(p, line, x + 22, top + 18 + k * LH, TEXT, 400, INK))
-        return true
+        y += 6
       }
-      if (!noteBox(n, RIGHT_X, y + 10, RIGHT_W) && !(leftEnd.n === n && noteBox(n, M, leftEnd.y + 30, LEFT_W))) {
-        y += 10
-        heading('Note')
-        for (const line of lines(note.trim(), TEXT, 400, RIGHT_W)) {
-          room(LH)
-          text(n, line, RIGHT_X, y, TEXT, 400, INK)
-          y += LH
+      let group = ''
+      for (const i of list) {
+        if ((i.group ?? '') !== group) {
+          group = i.group ?? ''
+          if (group) heading(group)
+        }
+        const amount = [i.qty, i.unit].map((s) => String(s ?? '').trim()).filter(Boolean).join(' ')
+        const amountLines = amount ? lines(amount, TEXT, 700, AMOUNT_W - 14) : []
+        const nameLines = lines(i.name ?? '', TEXT, 400, width - AMOUNT_W)
+        const rows = Math.max(amountLines.length, nameLines.length, 1)
+        const before = n
+        room(rows * LH)
+        // A group that runs on to the next page says so again at the top
+        if (n !== before && group) heading(`${group} (cont.)`)
+        amountLines.forEach((line, k) => text(n, line, x, y + k * LH, TEXT, 700, INK))
+        nameLines.forEach((line, k) => text(n, line, x + AMOUNT_W, y + k * LH, TEXT, 400, INK))
+        y += rows * LH + 6
+        page(n).card.bottom = y + PAD - 6
+      }
+      leftEnd = { n, y: page(n).card.bottom }
+    }
+
+    // Steps and the note on the right
+    if (steps.length || note?.trim()) {
+      let n = 0
+      let y = page(0).top + PAD
+      const room = (h) => {
+        if (y + h <= BOTTOM) return
+        n++
+        y = page(n).top + PAD
+      }
+      const heading = (label) => {
+        room(48 + LH * 2)
+        text(n, label, RIGHT_X, y, 30, 700, INK)
+        y += 48
+      }
+      const NUM = 40
+      if (steps.length) {
+        heading('Steps')
+        steps.forEach((step, k) => {
+          const stepLines = lines(step, TEXT, 400, RIGHT_W - NUM - 14)
+          // A step moves whole to the next page; only one longer than a page is split
+          room(stepLines.length * LH <= BOTTOM - M - 70 - PAD ? stepLines.length * LH : 2 * LH)
+          const top = y
+          const p = n
+          page(p).ops.push((ctx) => {
+            ctx.fillStyle = color
+            ctx.beginPath()
+            ctx.arc(RIGHT_X + 17, top + 15, 17, 0, Math.PI * 2)
+            ctx.fill()
+            font(ctx, 18, 700)
+            ctx.fillStyle = '#ffffff'
+            const label = String(k + 1)
+            ctx.fillText(label, RIGHT_X + 17 - ctx.measureText(label).width / 2, top + 4)
+          })
+          for (const line of stepLines) {
+            room(LH)
+            text(n, line, RIGHT_X + NUM + 14, y, TEXT, 400, INK)
+            y += LH
+          }
+          y += 14
+        })
+      }
+      if (note?.trim()) {
+        // In a sunken box under the steps, else under the ingredients when the
+        // steps filled the page, else as plain text running on
+        const noteBox = (p, x, top, width) => {
+          const noteLines = lines(note.trim(), TEXT, 400, width - 2 * 22)
+          const h = noteLines.length * LH + 36
+          if (top + 48 + h > BOTTOM) return false
+          text(p, 'Note', x, top, 30, 700, INK)
+          top += 48
+          page(p).ops.unshift((ctx) => {
+            ctx.fillStyle = SUNKEN
+            box(ctx, x, top, width, h, 16)
+            ctx.fill()
+          })
+          noteLines.forEach((line, k) => text(p, line, x + 22, top + 18 + k * LH, TEXT, 400, INK))
+          return true
+        }
+        if (!noteBox(n, RIGHT_X, y + 10, RIGHT_W) && !(leftEnd.n === n && noteBox(n, M, leftEnd.y + 30, LEFT_W))) {
+          y += 10
+          heading('Note')
+          for (const line of lines(note.trim(), TEXT, 400, RIGHT_W)) {
+            room(LH)
+            text(n, line, RIGHT_X, y, TEXT, 400, INK)
+            y += LH
+          }
         }
       }
+    }
+    return { pages, headerBottom }
+  }
+  let { pages, headerBottom } = layout(1)
+  for (const k of [0.93, 0.86]) {
+    if (pages.length === 1) break
+    const smaller = layout(k)
+    if (smaller.pages.length < pages.length) {
+      ;({ pages, headerBottom } = smaller)
+      break
     }
   }
 
