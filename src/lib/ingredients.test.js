@@ -265,3 +265,9 @@ describe('tidyIngredient', () => {
     expect(parseIngredientLine('50 ml / 2 oz of cream')).toMatchObject({ quantity: 50, unit: 'ml', name: 'cream' })
   })
 })
+
+it('drops an approximate weight in brackets in any language', async () => {
+  const { parseIngredientLine } = await import('./ingredients.js')
+  for (const l of ['8 brambor (asi 400 g)', '8 brambor (cca 400 g)', '8 Kartoffeln (etwa 400 g)', '8 potatoes (approximately 400 g)'])
+    expect(parseIngredientLine(l).name).not.toMatch(/\(|asi|cca|etwa|approx/)
+})
