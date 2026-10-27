@@ -1,6 +1,7 @@
 import { registerPlugin } from '@capacitor/core'
 import { capitalizeName, tidyIngredient } from './ingredients.js'
 import { canFetchCrossSite, getText, postForm } from './http.js'
+import { decodeEntities } from './reel/html.js'
 
 // Recipes in other languages translated into English, Czech or Bulgarian, for
 // free. On phones with Gemini Nano (Android AICore) the whole recipe is
@@ -121,13 +122,6 @@ export function pieces(text, max) {
   if (rest) out.push(rest)
   return out
 }
-
-const decodeEntities = (s) =>
-  s.replace(/&(#\d+|#x[\da-f]+|amp|quot|apos|lt|gt);/gi, (m, e) => {
-    const named = { amp: '&', quot: '"', apos: "'", lt: '<', gt: '>' }[e.toLowerCase()]
-    if (named) return named
-    return String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10))
-  })
 
 async function myMemoryText(q, from, to) {
   const url = `${MYMEMORY}?q=${encodeURIComponent(q)}&langpair=${from}|${to}`

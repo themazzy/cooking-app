@@ -1,4 +1,5 @@
 import { detectServings, timesFromText } from './recipeMeta.js'
+import { decodeEntities } from './reel/html.js'
 
 // Rule-based reader for recipe captions and transcripts, in Czech, Bulgarian
 // and English, plus the units and headings of German, Spanish, Italian, French,
@@ -182,6 +183,7 @@ export const capitalizeName = (name) => String(name ?? '').replace(/^([^\p{L}\p{
 
 /** An editable ingredient ({ qty, unit, name }) with a unit or "of" moved out of its name. */
 export function tidyIngredient(i) {
+  if (i.name?.includes('&')) i = { ...i, name: decodeEntities(i.name) }
   const name = i.name ?? ''
   const m = i.unit || NOT_A_UNIT.test(name) ? null : name.match(UNIT_IN_NAME)
   const unit = m && m[1].length > 1 ? unitOf(m[1]) : null
@@ -439,7 +441,7 @@ export function parseRecipeText(text) {
   let group = null // sub-list inside the ingredients, e.g. "Tzatziki sauce"
   const add = (ing) => ingredients.push(group ? { ...ing, group } : ing)
 
-  for (const rawLine of (text ?? '').split(/\r?\n/)) {
+  for (const rawLine of decodeEntities(text ?? '').split(/\r?\n/)) {
     // "★醤油 大さじ1", "A 酒 大さじ2": Japanese recipes mark what is mixed together; the mark is the group
     const mark = MARKER.exec(plainWidth(rawLine))
     const line = cleanLine(mark ? plainWidth(rawLine).slice(mark[0].length) : rawLine)

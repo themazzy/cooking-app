@@ -2,13 +2,48 @@
 // their data as JSON, sometimes escaped once or twice inside script strings,
 // so the helpers search both the raw HTML and a once-unescaped copy.
 
-const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", '#39': "'", nbsp: ' ' }
+// Named entities recipe sites use: markup, punctuation and the Latin letters
+// with accents (sauté, jalapeño, crème brûlée, Kühlschrank…).
+const ENTITIES = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', shy: '',
+  ndash: '–', mdash: '—', hellip: '…', lsquo: '‘', rsquo: '’', sbquo: '‚', ldquo: '“', rdquo: '”', bdquo: '„',
+  laquo: '«', raquo: '»', bull: '•', middot: '·', deg: '°', frac12: '½', frac14: '¼', frac34: '¾', frasl: '⁄',
+  times: '×', divide: '÷', minus: '−', plusmn: '±', micro: 'µ', copy: '©', reg: '®', trade: '™', euro: '€',
+  pound: '£', cent: '¢', yen: '¥', sect: '§', para: '¶', ordm: 'º', ordf: 'ª', sup2: '²', sup3: '³',
+  iexcl: '¡', iquest: '¿', thinsp: ' ', ensp: ' ', emsp: ' ', zwj: '', zwnj: '',
+  szlig: 'ß', aelig: 'æ', AElig: 'Æ', oelig: 'œ', OElig: 'Œ', oslash: 'ø', Oslash: 'Ø', aring: 'å', Aring: 'Å',
+  eth: 'ð', ETH: 'Ð', thorn: 'þ', THORN: 'Þ',
+}
+const ACCENTS = { acute: '\u0301', grave: '\u0300', circ: '\u0302', uml: '\u0308', tilde: '\u0303', cedil: '\u0327', caron: '\u030C', ring: '\u030A' }
 
+function named(name) {
+  if (name in ENTITIES) return ENTITIES[name]
+  const lower = ENTITIES[name.toLowerCase()]
+  if (lower != null && !/[A-Z]/.test(name.slice(1))) return lower
+  // &eacute; &Uuml; &ccedil; &scaron;… : the letter plus its accent
+  const m = name.match(/^([a-zA-Z])(acute|grave|circ|uml|tilde|cedil|caron|ring)$/)
+  return m ? (m[1] + ACCENTS[m[2]]).normalize('NFC') : null
+}
+
+const ENTITY = /&(?:#x([0-9a-f]+)|#(\d+)|([a-z][a-z0-9]*));/gi
+
+/**
+ * Text with HTML entities turned back into characters: named (&eacute;),
+ * numeric (&#233; &#xE9;) and double-escaped ones (&amp;eacute;), which some
+ * sites put in their recipe JSON. Unknown names are left as they are.
+ */
 export function decodeEntities(s) {
-  return s
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
-    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
-    .replace(/&([a-z0-9#]+);/gi, (m, n) => ENTITIES[n.toLowerCase()] ?? m)
+  let text = String(s ?? '')
+  for (let round = 0; round < 3 && text.includes('&'); round++) {
+    const next = text.replace(ENTITY, (m, hex, dec, name) => {
+      if (name) return named(name) ?? m
+      const code = hex ? parseInt(hex, 16) : Number(dec)
+      return code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : m
+    })
+    if (next === text) break
+    text = next
+  }
+  return text
 }
 
 /** Content of <meta property="og:..."> or <meta name="..."> tags. */
