@@ -771,6 +771,8 @@ export default function App() {
         setReport(
           debugReport({
             url,
+            // What was shared or pasted, when the link was picked out of more text
+            shared: rawLink.trim() !== url ? rawLink.slice(0, 500) : undefined,
             platform: reel?.platform,
             found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
             comments: (reel?.comments ?? []).map((c) => ({ ...c, text: c.text.slice(0, 300) })),
