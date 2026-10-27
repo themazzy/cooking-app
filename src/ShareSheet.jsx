@@ -19,7 +19,7 @@ const canShareFiles = () => {
  * Sending a recipe as it is shown (the chosen portions and units): as text,
  * or as a PDF with the photo, ingredients and steps.
  */
-export default function ShareSheet({ title, meta, text, pictures, ingredients, steps, note, footer, onClose }) {
+export default function ShareSheet({ title, meta, nutrition = null, text, pictures, ingredients, steps, note, footer, onClose }) {
   const [busy, setBusy] = useState(null) // 'pdf' | 'text'
   const [error, setError] = useState(null)
   const files = canShareFiles()
@@ -50,7 +50,7 @@ export default function ShareSheet({ title, meta, text, pictures, ingredients, s
       // The best picture that can be drawn: the photo, else the video's frame
       let picture = null
       for (const src of pictures) if ((picture = await pictureData(src))) break
-      const pdf = await recipePdf({ title, meta, picture, ingredients, steps, note, footer })
+      const pdf = await recipePdf({ title, meta, nutrition, picture, ingredients, steps, note, footer })
       return shareFile(pdf, fileName(title, 'pdf'), title)
     })
 

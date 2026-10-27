@@ -141,9 +141,10 @@ const BOTTOM = H - M - 30 // footer below
 /**
  * The PDF of a recipe as a Blob. `ingredients` ({ qty, unit, name, group })
  * and `steps` (an array of texts) as shown on screen, for the chosen portions;
- * `meta` is the line under the title; `picture` a data URL or null.
+ * `meta` is the line under the title; `nutrition` { per, values: [[value, label]] }
+ * or null; `picture` a data URL or null.
  */
-export async function recipePdf({ title, meta = '', picture = null, ingredients = [], steps = [], note = '', footer = '' }) {
+export async function recipePdf({ title, meta = '', nutrition = null, picture = null, ingredients = [], steps = [], note = '', footer = '' }) {
   const color = accent()
   const svg = (code) => loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(code)}`)
   // The watermark is the pot alone, without the logo's cream square
@@ -183,6 +184,38 @@ export async function recipePdf({ title, meta = '', picture = null, ingredients 
       text(0, line, M, y, 24, 400, MUTED)
       y += 32
     }
+  }
+  // Calories and macros as small pills under the meta line: "Per portion (640 kcal) (38 g protein)…"
+  if (nutrition?.values?.length) {
+    y += 10
+    const pill = 40
+    const per = nutrition.per.charAt(0).toUpperCase() + nutrition.per.slice(1)
+    font(measure, 19, 700)
+    text(0, per, M, y + 10, 19, 700, MUTED)
+    let x = M + measure.measureText(per).width + 12
+    for (const [value, label] of nutrition.values) {
+      font(measure, 20, 700)
+      const vw = measure.measureText(value).width
+      font(measure, 18)
+      const w = 14 + vw + 6 + measure.measureText(label).width + 14
+      if (x + w > M + titleW) {
+        x = M
+        y += pill + 8
+      }
+      const [px, py] = [x, y]
+      page(0).ops.push((ctx) => {
+        ctx.fillStyle = CARD
+        box(ctx, px, py, w, pill, pill / 2)
+        ctx.fill()
+        ctx.strokeStyle = BORDER
+        ctx.lineWidth = 2
+        ctx.stroke()
+      })
+      text(0, value, px + 14, py + 9, 20, 700, INK)
+      text(0, label, px + 14 + vw + 6, py + 11, 18, 400, MUTED)
+      x += w + 8
+    }
+    y += pill
   }
   const headerBottom = Math.max(y, img ? M + LOGO + 26 + photoH : 0) + 30
   page(0).top = headerBottom + 4
