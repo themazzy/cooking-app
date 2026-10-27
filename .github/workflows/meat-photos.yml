@@ -1,6 +1,6 @@
-# Finds candidate meat photos on Wikimedia Commons and saves them to the
+# Finds candidate ingredient photos on Wikimedia Commons and saves them to the
 # photo-candidates branch, so they can be reviewed and picked for the catalog.
-name: Find meat photos
+name: Find ingredient photos
 on: workflow_dispatch
 permissions:
   contents: write
@@ -19,5 +19,5 @@ jobs:
           git config user.email "github-actions@users.noreply.github.com"
           git checkout -B photo-candidates
           git add photo-candidates
-          git commit -m "Meat photo candidates from Wikimedia Commons"
+          git commit -m "Ingredient photo candidates from Wikimedia Commons"
           git push -f origin photo-candidates
