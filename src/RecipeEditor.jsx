@@ -4,6 +4,8 @@ import { splitSteps } from './lib/cook.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import Icon from './Icon.jsx'
 import { UnitSheet } from './UnitPicker.jsx'
+import { edgeIn, useDragSort } from './useDragSort.js'
+import { groupSlots, moveItem, moveRow, moveRun, rowSlots, rowStep, sections } from './lib/reorder.js'
 
 /** Ingredients as editable rows and each step in its own box, in order. */
 export default function RecipeEditor({ recipe, source, onChange, onReset }) {
@@ -35,37 +37,70 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
     onChange({ ...recipe, steps: saved.current })
   }
   const setStep = (n, text) => setSteps(list.map((s, k) => (k === n ? text : s)))
-  const move = (n, by) => {
-    const next = [...list]
-    ;[next[n], next[n + by]] = [next[n + by], next[n]]
-    setSteps(next)
-  }
+  const move = (n, to) => setSteps(moveItem(list, n, to))
   const removeStep = (n) => setSteps(withBlank(list.filter((_, k) => k !== n)))
 
   // Groups ("For the sauce") are a heading above a run of rows that share the same `group`
-  const sectionEnd = (start) => {
-    let end = start
-    while (end + 1 < ingredients.length && ingredients[end + 1].group === ingredients[start].group) end++
-    return end
+  const secs = sections(ingredients)
+  const setSectionGroup = (k, group) => {
+    const { start, end } = secs[k]
+    setIngredients(ingredients.map((i, n) => (n >= start && n <= end ? { ...i, group } : i)))
   }
-  const setSectionGroup = (start, group) => {
-    const end = sectionEnd(start)
-    setIngredients(ingredients.map((i, k) => (k >= start && k <= end ? { ...i, group } : i)))
+  const removeHeading = (k) => setSectionGroup(k, secs[k - 1]?.group ?? '')
+
+  // Drag handles: rows (also into another group), whole groups, and steps
+  const [drag, beginDrag] = useDragSort()
+  const listBox = useRef(null)
+  const rowEls = useRef([])
+  const secEls = useRef([])
+  const stepBox = useRef(null)
+  const stepEls = useRef([])
+  const place = (container, slot) => {
+    const [kind, n, edge] = slot.at
+    const el = (kind === 'row' ? rowEls : kind === 'section' ? secEls : stepEls).current[n]
+    return { ...slot, y: edgeIn(container, el, edge) + (edge === 'top' ? -3 : 3) }
   }
-  const removeHeading = (start) => setSectionGroup(start, ingredients[start - 1]?.group ?? '')
-  // Up pulls the row above into the group, down hands its first row to the group above
-  const moveHeading = (start, by) =>
-    setIngredients(
-      ingredients.map((i, k) =>
-        by < 0 && k === start - 1 ? { ...i, group: ingredients[start].group } : by > 0 && k === start ? { ...i, group: ingredients[start - 1]?.group ?? '' } : i,
+  const dragRow = (e, n) =>
+    beginDrag(e, {
+      id: `row${n}`,
+      container: listBox.current,
+      slots: rowSlots(secs).map((s) => place(listBox.current, s)),
+      onDrop: (s) => setIngredients(moveRow(ingredients, n, s.to, s.group)),
+    })
+  const stepRow = (n, by) => {
+    const s = rowStep(ingredients, n, by)
+    if (s) setIngredients(moveRow(ingredients, n, s.to, s.group))
+  }
+  const dragGroup = (e, k) =>
+    beginDrag(e, {
+      id: `sec${k}`,
+      container: listBox.current,
+      slots: groupSlots(secs).map((s) => place(listBox.current, s)),
+      onDrop: (s) => setIngredients(moveRun(ingredients, secs[k].start, secs[k].end, s.to)),
+    })
+  const stepGroup = (k, by) => {
+    const slots = groupSlots(secs)
+    const here = slots.findIndex((s) => s.to === (by < 0 ? secs[k].start : secs[k].end + 1))
+    const s = slots[here + by]
+    if (here >= 0 && s) setIngredients(moveRun(ingredients, secs[k].start, secs[k].end, s.to))
+  }
+  const dragStep = (e, n) =>
+    beginDrag(e, {
+      id: `step${n}`,
+      container: stepBox.current,
+      slots: [...list.map((_, k) => ({ to: k, at: ['step', k, 'top'] })), { to: list.length, at: ['step', list.length - 1, 'bottom'] }].map((s) =>
+        place(stepBox.current, s),
       ),
-    )
+      onDrop: (s) => move(n, s.to),
+    })
+  const lifted = (id) => (drag?.id === id ? { className: ' dragging', style: { transform: `translateY(${drag.dy}px)` } } : { className: '', style: undefined })
+
   const [focusGroup, setFocusGroup] = useState(null)
   const addGroup = () => {
     const taken = new Set(ingredients.map((i) => i.group))
     let n = taken.size + (taken.has('') ? 0 : 1)
     while (taken.has(`Group ${n}`)) n++
-    setFocusGroup(ingredients.length)
+    setFocusGroup(secs.length)
     setIngredients([...ingredients, emptyIngredient(`Group ${n}`)])
   }
 
@@ -73,9 +108,10 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
     <div className="editor">
       <h3>Ingredients {source ? <span className="note">(from the {source})</span> : null}</h3>
       <>
-        <div className="ingredients">
+        <div className={`ingredients${drag ? ' sorting' : ''}`} ref={listBox}>
           {ingredients.length > 0 && (
             <div className="ing-row ing-head" aria-hidden="true">
+              <span className="grip" />
               <span className="pic" />
               <span className="qty">Qty</span>
               <span className="unit">Unit</span>
@@ -83,35 +119,43 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
               <span className="del" />
             </div>
           )}
-          {ingredients.map((i, n) => (
-            <div key={n}>
-              {i.group && i.group !== ingredients[n - 1]?.group && (
+          {secs.map((sec, k) => (
+            <div key={k} ref={(el) => (secEls.current[k] = el)} className={`ing-section${lifted(`sec${k}`).className}`} style={lifted(`sec${k}`).style}>
+              {sec.group && (
                 <GroupHeading
-                  name={i.group}
-                  autoFocus={focusGroup === n}
+                  name={sec.group}
+                  autoFocus={focusGroup === k}
                   onFocused={() => setFocusGroup(null)}
-                  onRename={(to) => setSectionGroup(n, to)}
-                  onAdd={() => insertAfter(sectionEnd(n))}
-                  onUp={n > 0 ? () => moveHeading(n, -1) : null}
-                  onDown={sectionEnd(n) > n ? () => moveHeading(n, 1) : null}
-                  onRemove={() => removeHeading(n)}
+                  onRename={(to) => setSectionGroup(k, to)}
+                  onAdd={() => insertAfter(sec.end)}
+                  onDrag={(e) => dragGroup(e, k)}
+                  onStep={(by) => stepGroup(k, by)}
+                  onRemove={() => removeHeading(k)}
                 />
               )}
-              <div className="ing-row">
-                <span className="pic">
-                  <IngredientIcon entry={match(i.name)} size={22} />
-                </span>
-                <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
-                <button type="button" className={`unit unit-btn${i.unit ? '' : ' no-unit'}`} aria-label={`Unit: ${i.unit || 'none'}`} onClick={() => setUnitFor(n)}>
-                  {i.unit || (i.qty.trim() ? 'pcs' : '–')}
-                </button>
-                <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
-                <button className="icon del" aria-label="Remove ingredient" onClick={() => remove(n)}>
-                  <Icon name="close" />
-                </button>
-              </div>
+              {ingredients.slice(sec.start, sec.end + 1).map((i, r) => {
+                const n = sec.start + r
+                const lift = lifted(`row${n}`)
+                return (
+                  <div key={n} ref={(el) => (rowEls.current[n] = el)} className={`ing-row${lift.className}`} style={lift.style}>
+                    <Grip label={`Drag ${i.name.trim() || 'ingredient'}`} onDrag={(e) => dragRow(e, n)} onStep={(by) => stepRow(n, by)} />
+                    <span className="pic">
+                      <IngredientIcon entry={match(i.name)} size={22} />
+                    </span>
+                    <input className="qty" aria-label="Amount" inputMode="decimal" value={i.qty} onChange={(e) => update(n, 'qty', e.target.value)} />
+                    <button type="button" className={`unit unit-btn${i.unit ? '' : ' no-unit'}`} aria-label={`Unit: ${i.unit || 'none'}`} onClick={() => setUnitFor(n)}>
+                      {i.unit || (i.qty.trim() ? 'pcs' : '–')}
+                    </button>
+                    <input className="name" aria-label="Ingredient" value={i.name} onChange={(e) => update(n, 'name', e.target.value)} />
+                    <button className="icon del" aria-label="Remove ingredient" onClick={() => remove(n)}>
+                      <Icon name="close" />
+                    </button>
+                  </div>
+                )
+              })}
             </div>
           ))}
+          {drag && !drag.id.startsWith('step') && <div className="drop-line" style={{ top: drag.line }} />}
         </div>
         <div className="row">
           <button className="secondary" onClick={() => insertAfter(ingredients.length - 1)}>
@@ -138,18 +182,13 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
       )}
 
       <h3>Steps</h3>
-      <ol className="step-edit">
+      <ol className={`step-edit${drag?.id.startsWith('step') ? ' sorting' : ''}`} ref={stepBox}>
         {list.map((text, n) => (
-          <li key={n}>
+          <li key={n} ref={(el) => (stepEls.current[n] = el)} className={lifted(`step${n}`).className.trim() || undefined} style={lifted(`step${n}`).style}>
             <div className="step-edit-head">
+              {list.length > 1 && <Grip label={`Drag step ${n + 1}`} onDrag={(e) => dragStep(e, n)} onStep={(by) => n + by >= 0 && n + by < list.length && move(n, by < 0 ? n - 1 : n + 2)} />}
               <span className="step-no">{n + 1}</span>
               <span className="grow" />
-              <button className="icon" aria-label="Move step up" disabled={n === 0} onClick={() => move(n, -1)}>
-                <Icon name="up" />
-              </button>
-              <button className="icon" aria-label="Move step down" disabled={n === list.length - 1} onClick={() => move(n, 1)}>
-                <Icon name="down" />
-              </button>
               <button className="icon" aria-label="Remove step" onClick={() => removeStep(n)}>
                 <Icon name="close" />
               </button>
@@ -157,6 +196,7 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
             <textarea rows={2} aria-label={`Step ${n + 1}`} placeholder={n === 0 ? 'What to do first' : 'Then…'} value={text} onChange={(e) => setStep(n, e.target.value)} />
           </li>
         ))}
+        {drag?.id.startsWith('step') && <div className="drop-line" style={{ top: drag.line }} />}
       </ol>
       <div className="row">
         <button className="secondary" onClick={() => setSteps([...list, ''])}>
@@ -173,10 +213,10 @@ export default function RecipeEditor({ recipe, source, onChange, onReset }) {
 }
 
 /**
- * A group's name above its rows, with buttons to add a row, move the heading
- * up or down a row, or remove it (its rows join the group above).
+ * A group's name above its rows, with a handle to drag the whole group and
+ * buttons to add a row or remove the heading (its rows join the group above).
  */
-function GroupHeading({ name, autoFocus, onFocused, onRename, onAdd, onUp, onDown, onRemove }) {
+function GroupHeading({ name, autoFocus, onFocused, onRename, onAdd, onDrag, onStep, onRemove }) {
   // Kept here while the box is emptied to type a new name; a blank name on leaving removes the heading
   const [text, setText] = useState(name)
   const [was, setWas] = useState(name)
@@ -187,6 +227,7 @@ function GroupHeading({ name, autoFocus, onFocused, onRename, onAdd, onUp, onDow
   }
   return (
     <div className="group-edit">
+      <Grip label={`Drag group ${name}`} onDrag={onDrag} onStep={onStep} />
       <input
         className="group"
         aria-label="Group name"
@@ -215,16 +256,30 @@ function GroupHeading({ name, autoFocus, onFocused, onRename, onAdd, onUp, onDow
       <button className="icon" aria-label={`Add ingredient to ${name}`} onClick={onAdd}>
         <Icon name="plus" />
       </button>
-      <button className="icon" aria-label="Move group heading up" disabled={!onUp} onClick={onUp ?? undefined}>
-        <Icon name="up" />
-      </button>
-      <button className="icon" aria-label="Move group heading down" disabled={!onDown} onClick={onDown ?? undefined}>
-        <Icon name="down" />
-      </button>
       <button className="icon" aria-label={`Remove group ${name}`} onClick={onRemove}>
         <Icon name="close" />
       </button>
     </div>
+  )
+}
+
+/** A drag handle; with the keyboard, the up and down arrows move the item one place. */
+function Grip({ label, onDrag, onStep }) {
+  return (
+    <button
+      type="button"
+      className="icon grip"
+      aria-label={label}
+      title="Drag to move"
+      onPointerDown={onDrag}
+      onKeyDown={(e) => {
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+        e.preventDefault()
+        onStep(e.key === 'ArrowUp' ? -1 : 1)
+      }}
+    >
+      <Icon name="grip" size={16} />
+    </button>
   )
 }
 

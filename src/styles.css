@@ -448,6 +448,14 @@ ol.steps p { margin: 3px 0 0; line-height: 1.55; }
 .editor .group-edit input.group { flex: 1 1 auto; min-width: 0; font-weight: 700; background: transparent; border: 1px dashed var(--border); }
 .group-edit button.icon { width: 34px; height: 34px; min-height: 0; padding: 0; display: inline-grid; place-items: center; }
 .group-edit button.icon:disabled { opacity: 0.3; }
+/* Drag handles (useDragSort): the lifted item follows the finger, a line marks where it lands */
+.ing-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.ingredients, ol.step-edit { position: relative; }
+.editor button.icon.grip { flex: 0 0 20px; width: 20px; min-height: 40px; height: auto; padding: 0; display: inline-grid; place-items: center; color: var(--muted); background: transparent; touch-action: none; cursor: grab; }
+.ing-head .grip { flex: 0 0 20px; }
+.sorting, .sorting * { user-select: none; -webkit-user-select: none; cursor: grabbing; }
+.dragging { position: relative; z-index: 5; background: var(--card); border-radius: 10px; box-shadow: 0 6px 20px rgb(0 0 0 / 22%); }
+.drop-line { position: absolute; left: 4px; right: 4px; height: 3px; margin-top: -1.5px; border-radius: 2px; background: var(--accent); pointer-events: none; z-index: 6; }
 .save-bar {
   position: sticky;
   bottom: 0;
