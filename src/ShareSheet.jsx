@@ -20,6 +20,16 @@ const canShareFiles = () => {
  * or as a PDF with the photo, ingredients and steps.
  */
 export default function ShareSheet({ title, meta, nutrition = null, text, pictures, ingredients, steps, note, footer, onClose }) {
+  // The picture for the PDF is fetched as soon as the sheet opens (a website
+  // photo has to be downloaded), so it is usually ready when PDF is tapped
+  const [picture] = useState(async () => {
+    // The best picture that can be drawn: the photo, else the video's frame
+    for (const src of pictures) {
+      const data = await pictureData(src)
+      if (data) return data
+    }
+    return null
+  })
   const [busy, setBusy] = useState(null) // 'pdf' | 'text'
   const [error, setError] = useState(null)
   const files = canShareFiles()
@@ -47,10 +57,7 @@ export default function ShareSheet({ title, meta, nutrition = null, text, pictur
     })
   const sendPdf = () =>
     run('pdf', async () => {
-      // The best picture that can be drawn: the photo, else the video's frame
-      let picture = null
-      for (const src of pictures) if ((picture = await pictureData(src))) break
-      const pdf = await recipePdf({ title, meta, nutrition, picture, ingredients, steps, note, footer })
+      const pdf = await recipePdf({ title, meta, nutrition, picture: await picture, ingredients, steps, note, footer })
       return shareFile(pdf, fileName(title, 'pdf'), title)
     })
 
