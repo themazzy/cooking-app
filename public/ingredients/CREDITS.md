@@ -1,6 +1,6 @@
 # Photo credits
 
-The meat photos in this folder come from Wikimedia Commons, cropped to a square and scaled down to 128 px. Each keeps its licence; the original is linked.
+The meat, herb and spice photos in this folder come from Wikimedia Commons, cropped to a square and scaled down to 128 px. Each keeps its licence; the original is linked.
 
 | Picture | Original | Author | Licence |
 |---|---|---|---|
@@ -102,3 +102,19 @@ share alike – If you remix, transform, or build upon the material, you must di
 | veal-shank.webp | [Ossobuco 01-03.jpg](https://commons.wikimedia.org/wiki/File:Ossobuco_01-03.jpg) | P.Lameiro | CC BY-SA 3.0 |
 | venison.webp | [Raw venison shoulder meat, 2012.jpg](https://commons.wikimedia.org/wiki/File:Raw_venison_shoulder_meat,_2012.jpg) | Gloria Cabada-Leman | CC BY 2.0 |
 | wild-boar.webp | [Meat of wild boar01.jpg](https://commons.wikimedia.org/wiki/File:Meat_of_wild_boar01.jpg) | takami torao (Koiroha (talk) 04:01, 27 June 2009 (UTC)) | Public domain |
+| dried-mint.webp | [Չորացրած դաղձ.JPG](https://commons.wikimedia.org/wiki/File:%D5%89%D5%B8%D6%80%D5%A1%D6%81%D6%80%D5%A1%D5%AE_%D5%A4%D5%A1%D5%B2%D5%B1.JPG) | Chaojoker | CC BY-SA 3.0 |
+| dried-rosemary.webp | [Rosemary leaves.jpg](https://commons.wikimedia.org/wiki/File:Rosemary_leaves.jpg) | Mauro Cateb | CC BY-SA 4.0 |
+| dried-tarragon.webp | [Tarragon spice.jpg](https://commons.wikimedia.org/wiki/File:Tarragon_spice.jpg) | Dominikmatus | CC0 |
+| dried-sage.webp | [Salviae folium 095252.jpg](https://commons.wikimedia.org/wiki/File:Salviae_folium_095252.jpg) | Rillke | CC BY-SA 3.0 de |
+| fresh-marjoram.webp | [Starr 070906-8861 Origanum majorana.jpg](https://commons.wikimedia.org/wiki/File:Starr_070906-8861_Origanum_majorana.jpg) | Forest & Kim Starr | CC BY 3.0 |
+| lovage.webp | [Lovage-Flavor-Food 23058-480x360 (4905066760).jpg](https://commons.wikimedia.org/wiki/File:Lovage-Flavor-Food_23058-480x360_(4905066760).jpg) | Emilian Robert Vicol from Com. Balanesti, Romania | CC BY 2.0 |
+| curry-leaves.webp | [20260317 Murraya koenigii 02.jpg](https://commons.wikimedia.org/wiki/File:20260317_Murraya_koenigii_02.jpg) | Flocci Nivis | CC BY 4.0 |
+| black-peppercorns.webp | [Black Peppercorns (4422070187).jpg](https://commons.wikimedia.org/wiki/File:Black_Peppercorns_(4422070187).jpg) | Ryan Snyder | CC BY 2.0 |
+| white-peppercorns.webp | [White peppercorns.jpg](https://commons.wikimedia.org/wiki/File:White_peppercorns.jpg) | Fumikas Sagisavas | CC0 |
+| white-pepper.webp | [White pepper (ground).jpg](https://commons.wikimedia.org/wiki/File:White_pepper_(ground).jpg) | Susan Slater | CC BY-SA 4.0 |
+| coriander-seeds.webp | [Coriander Seeds.jpg](https://commons.wikimedia.org/wiki/File:Coriander_Seeds.jpg) | Sanjay Acharya | CC BY-SA 4.0 |
+| caraway-seeds.webp | [Caraway Seed.jpg](https://commons.wikimedia.org/wiki/File:Caraway_Seed.jpg) | OttawaAC | CC BY-SA 3.0 |
+| whole-nutmeg.webp | [Nutmeg whole.JPG](https://commons.wikimedia.org/wiki/File:Nutmeg_whole.JPG) | Miansari66 | Public domain |
+| fresh-turmeric.webp | [Zingiberales - Curcuma longa - 2.jpg](https://commons.wikimedia.org/wiki/File:Zingiberales_-_Curcuma_longa_-_2.jpg) | Emőke Dénes | CC BY-SA 4.0 |
+| himalayan-salt.webp | [Himalayan salt (coarse).jpg](https://commons.wikimedia.org/wiki/File:Himalayan_salt_(coarse).jpg) | Ivar Leidus | CC BY-SA 4.0 |
+| fenugreek-leaves.webp | [Dried leaves of Fenugreek-Kasuri Methi.jpg](https://commons.wikimedia.org/wiki/File:Dried_leaves_of_Fenugreek-Kasuri_Methi.jpg) | Thamizhpparithi Maari | CC BY-SA 4.0 |

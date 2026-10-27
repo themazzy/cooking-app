@@ -548,6 +548,31 @@ Kaffir lime leaves | листа от лайм
 Curry leaves | къри листа
 Lovage | девесил
 Cinnamon sticks | канела пръчка
+Dried parsley | сушен магданоз
+Dried basil | сушен босилек
+Dried coriander | сушен кориандър лист
+Dried dill | сушен копър
+Dried mint | сух джоджен
+Dried chives | сушен лук резанец
+Dried thyme | сушена мащерка
+Dried rosemary | сушен розмарин
+Dried sage | сушен градински чай
+Dried tarragon | сушен естрагон
+Dried lovage | сушен девесил
+Fresh oregano | пресен риган
+Fresh marjoram | прясна майорана
+Fenugreek leaves | сушени листа сминдух
+Black peppercorns | черен пипер на зърна
+White peppercorns | бял пипер на зърна
+Ground coriander | кориандър смлян
+Ground caraway | ким смлян
+Ground cloves | карамфил смлян
+Ground cardamom | кардамон смлян
+Whole nutmeg | индийско орехче цяло
+Ground allspice | бахар смлян
+Ground fennel | резене смляно
+Himalayan salt | хималайска сол
+Fresh turmeric | куркума корен
 Vanilla pod | ванилия шушулка
 Apricot jam | конфитюр кайсия
 Raspberry jam | конфитюр малина
@@ -826,4 +851,15 @@ Baking soda | сода
 Beef stock | телешки бульон, говежди бульон
 Plant milk | бадемово мляко, овесено мляко, соево мляко
 Coconut milk | кокосово мляко
+Black pepper | черен пипер мелен, смлян черен пипер
+Black peppercorns | черен пипер зърна, пипер на зърна
+Himalayan salt | розова сол, хималайска розова сол
+Coriander seeds | кориандър на зърна, кориандър семена
+Cumin seeds | кимион на зърна
+Dried mint | сушен джоджен, сушена мента
+Dried parsley | сух магданоз
+Dried dill | сух копър
+Dried basil | сух босилек
+Cloves | карамфил цял
+Cinnamon | канела на прах
 `

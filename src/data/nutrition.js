@@ -310,8 +310,8 @@ Chives|30||0.1|3.3|4.4|0.7
 Thyme|100||0.3|5.6|10|1.7
 Rosemary|130||0.3|3.3|21|5.9
 Oregano|265||0.3|9|45|4.3
-Sage|315||0.3|11|40|13
-Tarragon|295||0.3|23|35|7
+Sage|50||0.1|2.5|7|1.5
+Tarragon|50||0.1|3.5|6|1
 Marjoram|270||0.3|13|40|7
 Bay leaves|313|0.2||7.6|49|8.4
 Bouquet garni|50|5||3|8|1
@@ -320,23 +320,44 @@ Lemongrass|99|20||1.8|25|0.5
 Kaffir lime leaves|50|0.3||2|10|0.5
 Curry leaves|108|0.1||6|19|1
 Lovage|40||0.1|3|6|0.6
+Dried parsley|290||0.09|27|24|5.5
+Dried basil|250||0.12|23|30|4
+Dried coriander|280||0.12|22|42|4.8
+Dried dill|255||0.2|20|42|4.4
+Dried mint|285||0.1|20|38|6
+Dried chives|310||0.05|21|38|3.5
+Dried thyme|275||0.2|9|43|7.4
+Dried rosemary|330||0.24|5|44|15
+Dried sage|315||0.14|11|38|13
+Dried tarragon|295||0.15|23|43|7
+Dried lovage|280||0.1|20|35|5
+Fresh oregano|60||0.1|2.5|8|1
+Fresh marjoram|55||0.1|2.5|7|1
+Fenugreek leaves|300||0.1|22|35|5
 Salt|0||1.2|0|0|0
 Black pepper|250||0.5|10|39|3.3
+Black peppercorns|250|0.05|0.6|10|39|3.3
 Salt and pepper|0||1.2|0|0|0
 Paprika|280||0.45|14|20|13
 Smoked paprika|280||0.45|14|20|13
 Chilli powder|280||0.5|13|15|14
 Cumin|375||0.45|18|44|22
-Coriander seeds|300||0.4|12|13|18
+Coriander seeds|300||0.36|12|13|18
+Ground coriander|300||0.36|12|13|18
 Turmeric|310||0.6|10|65|3.3
+Fresh turmeric|80|15||1.8|14|0.9
 Curry powder|325||0.45|14|36|14
 Garam masala|380||0.45|14|50|15
 Cinnamon|250||0.55|4|55|1.2
 Nutmeg|525||0.5|6|49|36
+Whole nutmeg|525|7||6|49|36
 Cloves|275|0.1|0.45|6|32|13
+Ground cloves|275||0.44|6|32|13
 Cardamom|310|0.2|0.45|11|50|7
+Ground cardamom|310||0.4|11|50|7
 Star anise|340|1||18|35|16
 Caraway seeds|335||0.45|20|30|15
+Ground caraway|335||0.45|20|30|15
 Garlic powder|330||0.65|17|73|0.7
 Garlic salt|80||1.1|4|17|0.2
 Lemon pepper|200||0.6|6|40|2
@@ -349,14 +370,18 @@ Cayenne pepper|320||0.5|12|30|17
 Chilli flakes|320||0.35|12|30|17
 Cumin seeds|375||0.45|18|44|22
 Fennel seeds|345||0.4|16|52|15
+Ground fennel|345||0.4|16|52|15
 Fenugreek|325||0.75|23|58|6
 Saffron|310||0.15|11|65|6
-Allspice|265||0.5|6|50|9
+Allspice|265|0.2|0.4|6|50|9
+Ground allspice|265||0.5|6|50|9
 White pepper|300||0.55|10|69|2
+White peppercorns|300|0.05|0.6|10|69|2
 Pink peppercorns|300||0.4|10|64|3
 Celery salt|20||1.2|1|4|0.5
 Onion salt|30||1.2|1|7|0
 Sea salt|0||1.1|0|0|0
+Himalayan salt|0||1.2|0|0|0
 Cajun seasoning|280||0.5|10|55|8
 Fajita seasoning|280||0.5|9|57|7
 Biryani masala|350||0.45|13|55|14
