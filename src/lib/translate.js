@@ -1,5 +1,5 @@
 import { registerPlugin } from '@capacitor/core'
-import { tidyIngredient } from './ingredients.js'
+import { capitalizeName, tidyIngredient } from './ingredients.js'
 import { canFetchCrossSite, getText, postForm } from './http.js'
 
 // Recipes in other languages translated into English, Czech or Bulgarian, for
@@ -47,7 +47,10 @@ export function applyTranslation(recipe, map) {
     ...recipe,
     title: tr(recipe.title),
     // A unit the parser didn't know can come back in the name: "tablespoon of cornstarch"
-    ingredients: (recipe.ingredients ?? []).map((i) => tidyIngredient({ ...i, name: tr(i.name), group: tr(i.group) })),
+    ingredients: (recipe.ingredients ?? []).map((i) => {
+      const row = tidyIngredient({ ...i, name: tr(i.name), group: tr(i.group) })
+      return { ...row, name: capitalizeName(row.name) }
+    }),
     steps: (recipe.steps ?? '')
       .split('\n')
       .map((line) => tr(line))

@@ -44,9 +44,9 @@ describe('reading a recipe through English', () => {
     const draft = draftFromImport(result)
     const read = draftFromTranslatedSource(draft, 'Meatballs', english, 'tr')
     expect(read.ingredients.map((i) => [i.group, i.qty, i.unit, i.name])).toEqual([
-      ['For the meatballs', '500', 'g', 'minced meat'],
-      ['For the meatballs', '1', 'tbsp', 'salt'],
-      ['For the sauce', '2', 'tbsp', 'tomato paste'],
+      ['For the meatballs', '500', 'g', 'Minced meat'],
+      ['For the meatballs', '1', 'tbsp', 'Salt'],
+      ['For the sauce', '2', 'tbsp', 'Tomato paste'],
     ])
     expect(read.lang).toBe('en')
     expect(read.original).toMatchObject({ lang: 'tr', title: draft.title, ingredients: draft.ingredients })
