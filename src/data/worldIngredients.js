@@ -354,28 +354,63 @@ Poppy seeds | mák celý
 Sunflower seeds | slunečnicová semínka
 Pumpkin seeds | dýňová semínka
 Parsley | petržel, petrželka, petrželku, petrželová nať, petrželovou nať, petrželky, petrželka, petrželku
-Dill | kopr, kopru, koprem, kopru
-Chives | pažitka, pažitku, pazitka, pažitky, pažitku, pažitkou
-Basil | bazalka, bazalku
-Thyme | tymián, tymiánu
-Rosemary | rozmarýn, rozmarýnu
-Oregano | oregáno
-Marjoram | majoránka, majoránku, majoranka, majoránky, majoránku
+Dill | kopr, kopru, koprem, čerstvý kopr
+Dried dill | sušený kopr, sušeného kopru
+Chives | pažitka, pažitku, pazitka, pažitky, pažitkou, čerstvá pažitka
+Dried chives | sušená pažitka, sušenou pažitku
+Basil | bazalka, bazalku, čerstvá bazalka
+Dried basil | sušená bazalka, sušenou bazalku, sušené bazalky
+Thyme | tymián, tymiánu, čerstvý tymián
+Dried thyme | sušený tymián, sušeného tymiánu
+Rosemary | rozmarýn, rozmarýnu, čerstvý rozmarýn
+Dried rosemary | sušený rozmarýn, sušeného rozmarýnu
+Oregano | oregáno, oregano, sušené oregano, sušené oregáno
+Fresh oregano | čerstvé oregano, čerstvé oregáno
+Marjoram | majoránka, majoránku, majoranka, majoránky, sušená majoránka, sušenou majoránku
+Fresh marjoram | čerstvá majoránka, čerstvou majoránku
 Bay leaves | bobkový list, bobkové listy, bobkového listu
-Lovage | libeček, libečku
-Mint | máta, mátu
-Coriander | koriandr, koriandrová nať
+Lovage | libeček, libečku, čerstvý libeček
+Dried lovage | sušený libeček, sušeného libečku
+Mint | máta, mátu, čerstvá máta
+Dried mint | sušená máta, sušenou mátu, sušené máty
+Coriander | koriandr, koriandrová nať, čerstvý koriandr
+Dried coriander | sušený koriandr, sušená koriandrová nať
 Salt | sůl, soli, sul
-Black pepper | pepř, pepře, mletý pepř, celý pepř, pepr
+Himalayan salt | himálajská sůl, himalájská sůl, růžová sůl, růžovou sůl
+Dried parsley | sušená petržel, sušená petrželka, sušenou petržel, sušenou petrželku, sušená petrželová nať
+Sage | šalvěj, šalvěje
+Dried sage | sušená šalvěj, sušenou šalvěj
+Tarragon | estragon, estragonu
+Dried tarragon | sušený estragon
+Coriander seeds | celý koriandr, koriandr celý, koriandrová semínka, semínka koriandru
+Ground coriander | mletý koriandr, mletého koriandru
+Cardamom | kardamom, kardamomu, celý kardamom
+Ground cardamom | mletý kardamom
+Turmeric | kurkuma, kurkumu, mletá kurkuma
+Fresh turmeric | čerstvá kurkuma, kurkuma kořen
+Fennel seeds | fenyklové semínko, fenyklová semínka, semínka fenyklu
+Ground fennel | mletý fenykl
+Ground ginger | mletý zázvor, sušený zázvor
+Fenugreek leaves | sušené listy pískavice
+Black pepper | pepř, pepře, mletý pepř, mletého pepře, černý pepř, mletý černý pepř, pepr
+Black peppercorns | celý pepř, pepř celý, celý černý pepř, celého pepře, pepř v zrnech, kuličky pepře
+White pepper | bílý pepř, mletý bílý pepř
+White peppercorns | celý bílý pepř, bílý pepř celý
 Paprika | sladká paprika, mletá paprika, mleta paprika
 Smoked paprika | uzená paprika, uzenou papriku
 Chilli powder | pálivá paprika, mleté chilli
-Caraway seeds | kmín, kmínu, kmin
-Cumin | římský kmín, rimsky kmin, kmín římský
-Allspice | nové koření, nove koreni, nového koření
-Cloves | hřebíček, hřebíčky, hrebicek
-Cinnamon | skořice, skořici, skorice
-Nutmeg | muškátový oříšek, muškátový květ
+Caraway seeds | kmín, kmínu, kmin, celý kmín, celého kmínu
+Ground caraway | mletý kmín, mletého kmínu, mleta kmin
+Cumin | římský kmín, rimsky kmin, kmín římský, mletý římský kmín, mletého římského kmínu, kmín římský mletý
+Cumin seeds | celý římský kmín, římský kmín celý
+Allspice | nové koření, nove koreni, nového koření, celé nové koření
+Ground allspice | mleté nové koření, mletého nového koření
+Cloves | hřebíček, hřebíčky, hrebicek, celý hřebíček
+Ground cloves | mletý hřebíček, mletého hřebíčku
+Cinnamon | skořice, skořici, skorice, mletá skořice, mleté skořice
+Cinnamon sticks | celá skořice, skořice celá, skořicová kůra, tyčinka skořice, skořicové tyčinky
+Nutmeg | muškátový oříšek, muškátový květ, mletý muškátový oříšek, strouhaný muškátový oříšek
+Whole nutmeg | celý muškátový oříšek
 Star anise | badyán, badyan
 Vanilla | vanilka, vanilkový lusk, vanilky
 Flour | mouka, mouky, mouku
