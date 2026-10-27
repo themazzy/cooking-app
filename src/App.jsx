@@ -4,7 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { PARSER_LANGS, draftFromImport, draftFromTranslatedSource, sourceLines } from './lib/recipeDraft.js'
-import { recipeInText } from './lib/recipeSource.js'
+import { commentFromScreenshot, recipeInText } from './lib/recipeSource.js'
 import { TARGETS, detectLanguage, languageName, translateRecipe, translateTexts } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { allTags, importTags } from './lib/recipeTags.js'
@@ -714,11 +714,19 @@ export default function App() {
     [settings.model, settings.language],
   )
 
+  /** Ingredients and steps read from more source text for a recipe on screen, translated like an import. */
+  const readMore = useCallback(
+    async (result, title) => {
+      const out = await translateDraft(await readThroughEnglish(result, { ...draftFromImport(result), title }))
+      return { ingredients: out.ingredients, steps: out.steps }
+    },
+    [readThroughEnglish, translateDraft],
+  )
+
   /**
    * Transcribes a recipe's video when the user asks (imports skip it when the
    * caption or a comment already holds the recipe). Uses the video on screen,
-   * else downloads it again from the source. Returns the transcript and the
-   * recipe read from it, translated like an import.
+   * else downloads it again from the source.
    */
   const transcribeVideo = useCallback(
     async (recipe, videoBlob, say) => {
@@ -742,11 +750,48 @@ export default function App() {
           transcript = await runTranscription(bytes, { say, onDownload })
         }
       }
-      const result = { transcript, author: recipe.author }
-      const out = await translateDraft(await readThroughEnglish(result, { ...draftFromImport(result), title: recipe.title }))
-      return { transcript, ingredients: out.ingredients, steps: out.steps }
+      return { label: 'From the video', transcript, raw: { transcript }, ...(await readMore({ transcript, author: recipe.author }, recipe.title)) }
     },
-    [runTranscription, readThroughEnglish, translateDraft],
+    [runTranscription, readMore],
+  )
+
+  /**
+   * More source for a recipe on screen: screenshots of a comment (read on the
+   * phone, without the app's buttons around it), pasted text, or a reel or
+   * page link. Returns what it found, for the recipe page to add or use.
+   */
+  const addSource = useCallback(
+    async (recipe, { photos, text, link }, say) => {
+      if (photos?.length) {
+        say(`Reading the text in ${photos.length} screenshot${photos.length > 1 ? 's' : ''}…`)
+        const read = await readRecipePhotos(photos, (p) => {
+          if (p.status === 'loading language traineddata' || p.status === 'loading tesseract core') say(`Downloading the text reader (once): ${Math.round((p.progress ?? 0) * 100)}%`)
+        }, settings.photoLanguage)
+        const comment = commentFromScreenshot(read)
+        if (!comment) throw new Error('No text found in the screenshot. Try one that shows the whole comment.')
+        return { label: 'From the screenshot', raw: { comments: [{ author: 'screenshot', text: comment }] }, ...(await readMore({ description: comment }, recipe.title)) }
+      }
+      if (text?.trim()) return { label: 'From the pasted text', raw: { comments: [{ author: 'pasted', text: text.trim() }] }, ...(await readMore({ description: text }, recipe.title)) }
+      const url = extractUrl(link ?? '') ?? link?.trim()
+      if (!url) throw new Error('Paste a link to a reel or a recipe page.')
+      say(detectPlatform(url) === 'web' ? 'Loading the page…' : 'Loading the reel…')
+      const reel = await loadReel(url)
+      const result = { url, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30), meta: reel.meta ?? null, transcript: reel.transcript ?? null }
+      if (!result.transcript && reel.platform !== 'web' && settings.transcribe && !recipeInText(result) && reel.videoUrl) {
+        say('No recipe in the text, so the video is transcribed…')
+        const bytes = await getBytes(reel.videoUrl, { headers: reel.downloadHeaders })
+        result.transcript = await runTranscription(bytes, { say, onDownload: (d) => d && say(`Downloading the speech model (once): ${d.pct}%`) })
+      }
+      if (!result.description && !result.comments.length && !result.transcript) throw new Error('Nothing could be read from that link.')
+      return {
+        label: 'From the link',
+        raw: { description: result.description, comments: result.comments, transcript: result.transcript },
+        // A recipe made by hand gets the link as its source
+        recipe: { sourceUrl: url, platform: reel.platform, author: reel.author, image: reel.image ?? null },
+        ...(await readMore(result, recipe.title)),
+      }
+    },
+    [settings.photoLanguage, settings.transcribe, runTranscription, readMore],
   )
 
   const importLink = useCallback(
@@ -943,6 +988,7 @@ export default function App() {
           onDiscard={discardEditing}
           onReread={rereadRecipe}
           onTranscribe={(recipe, say) => transcribeVideo(recipe, editing.videoBlob, say)}
+          onAddSource={addSource}
           onBack={back}
           onAddToList={(entry) => {
             updateShopping(addToList(shopping, entry, recipes, catalog.match))

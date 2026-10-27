@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addFromTranscript, pickRecipe, recipeInText, usableRecipe } from './recipeSource.js'
+import { addFromTranscript, addRaw, commentFromScreenshot, pickRecipe, recipeInText, usableRecipe } from './recipeSource.js'
 import { parseRecipeText } from './ingredients.js'
 
 const recipe = 'Ingredients:\n- 400 g ground beef\n- 250 g tomatoes\n- 2 flatbreads\nInstructions:\nRoll out the meat.'
@@ -71,5 +71,44 @@ describe('addFromTranscript', () => {
 
   it('keeps the recipe steps that are there', () => {
     expect(addFromTranscript({ ...current, steps: 'Mix.' }, heard).steps).toBe('Mix.')
+  })
+})
+
+describe('commentFromScreenshot', () => {
+  it('keeps the recipe and drops the app around it', () => {
+    const shot = [
+      '10:17 ⏰ 63 %',
+      'chef.maria 2h',
+      'Author',
+      'Ingredients:',
+      '200 g flour',
+      '2 eggs',
+      '300 ml milk ♡',
+      'Whisk and fry.',
+      'Reply',
+      'See translation',
+      '1,204 likes',
+      'View 12 more replies',
+      'Liked by creator',
+    ].join('\n')
+    expect(commentFromScreenshot(shot)).toBe('Ingredients:\n200 g flour\n2 eggs\n300 ml milk\nWhisk and fry.')
+  })
+
+  it('reads Czech and Bulgarian buttons', () => {
+    expect(commentFromScreenshot('Odpovědět\nZobrazit překlad\n3 d\n500 g mouky\nОтговор\nВижте превода')).toBe('500 g mouky')
+  })
+
+  it('keeps a recipe line that looks a bit like a name', () => {
+    expect(commentFromScreenshot('salt\npepper\n1.\n200g')).toBe('salt\npepper\n1.\n200g')
+  })
+})
+
+describe('addRaw', () => {
+  it('fills in what is missing and adds comments', () => {
+    expect(addRaw({ description: 'A', transcript: null, comments: [{ text: 'x' }] }, { description: 'B', transcript: 'T', comments: [{ text: 'y' }] })).toEqual({
+      description: 'A',
+      transcript: 'T',
+      comments: [{ text: 'x' }, { text: 'y' }],
+    })
   })
 })

@@ -10,7 +10,7 @@ import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { parseRecipeText } from './lib/ingredients.js'
-import { addFromTranscript, pickRecipe } from './lib/recipeSource.js'
+import { addFromTranscript, addRaw, pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients, scaleSteps } from './lib/scale.js'
@@ -60,7 +60,7 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -73,8 +73,9 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [filing, setFiling] = useState(false) // the collections sheet is open
   const [sharing, setSharing] = useState(false)
   const [imageBroken, setImageBroken] = useState(false)
-  // Transcribing the video on request: { status } while running, { heard } when done, { error }
-  const [hearing, setHearing] = useState(null)
+  // Reading more source on request (see moreCard), and the open paste / link box
+  const [more, setMore] = useState(null)
+  const [moreInput, setMoreInput] = useState(null)
   useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
   const [cookFor, setCookFor] = useState(recipe.servings ?? 1)
@@ -258,43 +259,57 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
     </>
   ) : null
 
-  // Imports skip the transcript when the caption or a comment holds the recipe; it can be made here
+  // More source for the recipe: the video heard (imports skip it when the caption or a comment
+  // holds the recipe), a comment screenshot, pasted text or a reel link. `more` is
+  // { status } while reading, { found } when there is something to add, or { error }.
   const applyPatch = (p) => (edit || !recipe.id ? set(p) : onSavePatch(p))
   const canTranscribe = !!onTranscribe && raw.transcript == null && !!recipe.platform && recipe.platform !== 'web' && (!!videoBlob || !!recipe.sourceUrl)
-  const startTranscribe = async () => {
-    setHearing({ status: 'Starting…' })
+  // Saved with the user's choice (not when it arrives), so edits made meanwhile stay
+  const keepSource = useRef(null)
+  const sourcePatch = (found) => ({
+    raw: addRaw(raw, found.raw),
+    ...Object.fromEntries(Object.entries(found.recipe ?? {}).filter(([k, v]) => v != null && !recipe[k])),
+  })
+  useEffect(() => {
+    if (!keepSource.current) return
+    const found = keepSource.current
+    keepSource.current = null
+    applyPatch(sourcePatch(found))
+  })
+  const readMore = async (read) => {
+    setMore({ status: 'Starting…' })
     try {
-      const heard = await onTranscribe(recipe, (status) => setHearing({ status }))
-      const found = heard.ingredients.filter((i) => i.name?.trim()).length
-      if (found || heard.steps.trim()) setHearing({ heard })
+      const found = await read((status) => setMore({ status }))
+      if (found.ingredients.some((i) => i.name?.trim()) || found.steps.trim()) setMore({ found })
       else {
-        // The recipe may have changed while the video was heard; the transcript is kept on the newest version
-        setHearing({ error: heard.transcript ? 'The video has no recipe the app could read.' : 'No speech found in the video.' })
-        keepTranscript.current = heard.transcript
+        // Nothing to cook from, but the text is kept with the recipe's sources
+        keepSource.current = found
+        setMore({ error: found.raw?.transcript === '' ? 'No speech found in the video.' : 'No recipe the app could read in it.' })
       }
     } catch (err) {
-      setHearing({ error: err?.message ?? String(err) })
+      setMore({ error: err?.message ?? String(err) })
     }
   }
-  const heard = hearing?.heard
-  // Saved with the user's choice (not when it arrives), so edits made meanwhile stay
-  const keepTranscript = useRef(null)
-  useEffect(() => {
-    if (keepTranscript.current == null) return
-    const transcript = keepTranscript.current
-    keepTranscript.current = null
-    applyPatch({ raw: { ...raw, transcript } })
-  })
-  const withTranscript = (p) => applyPatch({ ...p, raw: { ...raw, transcript: heard.transcript } })
-  const merged = heard ? addFromTranscript({ ingredients: recipe.ingredients, steps: recipe.steps ?? '' }, heard, canonical) : null
-  const transcribeCard = (canTranscribe || hearing) && (
-    <section className="card transcribe">
-      {heard ? (
+  const pickScreenshots = (e) => {
+    const photos = [...(e.target.files ?? [])]
+    e.target.value = ''
+    if (photos.length) readMore((say) => onAddSource(recipe, { photos }, say))
+  }
+  const found = more?.found
+  const merged = found ? addFromTranscript({ ingredients: recipe.ingredients, steps: recipe.steps ?? '' }, found, canonical) : null
+  const hasRecipe = recipe.ingredients.some((i) => i.name?.trim())
+  const finish = (p) => {
+    applyPatch({ ...p, ...sourcePatch(found) })
+    setMore(null)
+  }
+  const moreCard = (canTranscribe || more || (onAddSource && edit)) && (
+    <section className="card add-source">
+      {found ? (
         <>
-          <h3>From the video</h3>
+          <h3>{found.label}</h3>
           <p className="note">
-            The video names {heard.ingredients.filter((i) => i.name?.trim()).length} ingredients and {splitSteps(heard.steps).length} steps.
-            {merged.added ? ` ${merged.added} of the ingredients are not in this recipe yet.` : ' Every ingredient is already in this recipe.'}
+            {found.ingredients.filter((i) => i.name?.trim()).length} ingredients and {splitSteps(found.steps).length} steps.
+            {hasRecipe ? (merged.added ? ` ${merged.added} of the ingredients are not in this recipe yet.` : ' Every ingredient is already in this recipe.') : ''}
           </p>
           {merged.added > 0 && (
             <ul className="heard">
@@ -304,50 +319,67 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             </ul>
           )}
           <div className="row">
-            {(merged.added > 0 || merged.addedSteps) && (
-              <button
-                onClick={() => {
-                  withTranscript({ ingredients: merged.ingredients, steps: merged.steps })
-                  setHearing(null)
-                }}
-              >
-                {merged.added > 0 ? `Add ${merged.added} missing` : 'Add the steps'}
-              </button>
+            {hasRecipe && (merged.added > 0 || merged.addedSteps) && (
+              <button onClick={() => finish({ ingredients: merged.ingredients, steps: merged.steps })}>{merged.added > 0 ? `Add ${merged.added} missing` : 'Add the steps'}</button>
             )}
-            <button
-              className="secondary"
-              onClick={() => {
-                withTranscript({ ingredients: heard.ingredients, steps: heard.steps, source: 'transcript' })
-                setHearing(null)
-              }}
-            >
-              Use the video's recipe
+            <button className={hasRecipe ? 'secondary' : ''} onClick={() => finish({ ingredients: found.ingredients, steps: found.steps, source: found.label.replace(/^From the /, '') })}>
+              {hasRecipe ? 'Use this instead' : 'Use this recipe'}
             </button>
-            <button
-              className="link"
-              onClick={() => {
-                withTranscript({})
-                setHearing(null)
-              }}
-            >
-              Keep as it is
+            <button className="link" onClick={() => finish({})}>
+              {hasRecipe ? 'Keep as it is' : 'Keep only as a source'}
             </button>
           </div>
         </>
-      ) : hearing?.status ? (
-        <p className="note">
-          <Icon name="mic" size={14} /> {hearing.status}
-        </p>
+      ) : more?.status ? (
+        <p className="note">{more.status}</p>
       ) : (
         <>
-          {hearing?.error && <p className="note">{hearing.error}</p>}
+          {more?.error && <p className="note">{more.error}</p>}
           {canTranscribe && (
             <div className="row">
-              <button className="secondary small" onClick={startTranscribe}>
+              <button className="secondary small" onClick={() => readMore((say) => onTranscribe(recipe, say))}>
                 <Icon name="mic" /> Transcribe video
               </button>
               <span className="note">The recipe came from the {recipe.source ?? 'text'}. The video can add what it says.</span>
             </div>
+          )}
+          {onAddSource && edit && (
+            <>
+              <h3>Add a source</h3>
+              <p className="note">A screenshot of a comment (no Instagram sign-in needed), pasted text, or a reel or recipe link.</p>
+              <div className="row">
+                <label className="button secondary small">
+                  <Icon name="image" /> Screenshot
+                  <input type="file" accept="image/*" multiple hidden onChange={pickScreenshots} />
+                </label>
+                <button className={`secondary small${moreInput?.kind === 'text' ? ' on' : ''}`} onClick={() => setMoreInput(moreInput?.kind === 'text' ? null : { kind: 'text', value: '' })}>
+                  Paste text
+                </button>
+                <button className={`secondary small${moreInput?.kind === 'link' ? ' on' : ''}`} onClick={() => setMoreInput(moreInput?.kind === 'link' ? null : { kind: 'link', value: '' })}>
+                  <Icon name="external" /> Reel or link
+                </button>
+              </div>
+              {moreInput && (
+                <div className="row">
+                  {moreInput.kind === 'text' ? (
+                    <textarea rows="5" placeholder="Paste the comment or recipe text" value={moreInput.value} onChange={(e) => setMoreInput({ ...moreInput, value: e.target.value })} />
+                  ) : (
+                    <input className="grow" type="url" placeholder="https://www.instagram.com/reel/…" value={moreInput.value} onChange={(e) => setMoreInput({ ...moreInput, value: e.target.value })} />
+                  )}
+                  <button
+                    className="small"
+                    disabled={!moreInput.value.trim()}
+                    onClick={() => {
+                      const { kind, value } = moreInput
+                      setMoreInput(null)
+                      readMore((say) => onAddSource(recipe, kind === 'text' ? { text: value } : { link: value }, say))
+                    }}
+                  >
+                    Read
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
@@ -465,7 +497,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           />
         </section>
 
-        {transcribeCard}
+        {moreCard}
         {sources}
 
         <div className="save-bar">
@@ -764,7 +796,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
 
       {recipe.id && <CookedLog cooked={recipe.cooked} by={me} onChange={(cooked) => onSavePatch({ cooked })} />}
 
-      {transcribeCard}
+      {moreCard}
       {sources}
 
       {cooking && (
