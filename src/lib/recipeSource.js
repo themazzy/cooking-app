@@ -72,3 +72,45 @@ export function addFromTranscript(current, heard, canonical = (n) => n.trim().to
   const steps = current.steps?.trim() ? current.steps : heard.steps
   return { ingredients, steps, added: extra.length, addedSteps: steps !== current.steps }
 }
+
+// What a screenshot of Instagram, TikTok, Facebook or YouTube shows around a comment:
+// buttons, times, like counts, "Liked by creator" (English, Czech, Bulgarian, German)
+const SCREEN_NOISE = [
+  /^(reply|replies|odpov[eě]d[eě]t|отговор(и|ете)?|antworten|see translation|zobrazit p[řr]eklad|вижте превода|[üu]bersetzung anzeigen|hide replies|skr[ýy]t odpov[eě]di|скриване на отговорите|see more|more|v[íi]ce|още|mehr|edited|upraveno|редактирано|author|autor|автор|pinned|připnuto|закачено|creator|liked by (the )?(author|creator)|se zalíbilo autorovi|харесано от автора|translate|přeložit|преведи)$/iu,
+  /^(view|zobrazit|вижте|show|alle)\b.{0,30}\b(repl|odpov|отговор|antwort)/iu,
+  /^\d+([.,]\d+)?\s*[kKmM]?\s*(likes?|to se mi líbí|líbí se|харесвания|харесване|gefällt|odpovědi|replies)?$/iu,
+  /^\d{1,3}\s*(s|m|min|h|hod|d|dn[íy]?|w|t|týd|wk|y|r|ч|д|седм|мин)\.?(\s+ago|\s+zpět)?$/iu,
+  /^(just now|právě teď|току-що|gerade eben|yesterday|včera|вчера|gestern)$/iu,
+  // "chef.maria 2h", "chef.maria · 3 d", "@chef_maria • Author"
+  /^@?[\w.]{2,30}\s*[·•]?\s*(\d{1,3}\s*(s|m|h|d|w|t|y|r|ч|д)\.?|author|autor|автор|creator)\s*([·•]\s*)?(author|autor|автор|creator)?$/iu,
+  // A bare handle needs a handle's look ("chef.maria", "@cook_99"), so "salt" stays
+  /^(@[\w.]{2,30}|[a-z][a-z\d]*[._\d][\w.]*)$/u,
+]
+const STATUS_LINE = /^\s*\d{1,2}[:.]\d{2}\b[^\p{L}]{0,30}$/u
+
+/**
+ * The comment text from a screenshot's lines, without the app's buttons,
+ * times, counts and user names around it. Lines that read as a recipe stay
+ * (a lone word like "salt" is not taken for a user name).
+ */
+export function commentFromScreenshot(text) {
+  return (text ?? '')
+    .split(/\r?\n/)
+    .map((l) => l.replace(/[♡♥❤️🤍]+\s*$/u, '').trim())
+    .filter((l) => !STATUS_LINE.test(l) && !SCREEN_NOISE.some((re) => re.test(l)))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/**
+ * A recipe's saved source texts with more added: a description or transcript
+ * only fills in when the recipe has none, and comments are added after its own.
+ */
+export function addRaw(raw = {}, more = {}) {
+  return {
+    description: raw.description ?? more.description ?? null,
+    transcript: raw.transcript ?? more.transcript ?? null,
+    comments: [...(raw.comments ?? []), ...(more.comments ?? [])],
+  }
+}
