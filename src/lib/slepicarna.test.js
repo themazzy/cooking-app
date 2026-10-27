@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest'
 import { parseRecipePage } from './reel/web.js'
 import { draftFromImport } from './recipeDraft.js'
+import { parseRecipeText } from './ingredients.js'
 // Blog post without recipe data (slepicarna-blog.cz, 2026-10-15), its layout as
 // read on the page; step wording shortened
 const html = `<html><head><meta property="og:site_name" content="Slepičárna blog"></head><body><header><nav>Menu</nav></header>
@@ -38,4 +39,16 @@ it('reads a Czech blog recipe with question headings', () => {
   expect(steps).toHaveLength(3)
   expect(steps[0]).toMatch(/^Knedlíky nakrájej/)
   expect(steps[2]).toMatch(/kyselými okurkami\.$/)
+})
+
+it('keeps caption questions from starting a section', () => {
+  const caption = 'Co na to říkáte?\nJak na to? 👇\n200 g mouky\n2 vejce\nVšechno smíchej a peč 20 minut.'
+  const r = parseRecipeText(caption)
+  expect(r.ingredients.map((i) => i.name)).toEqual(['mouky', 'vejce'])
+  expect(parseRecipeText('Co na to říkáte?\nKrásný den\nMám rád podzim').ingredients).toEqual([])
+})
+
+it('ignores post dates and share buttons, keeps amounts with dots', () => {
+  const r = parseRecipePage('<article><p>15.10.2026</p><p>2026-10-15 by Slepice</p><h2>Suroviny</h2><ul><li>1.5 kg brambor</li><li>2 vejce</li></ul><p>Facebook Twitter Pinterest</p></article>')
+  expect(parseRecipeText(r.description).ingredients.map((i) => [i.quantity, i.name])).toEqual([[1.5, 'brambor'], [2, 'vejce']])
 })
