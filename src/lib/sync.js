@@ -125,13 +125,16 @@ async function pushRecipe(hid, recipe, userId) {
     updated_by: userId,
   }
   if (recipe.syncedAt) {
-    // Only replaces the version this phone last had, so a change from the other phone in between is not lost
+    // Only replaces the version this phone last had, so a change from the other phone in between is not lost.
+    // The phone keeps that time in milliseconds, the database in microseconds (a row changed in the
+    // dashboard has e.g. 31.427423), so any time within that millisecond is the same version.
     const { id: _id, household_id: _h, ...fields } = row
     const { data: written, error } = await supabase
       .from('recipes')
       .update(fields)
       .eq('id', recipe.id)
-      .eq('updated_at', new Date(recipe.syncedAt).toISOString())
+      .gte('updated_at', new Date(recipe.syncedAt).toISOString())
+      .lt('updated_at', new Date(recipe.syncedAt + 1).toISOString())
       .select('id')
     if (error) throw error
     if (!written?.length) {
