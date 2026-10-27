@@ -19,8 +19,8 @@ const SOURCE = {
  * ingredients (with the pack photo from Open Food Facts), counting as the
  * everyday ingredient it is, so it shows in Ingredients and its picture can
  * be changed.
- * `renderPicker(onPick, onClose)` shows the ingredient grid for a product
- * that is unknown or was guessed wrong.
+ * `renderPicker(onPick, onClose)` shows the ingredient grid when the person
+ * asks for it (a product that is unknown or was guessed wrong).
  */
 export default function ScanSheet({ onAdd, onClose, renderPicker }) {
   const { entries, match } = useCatalog()
@@ -61,8 +61,9 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
       setOwnName(own)
       setProductName(own)
       setPicture(null)
+      // An unknown product opens on its form (name it, or pick what it is), never with the picker over it
+      setPicking(false)
       setFound(result)
-      if (!result.entry && !result.ingredient && !own) setPicking(true)
       // The pack photo comes in while the person checks the rest
       if (result.picture) {
         fetchPicture(result.picture).then(async (blob) => {
@@ -218,7 +219,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
             </div>
             <label className="field" htmlFor="scan-name">Keep at home as</label>
             <div className="amount-row">
-              <input id="scan-name" placeholder={baseName || 'Product name'} value={ownName} onChange={(e) => setOwnName(e.target.value)} />
+              <input id="scan-name" placeholder={baseName || 'Product name'} value={ownName} autoFocus={!baseName && !productName} onChange={(e) => setOwnName(e.target.value)} />
               {ownName ? (
                 baseName && (
                   <button className="link" onClick={() => setOwnName('')}>
@@ -236,7 +237,9 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
             <p className="hint">
               {ownName.trim()
                 ? `Shown in Ingredients as your own, with ${picture ? 'the pack photo' : 'its own picture'}${found.kcal != null ? ` and its own calories (${found.kcal} kcal per 100 g)` : ''}${baseName ? `. Counts as ${baseName} on the shopping list.` : '.'}`
-                : `Kept at home as ${baseName || 'the ingredient you pick'}.`}
+                : baseName
+                  ? `Kept at home as ${baseName}.`
+                  : 'Type the product’s name, or pick the ingredient it is.'}
             </p>
             <label className="field">{ownName.trim() ? 'Counts as' : 'What it is'}</label>
             <button className="scan-ingredient secondary" onClick={() => setPicking(true)}>
