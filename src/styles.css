@@ -1148,3 +1148,6 @@ button.cook-timer-time { overflow: hidden; }
 .cook-custom .num-field { width: 104px; }
 .cook-custom .num-field input { width: 100%; }
 .amount-row .num-field { flex: 1 1 auto; }
+.voice-row { display: flex; align-items: flex-end; gap: 8px; }
+.voice-row > label { flex: 1 1 auto; min-width: 0; }
+.voice-row > button { flex: 0 0 auto; min-height: 44px; }

@@ -126,6 +126,47 @@ const browserVoice = typeof window !== 'undefined' && 'speechSynthesis' in windo
 /** True when this phone or browser can read text aloud. */
 export const canSpeak = nativeVoice || browserVoice
 
+// The voice picked for each language ('cs' → voice name), on this phone only
+const VOICES_KEY = 'cooking-app:voices'
+export function pickedVoices() {
+  try {
+    return JSON.parse(localStorage.getItem(VOICES_KEY) ?? '{}') ?? {}
+  } catch {
+    return {}
+  }
+}
+export function pickVoice(lang, name) {
+  const all = { ...pickedVoices() }
+  if (name) all[lang] = name
+  else delete all[lang]
+  try {
+    localStorage.setItem(VOICES_KEY, JSON.stringify(all))
+  } catch {
+    // not remembered; the phone's default voice reads
+  }
+  return all
+}
+
+const browserVoices = () =>
+  new Promise((resolve) => {
+    const synth = window.speechSynthesis
+    const now = synth.getVoices()
+    if (now.length) return resolve(now)
+    // Chrome fills the list a moment later
+    const t = setTimeout(() => resolve(synth.getVoices()), 1500)
+    synth.addEventListener('voiceschanged', () => (clearTimeout(t), resolve(synth.getVoices())), { once: true })
+  })
+
+/** The voices this phone or browser can read with: { name, language ('cs-CZ'), online, installed }. */
+export async function listVoices() {
+  if (nativeVoice) {
+    const { voices } = await Native.voices()
+    return voices ?? []
+  }
+  if (!browserVoice) return []
+  return (await browserVoices()).map((v) => ({ name: v.name, language: v.lang.replace('_', '-'), online: !v.localService, installed: true }))
+}
+
 /**
  * Reads `text` aloud, replacing whatever was being read. `onDone` is called
  * when it ends or is stopped. Returns stop(). On Android, listening for
@@ -134,9 +175,10 @@ export const canSpeak = nativeVoice || browserVoice
 let readCount = 0
 let reading = null // the text being read now: { drop } forgets it without calling its onDone
 
-export function speak(text, onDone = () => {}) {
+export function speak(text, onDone = () => {}, { voice, language: lang } = {}) {
   reading?.drop()
-  const language = speechLanguage(text)
+  const language = lang ?? speechLanguage(text)
+  const name = voice ?? pickedVoices()[language.slice(0, 2)]
   let over = false
   let sub = null
   const me = {
@@ -156,7 +198,7 @@ export function speak(text, onDone = () => {}) {
   if (nativeVoice) {
     const id = String(++readCount)
     Native.addListener('spoken', (e) => e?.id === id && end()).then((s) => (over ? s.remove() : (sub = s)))
-    Native.speak({ text, language, id }).catch(end)
+    Native.speak({ text, language, voice: name, id }).catch(end)
     return () => {
       if (over) return
       Native.stopSpeaking().catch(() => {})
@@ -171,6 +213,8 @@ export function speak(text, onDone = () => {}) {
   synth.cancel()
   const u = new window.SpeechSynthesisUtterance(text)
   u.lang = language
+  const v = name && synth.getVoices().find((x) => x.name === name)
+  if (v) u.voice = v
   u.onend = end
   u.onerror = end
   synth.speak(u)

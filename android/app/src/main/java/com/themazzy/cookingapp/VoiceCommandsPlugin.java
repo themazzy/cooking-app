@@ -10,6 +10,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
+import android.speech.tts.Voice;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.PermissionState;
@@ -22,6 +23,9 @@ import com.getcapacitor.annotation.PermissionCallback;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Set;
+
+import com.getcapacitor.JSArray;
 
 /**
  * Hands-free cooking: listens for short commands ("next", "back") with
@@ -38,6 +42,7 @@ import java.util.Locale;
 public class VoiceCommandsPlugin extends Plugin {
 
     private final Handler main = new Handler(Looper.getMainLooper());
+    private final Runnable listenTask = this::listen;
     private SpeechRecognizer recognizer;
     private boolean active = false; // the web app wants to listen
     private boolean paused = false; // the app is in the background
@@ -46,8 +51,7 @@ public class VoiceCommandsPlugin extends Plugin {
     private TextToSpeech tts;
     private boolean ttsReady = false;
     private boolean speaking = false;
-    private String sayText = null; // waiting for text-to-speech to start up
-    private String sayLanguage = null;
+    private final ArrayList<Runnable> whenReady = new ArrayList<>(); // waiting for text-to-speech to start up
     private String sayId = null; // which text is being read, sent back with "spoken"
 
     @PluginMethod
@@ -80,7 +84,7 @@ public class VoiceCommandsPlugin extends Plugin {
         language = call.getString("language");
         active = true;
         failures = 0;
-        main.post(this::listen);
+        main.post(listenTask);
         call.resolve();
     }
 
@@ -91,36 +95,69 @@ public class VoiceCommandsPlugin extends Plugin {
         call.resolve();
     }
 
+    /** Starts text-to-speech once, then runs `then` (on the main thread); null if the phone has none. */
+    private void withTts(Runnable then) {
+        if (tts != null && ttsReady) {
+            then.run();
+            return;
+        }
+        whenReady.add(then);
+        if (tts != null) return; // starting up
+        tts = new TextToSpeech(getContext(), status -> main.post(() -> {
+            ttsReady = status == TextToSpeech.SUCCESS;
+            if (ttsReady) tts.setOnUtteranceProgressListener(progress);
+            else tts = null;
+            ArrayList<Runnable> waiting = new ArrayList<>(whenReady);
+            whenReady.clear();
+            for (Runnable r : waiting) r.run();
+        }));
+    }
+
+    /** The phone's text-to-speech voices: name, language, online or not, installed or not. */
+    @PluginMethod
+    public void voices(PluginCall call) {
+        main.post(() -> withTts(() -> {
+            JSArray list = new JSArray();
+            Set<Voice> all = null;
+            try {
+                if (tts != null) all = tts.getVoices();
+            } catch (Exception ignored) {
+                // some engines throw before they are fully ready
+            }
+            if (all != null) {
+                for (Voice v : all) {
+                    JSObject o = new JSObject();
+                    o.put("name", v.getName());
+                    o.put("language", v.getLocale().toLanguageTag());
+                    o.put("online", v.isNetworkConnectionRequired());
+                    o.put("installed", !v.getFeatures().contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED));
+                    o.put("quality", v.getQuality());
+                    list.put(o);
+                }
+            }
+            JSObject out = new JSObject();
+            out.put("voices", list);
+            call.resolve(out);
+        }));
+    }
+
     @PluginMethod
     public void speak(PluginCall call) {
         String text = call.getString("text", "");
         String lang = call.getString("language");
+        String voice = call.getString("voice");
         String id = call.getString("id", "");
         main.post(() -> {
             sayId = id;
-            if (tts == null) {
-                sayText = text;
-                sayLanguage = lang;
-                tts = new TextToSpeech(getContext(), status -> main.post(() -> {
-                    ttsReady = status == TextToSpeech.SUCCESS;
-                    if (!ttsReady) {
-                        tts = null;
-                        sayText = null;
-                        done();
-                        return;
-                    }
-                    tts.setOnUtteranceProgressListener(progress);
-                    if (sayText != null) say(sayText, sayLanguage);
-                    sayText = null;
-                }));
-                speaking = true;
-                release(); // no listening while reading
-            } else if (ttsReady) {
-                say(text, lang);
-            } else {
-                sayText = text; // still starting up
-                sayLanguage = lang;
-            }
+            speaking = true;
+            release(); // no listening while reading
+            withTts(() -> {
+                if (tts == null || !id.equals(sayId) || !speaking) {
+                    if (tts == null && id.equals(sayId)) done();
+                    return; // no text-to-speech, or replaced or stopped meanwhile
+                }
+                say(text, lang, voice);
+            });
         });
         call.resolve();
     }
@@ -128,15 +165,24 @@ public class VoiceCommandsPlugin extends Plugin {
     @PluginMethod
     public void stopSpeaking(PluginCall call) {
         main.post(() -> {
-            sayText = null;
             if (tts != null && ttsReady) tts.stop();
             if (speaking) done();
         });
         call.resolve();
     }
 
-    private void say(String text, String lang) {
-        if (lang != null && !lang.isEmpty()) {
+    private void say(String text, String lang, String voice) {
+        Voice picked = null;
+        if (voice != null && !voice.isEmpty()) {
+            try {
+                for (Voice v : tts.getVoices()) if (v.getName().equals(voice)) picked = v;
+            } catch (Exception ignored) {
+                // no voice list: read with the language instead
+            }
+        }
+        if (picked != null) {
+            tts.setVoice(picked);
+        } else if (lang != null && !lang.isEmpty()) {
             int ok = tts.setLanguage(Locale.forLanguageTag(lang));
             if (ok == TextToSpeech.LANG_MISSING_DATA || ok == TextToSpeech.LANG_NOT_SUPPORTED) tts.setLanguage(Locale.getDefault());
         }
@@ -151,7 +197,7 @@ public class VoiceCommandsPlugin extends Plugin {
         JSObject out = new JSObject();
         out.put("id", sayId);
         notifyListeners("spoken", out);
-        if (active && !paused) main.postDelayed(this::listen, 200);
+        if (active && !paused) main.postDelayed(listenTask, 200);
     }
 
     private final UtteranceProgressListener progress = new UtteranceProgressListener() {
@@ -170,7 +216,7 @@ public class VoiceCommandsPlugin extends Plugin {
     @Override
     protected void handleOnResume() {
         paused = false;
-        if (active) main.post(this::listen);
+        if (active) main.post(listenTask);
     }
 
     @Override
@@ -182,7 +228,7 @@ public class VoiceCommandsPlugin extends Plugin {
     }
 
     private void release() {
-        main.removeCallbacksAndMessages(null);
+        main.removeCallbacks(listenTask); // not the text-to-speech work waiting on the same thread
         if (recognizer != null) {
             recognizer.destroy();
             recognizer = null;
@@ -225,7 +271,7 @@ public class VoiceCommandsPlugin extends Plugin {
             notifyListeners("stopped", out);
             return;
         }
-        main.postDelayed(this::listen, failed ? 300L * failures : 100);
+        main.postDelayed(listenTask, failed ? 300L * failures : 100);
     }
 
     private final RecognitionListener listener = new RecognitionListener() {
