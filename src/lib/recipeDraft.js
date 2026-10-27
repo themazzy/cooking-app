@@ -3,6 +3,7 @@ import { toEditable } from './recipeEdit.js'
 import { parseRecipeText } from './ingredients.js'
 import { detectServings, tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
 import { mergeTags, tagsFromHashtags as styleHashtags } from './recipeTags.js'
+import { decodeEntities } from './reel/html.js'
 
 export { detectServings }
 
@@ -41,7 +42,7 @@ export function draftFromTranslatedSource(draft, title, lines, from) {
 
 /** A readable title: the first line that is not just hashtags or emoji. */
 export function titleFrom(text, fallback) {
-  for (const line of (text ?? '').split('\n')) {
+  for (const line of decodeEntities(text ?? '').split('\n')) {
     const t = line.replace(/#\S+/g, '').replace(/[^\p{L}\p{N}\s,.'’&()-]/gu, '').replace(/\s+/g, ' ').trim()
     if (t.length >= 3) return t.length > 80 ? `${t.slice(0, 77)}…` : t
   }

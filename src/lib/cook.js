@@ -1,6 +1,8 @@
 // Helpers for cooking mode: the steps one by one, the ingredients each step
 // mentions, and timers for the times written in a step.
 
+import { decodeEntities } from './reel/html.js'
+
 const NUMBER = /^(?:\d+\s*[.)]|step\s*\d+\s*[:.)]?|krok\s*\d+\s*[:.)]?|стъпка\s*\d+\s*[:.)]?)\s*/iu
 const BULLET = /^[-•*–]\s*/
 // "For the sauce:" — a short line that names the part of the recipe the next steps make
@@ -26,7 +28,7 @@ const splitInlineNumbers = (line) => {
  * A heading such as "For the sauce:" goes in front of the step after it.
  */
 export function splitSteps(steps) {
-  const lines = String(steps ?? '')
+  const lines = decodeEntities(steps)
     .split('\n')
     .map((s) => s.trim())
     .flatMap((s) => (s ? splitInlineNumbers(s) : ['']))

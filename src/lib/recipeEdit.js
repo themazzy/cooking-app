@@ -1,5 +1,6 @@
 import { splitSteps } from './cook.js'
 import { capitalizeName, tidyIngredient } from './ingredients.js'
+import { decodeEntities } from './reel/html.js'
 
 // Editable form of a parsed recipe. Quantities stay text while editing so
 // "1–2" or "½" can be typed; scaling and shopping lists parse them later.
@@ -25,7 +26,7 @@ export function toEditable(parsed) {
       })
       return { ...row, name: capitalizeName(row.name) }
     }),
-    steps: (parsed?.steps ?? []).join('\n'),
+    steps: decodeEntities((parsed?.steps ?? []).join('\n')),
   }
 }
 
