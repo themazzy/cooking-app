@@ -35,6 +35,8 @@ import { addToList, makeList } from './lib/shopping.js'
 import { mergeLists } from './lib/listMerge.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
+import VoicePicker from './VoicePicker.jsx'
+import { canSpeak } from './lib/voice.js'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
 import { openLogin } from './lib/pageReader.js'
@@ -1206,6 +1208,13 @@ export default function App() {
           </div>
           <p className="hint">Recipes keep their own units; this changes how amounts and oven temperatures are shown. You can also switch on any recipe.</p>
         </section>
+        {canSpeak && (
+          <section className="card">
+            <h3>Read aloud</h3>
+            <p className="hint">The voice that reads steps in cooking mode. Saved on this phone only.</p>
+            <VoicePicker />
+          </section>
+        )}
         <section className="card">
           <h3>Cooking timers</h3>
           <div className="settings">
