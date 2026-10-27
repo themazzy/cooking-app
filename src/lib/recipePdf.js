@@ -145,7 +145,9 @@ const BOTTOM = H - M - 30 // footer below
  */
 export async function recipePdf({ title, meta = '', picture = null, ingredients = [], steps = [], note = '', footer = '' }) {
   const color = accent()
-  const [img, logo] = await Promise.all([loadImage(picture), loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`)])
+  const svg = (code) => loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(code)}`)
+  // The watermark is the pot alone, without the logo's cream square
+  const [img, logo, pot] = await Promise.all([loadImage(picture), svg(logoSvg), svg(logoSvg.replace(/<rect width="108"[^>]*\/>/, ''))])
   // Everything is laid out first and drawn per page afterwards, so the
   // ingredients card can be painted under its text once its height is known.
   const pages = [] // { ops: [fn(ctx)], card: { top, bottom } | null }
@@ -349,6 +351,13 @@ export async function recipePdf({ title, meta = '', picture = null, ingredients 
       ctx.strokeStyle = BORDER
       ctx.lineWidth = 2
       ctx.stroke()
+    }
+    // A big, faint pot in the middle of the page, over the card, under the text
+    if (pot) {
+      const size = 760
+      ctx.globalAlpha = 0.06
+      ctx.drawImage(pot, (W - size) / 2, (H - size) / 2 + 60, size, size)
+      ctx.globalAlpha = 1
     }
     for (const op of p.ops) op(ctx)
 
