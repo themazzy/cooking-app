@@ -260,18 +260,18 @@ Lemongrass | Herbs | Lemongrass | lemon grass
 Kaffir lime leaves | Herbs | Lime Leaves | lime leaves
 Curry leaves | Herbs | /ingredients/curry-leaves.webp |
 Lovage | Herbs | /ingredients/lovage.webp | devesil, fresh lovage
-Dried parsley | Herbs |  | dry parsley, parsley flakes, dried parsley flakes | Parsley
-Dried basil | Herbs |  | dry basil, dried basil leaves | Basil
-Dried coriander | Herbs |  | dry coriander, dried cilantro, dried coriander leaves, dried coriander leaf | Coriander
-Dried dill | Herbs |  | dry dill, dill weed, dried dill weed | Dill
+Dried parsley | Herbs | Parsley | dry parsley, parsley flakes, dried parsley flakes | Parsley
+Dried basil | Herbs | Basil | dry basil, dried basil leaves | Basil
+Dried coriander | Herbs | Coriander | dry coriander, dried cilantro, dried coriander leaves, dried coriander leaf | Coriander
+Dried dill | Herbs | Dill | dry dill, dill weed, dried dill weed | Dill
 Dried mint | Herbs | /ingredients/dried-mint.webp | dry mint, dried mint leaves, dried spearmint | Mint
-Dried chives | Herbs |  | dry chives, freeze-dried chives, freeze dried chives | Chives
+Dried chives | Herbs | Chives | dry chives, freeze-dried chives, freeze dried chives | Chives
 Dried thyme | Herbs | Thyme | dry thyme, dried thyme leaves, ground thyme | Thyme
 Dried rosemary | Herbs | /ingredients/dried-rosemary.webp | dry rosemary, ground rosemary | Rosemary
 Dried sage | Herbs | /ingredients/dried-sage.webp | dry sage, rubbed sage, ground sage | Sage
 Dried tarragon | Herbs | /ingredients/dried-tarragon.webp | dry tarragon | Tarragon
-Dried lovage | Herbs |  | dry lovage | Lovage
-Fresh oregano | Herbs |  | oregano leaves, oregano sprigs | Oregano
+Dried lovage | Herbs | /ingredients/lovage.webp | dry lovage | Lovage
+Fresh oregano | Herbs | Oregano | oregano leaves, oregano sprigs | Oregano
 Fresh marjoram | Herbs | /ingredients/fresh-marjoram.webp | marjoram leaves, marjoram sprigs | Marjoram
 Fenugreek leaves | Herbs | /ingredients/fenugreek-leaves.webp | kasuri methi, dried fenugreek leaves, methi leaves | Fenugreek
 Salt | Spices | Salt | table salt
@@ -297,7 +297,7 @@ Cardamom | Spices | Cardamom | cardamom pods, green cardamom, whole cardamom, ca
 Ground cardamom | Spices | Ground Cardomom | cardamom powder | Cardamom
 Star anise | Spices | Star Anise |
 Caraway seeds | Spices | /ingredients/caraway-seeds.webp | caraway, caraway seed, whole caraway
-Ground caraway | Spices |  | caraway powder, ground caraway seeds | Caraway seeds
+Ground caraway | Spices | /ingredients/caraway-seeds.webp | caraway powder, ground caraway seeds | Caraway seeds
 Garlic powder | Spices | Garlic Powder | dried garlic, granulated garlic
 Garlic salt | Spices |  |
 Lemon pepper | Spices |  | lemon pepper seasoning
@@ -310,7 +310,7 @@ Cayenne pepper | Spices | Cayenne Pepper | cayenne | Chilli powder
 Chilli flakes | Spices | Red Chilli Flakes | red pepper flakes, crushed chilli, red chilli flakes, chili flakes, chilli flakes, crushed red pepper, crushed red pepper flakes | Chilli powder
 Cumin seeds | Spices | Cumin Seeds | cumin seed, whole cumin, whole cumin seeds, jeera | Cumin
 Fennel seeds | Spices | Fennel Seeds | fennel seed, whole fennel seeds
-Ground fennel | Spices |  | fennel powder, ground fennel seeds, ground fennel seed | Fennel seeds
+Ground fennel | Spices | Fennel Seeds | fennel powder, ground fennel seeds, ground fennel seed | Fennel seeds
 Fenugreek | Spices | Fenugreek | sominka
 Saffron | Spices | Saffron |
 Allspice | Spices | Allspice Berries | pimento, allspice berries, whole allspice

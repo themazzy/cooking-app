@@ -70,7 +70,7 @@ Burdock root | Vegetables |  | gobo, gobō
 Kabocha | Vegetables |  | kabocha squash, japanese pumpkin, hokkaido, dýně hokkaido | Pumpkin
 Shiso | Herbs |  | perilla, ooba, 紫苏
 Mitsuba | Herbs |  | japanese parsley
-Thai basil | Herbs |  | holy basil, 九层塔 | Basil
+Thai basil | Herbs | Basil | holy basil, 九层塔 | Basil
 Japanese cucumber | Vegetables |  | kyuri | Cucumber
 Negi | Vegetables |  | welsh onion, japanese leek, 大葱 | Leek
 Sweet potato leaves | Vegetables |  | kangkong, water spinach, morning glory, 空心菜 | Spinach
@@ -194,8 +194,8 @@ Black bean sauce | Oils & sauces |  | black bean garlic sauce
 Sweet bean sauce | Oils & sauces |  | tianmianjiang, sweet flour sauce, 甜面酱
 Chilli oil | Oils & sauces |  | chili oil, chilli crisp, chili crisp, lao gan ma, rayu, la-yu, 辣椒油
 Sichuan peppercorns | Spices |  | szechuan pepper, sichuan pepper, huajiao, sansho, 花椒
-Dried chillies | Spices |  | dried chilies, dried red chillies, sušené chilli, 干辣椒 | Chilli
-Cassia bark | Spices |  | chinese cinnamon, 桂皮 | Cinnamon
+Dried chillies | Spices | Chilli | dried chilies, dried red chillies, sušené chilli, 干辣椒 | Chilli
+Cassia bark | Spices | Cinnamon | chinese cinnamon, 桂皮 | Cinnamon
 MSG | Spices |  | monosodium glutamate, ajinomoto, glutamát, 味精
 Chicken powder | Spices |  | chicken bouillon powder, 鸡精 | Stock
 Rock sugar | Baking |  | 冰糖, crystal sugar | Sugar
@@ -226,7 +226,7 @@ Nori | Other |  | nori sheets, seaweed sheets, laver, 海苔
 Wakame | Other |  | wakame seaweed, dried seaweed, わかめ
 Hijiki | Other |  | hijiki seaweed
 Furikake | Spices |  | rice seasoning
-Shichimi togarashi | Spices |  | shichimi, togarashi, seven spice, ichimi | Chilli flakes
+Shichimi togarashi | Spices | Red Chilli Flakes | shichimi, togarashi, seven spice, ichimi | Chilli flakes
 Japanese rice | Pasta & grains |  | short grain rice, japonica rice, calrose | Rice
 Sake lees | Other |  | sake kasu
 Rice wine | Drinks |  | mijiu, 米酒, makgeolli
