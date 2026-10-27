@@ -150,7 +150,7 @@ function cleanLine(line) {
 
 // Measurements left in a name ("ground beef (680g)", "/450 g butter") belong in the amount
 const MEASURE_UNITS = 'g|gr|grams?|kg|ml|l|dl|oz|ounces?|lbs?|pounds?|cups?|tbsp|tsp|fl\\.?\\s?oz|г|гр|кг|мл|л'
-const IN_PARENS = new RegExp(`\\(\\s*(?:about|approx\\.?|ca\\.?|около|~)?\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?(?:\\s*(?:/|or)\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?)?\\s*\\)`, 'giu')
+const IN_PARENS = new RegExp(`\\(\\s*(?:about|approx\\.?|approximately|ca\\.?|cca\\.?|asi|přibližně|zhruba|približne|около|приблизително|примерно|etwa|ungefähr|environ|circa|około|~)?\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?(?:\\s*(?:/|or)\\s*${NUM}\\s*(?:${MEASURE_UNITS})\\.?)?\\s*\\)`, 'giu')
 const LOOSE = new RegExp(`(?:^|\\s|/)${NUM}\\s*(?:${MEASURE_UNITS})\\.?(?=\\s|$|[,/)])`, 'giu')
 const stripMeasures = (s) => s.replace(IN_PARENS, ' ').replace(LOOSE, ' ').replace(/\(\s*\)/g, ' ').replace(/\s{2,}/g, ' ')
 

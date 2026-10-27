@@ -2,6 +2,7 @@ import { expect, it } from 'vitest'
 import { parseRecipePage } from './reel/web.js'
 import { draftFromImport } from './recipeDraft.js'
 import { parseRecipeText } from './ingredients.js'
+import { findTimers } from './cook.js'
 // Blog post without recipe data (slepicarna-blog.cz, 2026-10-15), its layout as
 // read on the page; step wording shortened
 const html = `<html><head><meta property="og:site_name" content="Slepičárna blog"></head><body><header><nav>Menu</nav></header>
@@ -82,4 +83,29 @@ it('reads the devilled mince toast recipe', () => {
     ['160', 'g', 'Strouhaného ementálu'],
   ])
   expect(d.steps.split('\n')).toHaveLength(3)
+})
+
+// Third post (2026-04-08): "(asi 400 g)" after the potatoes, a 20 minute step
+const gulas = `<html><body><article><h3>Naučíme vás buřtguláš, polévku, co připomíná prázdniny u babičky</h3>
+<div>8.4.2026 by Slepice No comment(s)</div>
+<p>Buřtguláš je klasika ze školní jídelny i od babičky.</p>
+<p><strong>Buřtguláš s vejci</strong><br>4 porce<br>příprava: 60 minut</p>
+<p><strong>Co na buřtguláš?</strong></p>
+<ul><li>4 buřty</li><li>1 lžíce vepřového sádla (nebo oleje)</li><li>1 velká cibule</li><li>1 lžička drceného kmínu</li><li>1 lžička sušeného česneku (nebo 2 stroužky)</li><li>2 lžíce hladké mouky</li><li>1 lžíce sladké papriky</li><li>1 lžíce uzené papriky</li><li>1 l domácího vývaru (např. kuřecí)</li><li>8 středně velkých brambor typu B (asi 400 g)</li><li>1 lžíce sušené majoránky</li><li>sůl a pepř</li><li>4 vejce vařená natvrdo</li><li>čerstvá petrželka</li><li>pečivo na podávání</li></ul>
+<p><strong>Jak na to?</strong></p>
+<ol><li>Na sádle osmahni nadrobno nakrájenou cibuli dozlatova, přidej na kousky nakrájené buřty a kmín. Přidej česnek, mouku a obě papriky, promíchej, zalij vývarem a přidej brambory nakrájené na kostky.</li>
+<li>Přiveď k varu, přidej majoránku, osol a opepři. Vař asi 20 minut, dokud brambory nezměknou a trochu se nerozvaří, jejich škrob polévku zahustí.</li>
+<li>Mezitím uvař vejce natvrdo, oloupej je, nakrájej na kostičky a vmíchej do guláše.</li>
+<li>Hotový guláš posyp čerstvou petrželkou a podávej s pečivem.</li></ol>
+<div>Facebook Twitter Google+ LinkedIn Pinterest</div></article></body></html>`
+it('reads the buřtguláš recipe', () => {
+  const d = draftFromImport({ platform: 'web', url: 'x', ...parseRecipePage(gulas), comments: [] })
+  expect([d.servings, d.prepMin]).toEqual([4, 60])
+  const names = d.ingredients.map((i) => [i.qty, i.unit, i.name])
+  expect(names).toHaveLength(15)
+  expect(names[9]).toEqual(['8', '', 'Středně velkých brambor typu B'])
+  expect(names[8]).toEqual(['1', 'l', 'Domácího vývaru (např. kuřecí)'])
+  expect(names.slice(-3)).toEqual([['4', '', 'Vejce vařená natvrdo'], ['', '', 'Čerstvá petrželka'], ['', '', 'Pečivo na podávání']])
+  expect(d.steps.split('\n')).toHaveLength(4)
+  expect(findTimers(d.steps)).toEqual([{ label: '20 min', seconds: 1200 }])
 })
