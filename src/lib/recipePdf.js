@@ -1,16 +1,24 @@
-// A recipe as a PDF: photo, ingredients and steps on A4 pages. The pages are
-// drawn on a canvas with the phone's own fonts (so Czech and Bulgarian
-// letters print without shipping a font) and put into a small PDF as JPEG
-// images. No PDF library, so the app stays small; the text in the PDF is a
-// picture and can't be selected.
+// A recipe as a PDF: photo, ingredients and steps on A4 pages in the app's
+// cream look, with the Simmer pot in the header. The pages are drawn on a
+// canvas with the phone's own fonts (so Czech and Bulgarian letters print
+// without shipping a font) and put into a small PDF as JPEG images. No PDF
+// library, so the app stays small; the text in the PDF is a picture and
+// can't be selected.
+
+import logoSvg from '../../public/icon.svg?raw'
 
 const W = 1240 // A4 at 150 dpi
 const H = 1754
-const M = 100 // margin
+const M = 72 // margin
 const FONT = '"Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif'
+// The light theme's colours (styles.css)
+const BG = '#faf1e3'
+const CARD = '#fffaf2'
+const SUNKEN = '#f3e7d5'
+const BORDER = '#ebdcc5'
 const INK = '#1f1e1b'
 const MUTED = '#6e6b63'
-const LINE = '#e3e0d8'
+const HERB = '#2f7a52'
 
 /**
  * A PDF made of one JPEG per page. `pages` are { jpeg: Uint8Array, width, height }
@@ -101,8 +109,34 @@ const loadImage = async (src) => {
 
 const toJpeg = (canvas) =>
   new Promise((resolve, reject) =>
-    canvas.toBlob(async (blob) => (blob ? resolve(new Uint8Array(await blob.arrayBuffer())) : reject(new Error('Could not draw the PDF page'))), 'image/jpeg', 0.86),
+    canvas.toBlob(async (blob) => (blob ? resolve(new Uint8Array(await blob.arrayBuffer())) : reject(new Error('Could not draw the PDF page'))), 'image/jpeg', 0.88),
   )
+
+// The accent picked in Settings, in its light-theme shade
+const accent = () => {
+  try {
+    return getComputedStyle(document.documentElement).getPropertyValue('--a-light').trim() || HERB
+  } catch {
+    return HERB
+  }
+}
+
+const box = (ctx, x, y, w, h, r) => {
+  ctx.beginPath()
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r)
+  else ctx.rect(x, y, w, h)
+}
+
+// Ingredients in a card on the left, steps on the right
+const LEFT_W = 430
+const GAP = 40
+const RIGHT_X = M + LEFT_W + GAP
+const RIGHT_W = W - M - RIGHT_X
+const PAD = 26 // inside the ingredients card
+const AMOUNT_W = 128
+const TEXT = 24
+const LH = 33
+const BOTTOM = H - M - 30 // footer below
 
 /**
  * The PDF of a recipe as a Blob. `ingredients` ({ qty, unit, name, group })
@@ -110,148 +144,224 @@ const toJpeg = (canvas) =>
  * `meta` is the line under the title; `picture` a data URL or null.
  */
 export async function recipePdf({ title, meta = '', picture = null, ingredients = [], steps = [], note = '', footer = '' }) {
-  const pages = []
-  let canvas
-  let ctx
-  let y
-  const bottom = H - M - 40
-  const newPage = () => {
-    canvas = document.createElement('canvas')
-    canvas.width = W
-    canvas.height = H
-    ctx = canvas.getContext('2d')
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, W, H)
-    ctx.textBaseline = 'top'
-    pages.push(canvas)
-    y = M
+  const color = accent()
+  const [img, logo] = await Promise.all([loadImage(picture), loadImage(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(logoSvg)}`)])
+  // Everything is laid out first and drawn per page afterwards, so the
+  // ingredients card can be painted under its text once its height is known.
+  const pages = [] // { ops: [fn(ctx)], card: { top, bottom } | null }
+  const measure = document.createElement('canvas').getContext('2d')
+  const font = (ctx, size, weight = 400) => (ctx.font = `${weight} ${size}px ${FONT}`)
+  const page = (n) => {
+    while (pages.length <= n) pages.push({ ops: [], card: null, top: M + 70 })
+    return pages[n]
   }
-  const font = (size, weight = 400) => (ctx.font = `${weight} ${size}px ${FONT}`)
-  const room = (h) => {
-    if (y + h > bottom) newPage()
-  }
-  const heading = (text) => {
-    room(120)
-    y += 28
-    font(38, 700)
-    ctx.fillStyle = INK
-    ctx.fillText(text, M, y)
-    y += 54
-    ctx.fillStyle = LINE
-    ctx.fillRect(M, y, W - 2 * M, 3)
-    y += 22
+  const text = (n, str, x, y, size, weight, fill) =>
+    page(n).ops.push((ctx) => {
+      font(ctx, size, weight)
+      ctx.fillStyle = fill
+      ctx.fillText(str, x, y)
+    })
+  const lines = (str, size, weight, width) => {
+    font(measure, size, weight)
+    return wrap(measure, str, width)
   }
 
-  newPage()
-  font(56, 700)
-  ctx.fillStyle = INK
-  for (const line of wrap(ctx, title || 'Recipe', W - 2 * M)) {
-    ctx.fillText(line, M, y)
-    y += 68
-  }
+  // Header of the first page: the pot and the name, then the title and the photo
+  page(0)
+  const LOGO = 58
+  const photoW = img ? 360 : 0
+  const photoH = Math.round(photoW * 0.75)
+  const titleW = W - 2 * M - (img ? photoW + 32 : 0)
+  let y = M + LOGO + 26
+  const titleLines = lines(title || 'Recipe', 50, 700, titleW)
+  titleLines.forEach((line, i) => text(0, line, M, y + i * 60, 50, 700, INK))
+  y += titleLines.length * 60 + 6
   if (meta) {
-    font(28)
-    ctx.fillStyle = MUTED
-    for (const line of wrap(ctx, meta, W - 2 * M)) {
-      ctx.fillText(line, M, y + 6)
-      y += 38
+    for (const line of lines(meta, 24, 400, titleW)) {
+      text(0, line, M, y, 24, 400, MUTED)
+      y += 32
     }
   }
-  y += 24
+  const headerBottom = Math.max(y, img ? M + LOGO + 26 + photoH : 0) + 30
+  page(0).top = headerBottom + 4
 
-  const img = await loadImage(picture)
-  if (img) {
-    // The middle of the photo at 16:10, as wide as the text
-    const w = W - 2 * M
-    const h = Math.round(w / 1.6)
-    const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight)
-    const sw = w / scale
-    const sh = h / scale
-    ctx.save()
-    ctx.beginPath()
-    if (ctx.roundRect) ctx.roundRect(M, y, w, h, 18)
-    else ctx.rect(M, y, w, h)
-    ctx.clip()
-    ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, M, y, w, h)
-    ctx.restore()
-    y += h + 16
-  }
-
+  // Ingredients: a column that runs on to the next pages if it must
   const list = ingredients.filter((i) => String(i.name ?? '').trim() || String(i.qty ?? '').trim())
+  let leftEnd = { n: 0, y: page(0).top - 30 } // where the ingredients card ends
   if (list.length) {
-    heading('Ingredients')
-    const amountW = 230
+    let n = 0
+    let y = page(0).top + PAD
+    const open = () => (page(n).card = { top: page(n).top, bottom: page(n).top })
+    const room = (h) => {
+      if (y + h <= BOTTOM - PAD) return
+      n++
+      y = page(n).top + PAD
+      open()
+    }
+    open()
+    const x = M + PAD
+    const width = LEFT_W - 2 * PAD
+    text(n, 'Ingredients', x, y, 30, 700, INK)
+    y += 48
     let group = ''
     for (const i of list) {
       if ((i.group ?? '') !== group) {
         group = i.group ?? ''
         if (group) {
-          room(56)
-          y += 12
-          font(28, 700)
-          ctx.fillStyle = MUTED
-          ctx.fillText(group, M, y)
-          y += 42
+          const head = lines(group.toUpperCase(), 19, 700, width)
+          room(head.length * 26 + 14 + LH)
+          y += 8
+          for (const line of head) {
+            text(n, line, x, y, 19, 700, color)
+            y += 26
+          }
+          y += 6
         }
       }
-      font(30)
-      const lines = wrap(ctx, i.name ?? '', W - 2 * M - amountW)
-      room(lines.length * 40 + 8)
-      font(30, 700)
-      ctx.fillStyle = INK
       const amount = [i.qty, i.unit].map((s) => String(s ?? '').trim()).filter(Boolean).join(' ')
-      for (const [n, line] of wrap(ctx, amount, amountW - 20).entries()) ctx.fillText(line, M, y + n * 40)
-      font(30)
-      lines.forEach((line, n) => ctx.fillText(line, M + amountW, y + n * 40))
-      y += Math.max(lines.length, 1) * 40 + 8
+      const amountLines = amount ? lines(amount, TEXT, 700, AMOUNT_W - 14) : []
+      const nameLines = lines(i.name ?? '', TEXT, 400, width - AMOUNT_W)
+      const rows = Math.max(amountLines.length, nameLines.length, 1)
+      room(rows * LH)
+      amountLines.forEach((line, k) => text(n, line, x, y + k * LH, TEXT, 700, INK))
+      nameLines.forEach((line, k) => text(n, line, x + AMOUNT_W, y + k * LH, TEXT, 400, INK))
+      y += rows * LH + 6
+      page(n).card.bottom = y + PAD - 6
     }
+    leftEnd = { n, y: page(n).card.bottom }
   }
 
-  if (steps.length) {
-    heading('Steps')
-    const numW = 64
-    steps.forEach((step, n) => {
-      font(30)
-      const lines = wrap(ctx, step, W - 2 * M - numW)
-      // A step may run over a page, but starts with at least two lines
-      room(Math.min(lines.length, 2) * 42)
-      font(30, 700)
-      ctx.fillStyle = '#2f7a52'
-      ctx.fillText(`${n + 1}.`, M, y)
-      font(30)
-      ctx.fillStyle = INK
-      for (const line of lines) {
-        room(42)
-        ctx.fillText(line, M + numW, y)
-        y += 42
+  // Steps and the note on the right
+  if (steps.length || note?.trim()) {
+    let n = 0
+    let y = page(0).top + PAD
+    const room = (h) => {
+      if (y + h <= BOTTOM) return
+      n++
+      y = page(n).top + PAD
+    }
+    const heading = (label) => {
+      room(48 + LH * 2)
+      text(n, label, RIGHT_X, y, 30, 700, INK)
+      y += 48
+    }
+    const NUM = 40
+    if (steps.length) {
+      heading('Steps')
+      steps.forEach((step, k) => {
+        const stepLines = lines(step, TEXT, 400, RIGHT_W - NUM - 14)
+        // A step may run over a page, but starts with at least two lines
+        room(Math.min(stepLines.length, 2) * LH)
+        const top = y
+        const p = n
+        page(p).ops.push((ctx) => {
+          ctx.fillStyle = color
+          ctx.beginPath()
+          ctx.arc(RIGHT_X + 17, top + 15, 17, 0, Math.PI * 2)
+          ctx.fill()
+          font(ctx, 18, 700)
+          ctx.fillStyle = '#ffffff'
+          const label = String(k + 1)
+          ctx.fillText(label, RIGHT_X + 17 - ctx.measureText(label).width / 2, top + 4)
+        })
+        for (const line of stepLines) {
+          room(LH)
+          text(n, line, RIGHT_X + NUM + 14, y, TEXT, 400, INK)
+          y += LH
+        }
+        y += 14
+      })
+    }
+    if (note?.trim()) {
+      // In a sunken box under the steps, else under the ingredients when the
+      // steps filled the page, else as plain text running on
+      const noteBox = (p, x, top, width) => {
+        const noteLines = lines(note.trim(), TEXT, 400, width - 2 * 22)
+        const h = noteLines.length * LH + 36
+        if (top + 48 + h > BOTTOM) return false
+        text(p, 'Note', x, top, 30, 700, INK)
+        top += 48
+        page(p).ops.unshift((ctx) => {
+          ctx.fillStyle = SUNKEN
+          box(ctx, x, top, width, h, 16)
+          ctx.fill()
+        })
+        noteLines.forEach((line, k) => text(p, line, x + 22, top + 18 + k * LH, TEXT, 400, INK))
+        return true
       }
-      y += 18
-    })
-  }
-
-  if (note?.trim()) {
-    heading('Note')
-    font(30)
-    ctx.fillStyle = INK
-    for (const line of wrap(ctx, note.trim(), W - 2 * M)) {
-      room(42)
-      ctx.fillText(line, M, y)
-      y += 42
+      if (!noteBox(n, RIGHT_X, y + 10, RIGHT_W) && !(leftEnd.n === n && noteBox(n, M, leftEnd.y + 30, LEFT_W))) {
+        y += 10
+        heading('Note')
+        for (const line of lines(note.trim(), TEXT, 400, RIGHT_W)) {
+          room(LH)
+          text(n, line, RIGHT_X, y, TEXT, 400, INK)
+          y += LH
+        }
+      }
     }
   }
 
   const out = []
-  for (const [n, page] of pages.entries()) {
-    const c = page.getContext('2d')
-    c.textBaseline = 'top'
-    c.font = `400 22px ${FONT}`
-    c.fillStyle = MUTED
-    c.fillText(footer, M, H - M + 10)
-    if (pages.length > 1) {
-      const label = `${n + 1} / ${pages.length}`
-      c.fillText(label, W - M - c.measureText(label).width, H - M + 10)
+  for (const [n, p] of pages.entries()) {
+    const canvas = document.createElement('canvas')
+    canvas.width = W
+    canvas.height = H
+    const ctx = canvas.getContext('2d')
+    ctx.textBaseline = 'top'
+    ctx.fillStyle = BG
+    ctx.fillRect(0, 0, W, H)
+
+    // The pot and "Simmer"; later pages also repeat the title small
+    const size = n === 0 ? LOGO : 40
+    if (logo) ctx.drawImage(logo, M, M, size, size)
+    font(ctx, n === 0 ? 30 : 24, 700)
+    ctx.fillStyle = INK
+    const nameX = M + (logo ? size + 14 : 0)
+    ctx.fillText('Simmer', nameX, M + (size - (n === 0 ? 30 : 24)) / 2 - 2)
+    if (n > 0) {
+      const after = nameX + ctx.measureText('Simmer').width
+      font(ctx, 22)
+      ctx.fillStyle = MUTED
+      const rest = W - M - after - 30
+      const [line] = wrap(ctx, `·  ${title || 'Recipe'}`, rest)
+      ctx.fillText(line, after + 14, M + 9)
     }
-    out.push({ jpeg: await toJpeg(page), width: W, height: H })
+    if (n === 0 && img) {
+      const x = W - M - photoW
+      const y = M + LOGO + 26
+      // The middle of the photo at 4:3
+      const scale = Math.max(photoW / img.naturalWidth, photoH / img.naturalHeight)
+      const sw = photoW / scale
+      const sh = photoH / scale
+      ctx.save()
+      box(ctx, x, y, photoW, photoH, 18)
+      ctx.clip()
+      ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, x, y, photoW, photoH)
+      ctx.restore()
+    }
+    ctx.fillStyle = BORDER
+    ctx.fillRect(M, (n === 0 ? headerBottom : M + 52) - 14, W - 2 * M, 2)
+
+    if (p.card) {
+      ctx.fillStyle = CARD
+      box(ctx, M, p.card.top, LEFT_W, p.card.bottom - p.card.top, 20)
+      ctx.fill()
+      ctx.strokeStyle = BORDER
+      ctx.lineWidth = 2
+      ctx.stroke()
+    }
+    for (const op of p.ops) op(ctx)
+
+    ctx.fillStyle = BORDER
+    ctx.fillRect(M, H - M - 12, W - 2 * M, 2)
+    font(ctx, 19)
+    ctx.fillStyle = MUTED
+    const label = pages.length > 1 ? `${n + 1} / ${pages.length}` : ''
+    const footW = W - 2 * M - (label ? ctx.measureText(label).width + 30 : 0)
+    const [foot = ''] = wrap(ctx, footer, footW)
+    ctx.fillText(foot, M, H - M)
+    if (label) ctx.fillText(label, W - M - ctx.measureText(label).width, H - M)
+    out.push({ jpeg: await toJpeg(canvas), width: W, height: H })
   }
   return new Blob([jpegPdf(out)], { type: 'application/pdf' })
 }
