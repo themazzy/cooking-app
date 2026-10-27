@@ -38,6 +38,7 @@ import { EBAG_SEARCH } from './lib/ebag.js'
 import { openLogin } from './lib/pageReader.js'
 import { debugReport, detectPlatform, extractUrl, loadReel } from './lib/reel/index.js'
 import { INSTAGRAM_LOGIN_URL, isInstagramSignedIn, setVideoMinShortSide } from './lib/reel/instagram.js'
+import { FACEBOOK_LOGIN_URL, isFacebookSignedIn } from './lib/reel/facebook.js'
 import { CapacitorCookies } from '@capacitor/core'
 import { ACCENTS, THEMES, applyTheme, resolveTheme } from './lib/theme.js'
 import { setWorking, toast } from './lib/toast.js'
@@ -152,6 +153,7 @@ export default function App() {
   const [report, setReport] = useState(null)
   const [copied, setCopied] = useState(false)
   const [igSignedIn, setIgSignedIn] = useState(false)
+  const [fbSignedIn, setFbSignedIn] = useState(false)
   const runRef = useRef(null)
 
   useEffect(() => writeStore(SETTINGS_KEY, settings), [settings])
@@ -316,7 +318,10 @@ export default function App() {
   // Re-checked whenever the app comes back to the front (a login can also expire)
   useEffect(() => {
     if (!native) return
-    const check = () => isInstagramSignedIn().then(setIgSignedIn)
+    const check = () => {
+      isInstagramSignedIn().then(setIgSignedIn)
+      isFacebookSignedIn().then(setFbSignedIn)
+    }
     check()
     window.addEventListener('pageshow', check)
     window.addEventListener('focus', check)
@@ -335,6 +340,14 @@ export default function App() {
       await CapacitorCookies.clearCookies({ url: 'https://www.instagram.com' })
     } finally {
       setIgSignedIn(await isInstagramSignedIn())
+    }
+  }
+
+  const signOutFacebook = async () => {
+    try {
+      await CapacitorCookies.clearCookies({ url: 'https://www.facebook.com' })
+    } finally {
+      setFbSignedIn(await isFacebookSignedIn())
     }
   }
 
@@ -714,18 +727,19 @@ export default function App() {
       try {
         step(detectPlatform(url) === 'web' ? 'Loading the page…' : 'Loading the reel page…')
         reel = await loadReel(url)
-        if (reel.signedIn != null) setIgSignedIn(reel.signedIn)
+        if (reel.signedIn != null) (reel.platform === 'facebook' ? setFbSignedIn : setIgSignedIn)(reel.signedIn)
         r = { ...r, platform: reel.platform, author: reel.author, description: reel.description, comments: (reel.comments ?? []).slice(0, 30), image: reel.image ?? null, meta: reel.meta ?? null }
         step(reel.description ? 'Found the description.' : 'No description found.', reel.description ? 'ok' : 'warn')
         if (reel.platform === 'web') {
           step(reel.structured ? 'Found the recipe data on the page.' : 'No recipe data on the page, reading its text instead.', reel.structured ? 'ok' : 'warn')
-        } else if (reel.platform === 'instagram') {
+        } else if (reel.platform === 'instagram' || reel.platform === 'facebook') {
+          const site = reel.platform === 'facebook' ? 'Facebook' : 'Instagram'
           step(
             r.comments.length
               ? `Found ${r.comments.length} comment${r.comments.length > 1 ? 's' : ''}.`
               : reel.signedIn
                 ? 'No comments found.'
-                : 'No comments found. Instagram may only show them when signed in (Settings).',
+                : `No comments found. ${site} may only show them when signed in (Settings).`,
             r.comments.length ? 'ok' : 'warn',
           )
         }
@@ -1172,6 +1186,33 @@ export default function App() {
                   }}
                 >
                   Sign in to Instagram
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+        {native && (
+          <section className="card">
+            <h3>Facebook</h3>
+            <p>{fbSignedIn ? 'Signed in' : 'Not signed in'}</p>
+            <p className="hint">
+              Logged out, Facebook shows few comments and hides some reels. Signing in works like Instagram: a separate window
+              that closes by itself, and the login stays on this phone.
+            </p>
+            <div className="row">
+              {fbSignedIn ? (
+                <button className="secondary" onClick={signOutFacebook}>
+                  Sign out of Facebook
+                </button>
+              ) : (
+                <button
+                  className="secondary"
+                  onClick={async () => {
+                    await openLogin(FACEBOOK_LOGIN_URL, { doneCookie: 'c_user', title: 'Sign in to Facebook' }).catch(() => false)
+                    setFbSignedIn(await isFacebookSignedIn())
+                  }}
+                >
+                  Sign in to Facebook
                 </button>
               )}
             </div>

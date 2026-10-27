@@ -154,6 +154,30 @@ describe('Facebook', () => {
   it('detects the login wall', () => {
     expect(parseFacebookPage('<form id="login_form"></form>').loginWall).toBe(true)
   })
+
+  it('keeps the caption from a reel og:description', async () => {
+    const { captionFromFacebookOg } = await import('./facebook.js')
+    expect(captionFromFacebookOg('1.2K views · 40 reactions | Kuře na paprice 500 g kuřete')).toBe('Kuře na paprice 500 g kuřete')
+    expect(captionFromFacebookOg('Just a caption')).toBe('Just a caption')
+  })
+
+  it('merges what the hidden browser read from the reel page', async () => {
+    const { parseInPageResult } = await import('./facebook.js')
+    const r = parseInPageResult({
+      href: 'https://www.facebook.com/reel/987654321',
+      meta: '<meta property="og:description" content="12 views | Short caption" />',
+      scripts: '{"browser_native_sd_url":"https:\\/\\/video.fbcdn.net\\/r.mp4","message":{"text":"Full caption\\n2 eggs"}}',
+      dom: [{ author: 'Chef Bob', text: 'Recipe: 200 g flour' }, { author: 'X', text: 'Full caption\n2 eggs' }],
+      loginWall: false,
+    })
+    expect(r).toMatchObject({
+      url: 'https://www.facebook.com/reel/987654321',
+      description: 'Full caption\n2 eggs',
+      videoUrl: 'https://video.fbcdn.net/r.mp4',
+      comments: [{ author: 'Chef Bob', text: 'Recipe: 200 g flour', pinned: false }],
+      loginWall: false,
+    })
+  })
 })
 
 describe('html helpers', () => {
