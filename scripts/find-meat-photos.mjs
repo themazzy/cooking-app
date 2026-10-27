@@ -5,19 +5,17 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 
 const SEARCHES = {
-  'dried-parsley': ['dried parsley flakes', 'dried parsley'], 'dried-basil': ['dried basil', 'dried basil leaves'], 'dried-coriander': ['dried coriander leaves', 'dried cilantro'],
-  'dried-dill': ['dried dill weed', 'dried dill'], 'dried-mint': ['dried mint leaves', 'dried mint'], 'dried-chives': ['dried chives', 'freeze dried chives'],
-  'dried-thyme': ['dried thyme', 'dried thyme leaves'], 'dried-rosemary': ['dried rosemary', 'dried rosemary leaves'], 'dried-sage': ['dried sage leaves', 'rubbed sage'],
-  'dried-tarragon': ['dried tarragon', 'tarragon dried spice'], 'dried-oregano': ['dried oregano', 'oregano spice'], 'dried-marjoram': ['dried marjoram', 'marjoram spice'],
-  'dried-lovage': ['dried lovage', 'Levisticum officinale dried'], 'dried-savory': ['dried savory', 'chubritsa', 'Satureja hortensis dried'],
-  'fresh-oregano': ['fresh oregano', 'Origanum vulgare leaves'], 'fresh-marjoram': ['fresh marjoram', 'Origanum majorana leaves'], 'savory': ['Satureja hortensis', 'summer savory'],
-  'lovage': ['lovage leaves', 'Levisticum officinale'], 'lemongrass': ['lemongrass stalks', 'lemon grass'], 'kaffir-lime-leaves': ['kaffir lime leaves', 'makrut lime leaves'], 'curry-leaves': ['curry leaves', 'Murraya koenigii leaves'],
-  'black-peppercorns': ['black peppercorns', 'peppercorns'], 'white-peppercorns': ['white peppercorns', 'white pepper whole'], 'white-pepper': ['ground white pepper', 'white pepper powder'],
-  'ground-coriander': ['ground coriander', 'coriander powder'], 'caraway-seeds': ['caraway seeds', 'Carum carvi seeds'], 'ground-caraway': ['ground caraway', 'caraway powder'],
-  'ground-cloves': ['ground cloves', 'clove powder'], 'ground-cardamom': ['ground cardamom', 'cardamom powder'], 'whole-nutmeg': ['whole nutmeg', 'nutmeg seeds'],
-  'allspice': ['allspice berries', 'Pimenta dioica dried'], 'ground-allspice': ['ground allspice', 'allspice powder'], 'ground-fennel': ['ground fennel seed', 'fennel powder'],
-  'fresh-turmeric': ['fresh turmeric root', 'turmeric rhizome'], 'himalayan-salt': ['himalayan salt', 'pink salt crystals'], 'fenugreek-leaves': ['kasuri methi', 'dried fenugreek leaves'],
+  'dried-parsley': ['dried parsley leaves', 'Petroselinum dried', 'getrocknete Petersilie'], 'dried-basil': ['dried basil herb', 'getrocknetes Basilikum', 'basilic séché'],
+  'dried-coriander': ['dried coriander leaf', 'getrockneter Koriander'], 'dried-chives': ['chives dried herb', 'getrockneter Schnittlauch', 'Schnittlauch gefriergetrocknet'],
+  'dried-sage': ['dried sage', 'Salvia officinalis dried leaves', 'getrockneter Salbei'], 'dried-lovage': ['getrocknetes Liebstöckel', 'lovage dried leaves'],
+  'ground-caraway': ['ground caraway seeds', 'Kümmel gemahlen'], 'ground-fennel': ['fennel seed powder', 'Fenchel gemahlen'],
+  'fresh-oregano': ['Origanum vulgare harvested', 'oregano herb fresh leaves', 'fresh oregano bunch'], 'dried-savory': ['Bohnenkraut getrocknet', 'Satureja dried herb', 'чубрица'],
 }
+// TheMealDB pictures to compare with
+const MEALDB = ['Oregano', 'Dried Oregano', 'Fresh Thyme', 'Thyme', 'Dried Mint', 'Dried Dill', 'Dried Leaves Of Summer Savoury', 'Whole black peppercorns', 'Peppercorns', 'Ground Black Pepper',
+  'Ground Coriander', 'Ground Cumin', 'Ground Nutmeg', 'Ground Clove', 'Ground Cardomom', 'Allspice', 'Allspice Berries', 'Ground Allspice', 'Ground Turmeric', 'Turmeric', 'Ground Cinnamon',
+  'Caraway Seed', 'Lemongrass', 'Lemongrass Stalks', 'Kaffir Lime Leaves', 'Lime Leaves', 'Green Cardamom Pods', 'Marjoram', 'Sage', 'Basil', 'Coriander', 'Coriander Seeds', 'Cumin', 'Cumin Seeds',
+  'Cloves', 'Nutmeg', 'Cardamom', 'Fenugreek', 'Tarragon Leaves', 'Rosemary', 'Chives', 'Mint', 'Dill', 'Parsley', 'Black Pepper', 'Pepper', 'Ground Mustard', 'Mustard Powder']
 
 const API = 'https://commons.wikimedia.org/w/api.php'
 const UA = { 'User-Agent': 'SimmerCookingApp/1.0 (https://github.com/themazzy/cooking-app)' }
@@ -48,6 +46,10 @@ for (const [slug, queries] of Object.entries(SEARCHES)) {
   }
 }
 writeFileSync('photo-candidates/candidates.json', JSON.stringify(found, null, 1))
+for (const name of MEALDB) try {
+  const res = await fetch(`https://www.themealdb.com/images/ingredients/${encodeURIComponent(name.toLowerCase().replace(/ /g, '_'))}-small.png`, { headers: UA })
+  if (res.ok) writeFileSync(`photo-candidates/mealdb-${name.toLowerCase().replace(/ /g, '-')}.png`, Buffer.from(await res.arrayBuffer()))
+} catch {}
 // TheMealDB's ingredient names, to see which ones already have a picture there
 try {
   const meals = (await (await fetch('https://www.themealdb.com/api/json/v1/1/list.php?i=list', { headers: UA })).json()).meals ?? []
