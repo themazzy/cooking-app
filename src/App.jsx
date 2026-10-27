@@ -4,6 +4,7 @@ import { canFetchCrossSite, getBytes } from './lib/http.js'
 import { decodeToMono16k } from './lib/audio.js'
 import { MODELS, transcribe } from './lib/transcribe.js'
 import { PARSER_LANGS, draftFromImport, draftFromTranslatedSource, sourceLines } from './lib/recipeDraft.js'
+import { recipeInText } from './lib/recipeSource.js'
 import { TARGETS, detectLanguage, languageName, translateRecipe, translateTexts } from './lib/translate.js'
 import { allCategories, allCuisines } from './lib/recipeMeta.js'
 import { allTags, importTags } from './lib/recipeTags.js'
@@ -691,25 +692,61 @@ export default function App() {
 
   const back = () => (window.history.length > 1 ? window.history.back() : go('#/'))
 
+  // `say` reports progress (the import log by default); `onDownload` the speech model download
   const runTranscription = useCallback(
-    async (buffer) => {
-      step('Reading the audio track…')
+    async (buffer, { say = step, onDownload = setDownload } = {}) => {
+      say('Reading the audio track…')
       const audio = await decodeToMono16k(buffer)
-      step(`Audio is ${Math.round(audio.length / 16000)} s long. Transcribing on this device…`)
+      say(`Audio is ${Math.round(audio.length / 16000)} s long. Transcribing on this device…`)
       const started = Date.now()
       const text = await transcribe(audio, {
         model: settings.model,
         language: settings.language,
         onProgress: (p) => {
-          if (p.status === 'progress' && p.total) setDownload({ file: p.file, pct: Math.round((p.loaded / p.total) * 100) })
-          if (p.status === 'ready') setDownload(null)
+          if (p.status === 'progress' && p.total) onDownload({ file: p.file, pct: Math.round((p.loaded / p.total) * 100) })
+          if (p.status === 'ready') onDownload(null)
         },
-        onStatus: () => setDownload(null),
+        onStatus: () => onDownload(null),
       })
-      step(`Transcript ready in ${Math.round((Date.now() - started) / 1000)} s.`, 'ok')
+      say(`Transcript ready in ${Math.round((Date.now() - started) / 1000)} s.`, 'ok')
       return text
     },
     [settings.model, settings.language],
+  )
+
+  /**
+   * Transcribes a recipe's video when the user asks (imports skip it when the
+   * caption or a comment already holds the recipe). Uses the video on screen,
+   * else downloads it again from the source. Returns the transcript and the
+   * recipe read from it, translated like an import.
+   */
+  const transcribeVideo = useCallback(
+    async (recipe, videoBlob, say) => {
+      const onDownload = (d) => d && say(`${d.file === 'text reader' ? 'Downloading the text reader' : 'Downloading the speech model'} (once): ${d.pct}%`)
+      let transcript = null
+      if (videoBlob) {
+        try {
+          transcript = await runTranscription(await videoBlob.arrayBuffer(), { say, onDownload })
+        } catch {
+          // A shrunk copy may have no readable audio; the original is fetched below
+        }
+      }
+      if (transcript == null) {
+        if (!recipe.sourceUrl) throw new Error('There is no video to transcribe.')
+        say('Loading the video again…')
+        const reel = await loadReel(recipe.sourceUrl)
+        if (reel.transcript) transcript = reel.transcript
+        else {
+          if (!reel.videoUrl) throw new Error('Could not find the video file.')
+          const bytes = await getBytes(reel.videoUrl, { headers: reel.downloadHeaders })
+          transcript = await runTranscription(bytes, { say, onDownload })
+        }
+      }
+      const result = { transcript, author: recipe.author }
+      const out = await translateDraft(await readThroughEnglish(result, { ...draftFromImport(result), title: recipe.title }))
+      return { transcript, ingredients: out.ingredients, steps: out.steps }
+    },
+    [runTranscription, readThroughEnglish, translateDraft],
   )
 
   const importLink = useCallback(
@@ -747,7 +784,10 @@ export default function App() {
           r = { ...r, transcript: reel.transcript }
           step('Used the video\'s captions as the transcript.', 'ok')
         }
-        const wantTranscript = settings.transcribe && !reel.transcript
+        // A recipe written out in the caption or a comment needs no transcript; the recipe page can still make one
+        const inText = !reel.transcript && reel.platform !== 'web' ? recipeInText(r) : null
+        if (inText && settings.transcribe) step(`Found the recipe in the ${inText.source}, so the video was not transcribed. The recipe page can still do it.`, 'ok')
+        const wantTranscript = settings.transcribe && !reel.transcript && !inText
         if (reel.platform !== 'web' && (wantTranscript || settings.saveVideos)) {
           if (!reel.videoUrl) {
             step(wantTranscript ? 'Could not find the video file, so no transcript.' : 'Could not find the video file.', 'warn')
@@ -902,6 +942,7 @@ export default function App() {
           onDelete={deleteEditing}
           onDiscard={discardEditing}
           onReread={rereadRecipe}
+          onTranscribe={(recipe, say) => transcribeVideo(recipe, editing.videoBlob, say)}
           onBack={back}
           onAddToList={(entry) => {
             updateShopping(addToList(shopping, entry, recipes, catalog.match))
@@ -1043,7 +1084,7 @@ export default function App() {
           <div className="settings">
             <label>
               <input type="checkbox" checked={settings.transcribe} onChange={(e) => setSettings({ ...settings, transcribe: e.target.checked })} />{' '}
-              Transcribe the audio
+              Transcribe the audio when the caption and comments have no recipe
             </label>
             <label>
               Speech model{' '}

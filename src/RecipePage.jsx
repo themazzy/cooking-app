@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import RecipeEditor from './RecipeEditor.jsx'
 import RecipeTags from './RecipeTags.jsx'
 import Stars from './Stars.jsx'
@@ -10,7 +10,7 @@ import ShopSheet from './ShopSheet.jsx'
 import VideoPlayer from './VideoPlayer.jsx'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { parseRecipeText } from './lib/ingredients.js'
-import { pickRecipe } from './lib/recipeSource.js'
+import { addFromTranscript, pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
 import { scaleIngredients, scaleSteps } from './lib/scale.js'
@@ -60,7 +60,7 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -73,6 +73,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [filing, setFiling] = useState(false) // the collections sheet is open
   const [sharing, setSharing] = useState(false)
   const [imageBroken, setImageBroken] = useState(false)
+  // Transcribing the video on request: { status } while running, { heard } when done, { error }
+  const [hearing, setHearing] = useState(null)
   useEffect(() => setImageBroken(false), [recipe.image])
   // Portions to cook; without a known recipe size it is a multiplier (×2)
   const [cookFor, setCookFor] = useState(recipe.servings ?? 1)
@@ -256,6 +258,102 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
     </>
   ) : null
 
+  // Imports skip the transcript when the caption or a comment holds the recipe; it can be made here
+  const applyPatch = (p) => (edit || !recipe.id ? set(p) : onSavePatch(p))
+  const canTranscribe = !!onTranscribe && raw.transcript == null && !!recipe.platform && recipe.platform !== 'web' && (!!videoBlob || !!recipe.sourceUrl)
+  const startTranscribe = async () => {
+    setHearing({ status: 'Starting…' })
+    try {
+      const heard = await onTranscribe(recipe, (status) => setHearing({ status }))
+      const found = heard.ingredients.filter((i) => i.name?.trim()).length
+      if (found || heard.steps.trim()) setHearing({ heard })
+      else {
+        // The recipe may have changed while the video was heard; the transcript is kept on the newest version
+        setHearing({ error: heard.transcript ? 'The video has no recipe the app could read.' : 'No speech found in the video.' })
+        keepTranscript.current = heard.transcript
+      }
+    } catch (err) {
+      setHearing({ error: err?.message ?? String(err) })
+    }
+  }
+  const heard = hearing?.heard
+  // Saved with the user's choice (not when it arrives), so edits made meanwhile stay
+  const keepTranscript = useRef(null)
+  useEffect(() => {
+    if (keepTranscript.current == null) return
+    const transcript = keepTranscript.current
+    keepTranscript.current = null
+    applyPatch({ raw: { ...raw, transcript } })
+  })
+  const withTranscript = (p) => applyPatch({ ...p, raw: { ...raw, transcript: heard.transcript } })
+  const merged = heard ? addFromTranscript({ ingredients: recipe.ingredients, steps: recipe.steps ?? '' }, heard, canonical) : null
+  const transcribeCard = (canTranscribe || hearing) && (
+    <section className="card transcribe">
+      {heard ? (
+        <>
+          <h3>From the video</h3>
+          <p className="note">
+            The video names {heard.ingredients.filter((i) => i.name?.trim()).length} ingredients and {splitSteps(heard.steps).length} steps.
+            {merged.added ? ` ${merged.added} of the ingredients are not in this recipe yet.` : ' Every ingredient is already in this recipe.'}
+          </p>
+          {merged.added > 0 && (
+            <ul className="heard">
+              {merged.ingredients.slice(-merged.added).map((i, n) => (
+                <li key={n}>{[i.qty, i.unit, i.name].filter(Boolean).join(' ')}</li>
+              ))}
+            </ul>
+          )}
+          <div className="row">
+            {(merged.added > 0 || merged.addedSteps) && (
+              <button
+                onClick={() => {
+                  withTranscript({ ingredients: merged.ingredients, steps: merged.steps })
+                  setHearing(null)
+                }}
+              >
+                {merged.added > 0 ? `Add ${merged.added} missing` : 'Add the steps'}
+              </button>
+            )}
+            <button
+              className="secondary"
+              onClick={() => {
+                withTranscript({ ingredients: heard.ingredients, steps: heard.steps, source: 'transcript' })
+                setHearing(null)
+              }}
+            >
+              Use the video's recipe
+            </button>
+            <button
+              className="link"
+              onClick={() => {
+                withTranscript({})
+                setHearing(null)
+              }}
+            >
+              Keep as it is
+            </button>
+          </div>
+        </>
+      ) : hearing?.status ? (
+        <p className="note">
+          <Icon name="mic" size={14} /> {hearing.status}
+        </p>
+      ) : (
+        <>
+          {hearing?.error && <p className="note">{hearing.error}</p>}
+          {canTranscribe && (
+            <div className="row">
+              <button className="secondary small" onClick={startTranscribe}>
+                <Icon name="mic" /> Transcribe video
+              </button>
+              <span className="note">The recipe came from the {recipe.source ?? 'text'}. The video can add what it says.</span>
+            </div>
+          )}
+        </>
+      )}
+    </section>
+  )
+
   const sources = (raw.description || raw.transcript || comments.length > 0) && (
     <section className="card">
       <details>
@@ -367,6 +465,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           />
         </section>
 
+        {transcribeCard}
         {sources}
 
         <div className="save-bar">
@@ -665,6 +764,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
 
       {recipe.id && <CookedLog cooked={recipe.cooked} by={me} onChange={(cooked) => onSavePatch({ cooked })} />}
 
+      {transcribeCard}
       {sources}
 
       {cooking && (
