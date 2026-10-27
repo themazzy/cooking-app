@@ -177,6 +177,9 @@ function pepperSpice(i, unit) {
   return { ...i, name: `${m[1] ? `${m[1].toLowerCase()} ` : ''}paprika${m[2] ?? ''}` }
 }
 
+/** The name with its first letter made capital ("onion" → "Onion", "лук" → "Лук"); the rest stays as written. */
+export const capitalizeName = (name) => String(name ?? '').replace(/^([^\p{L}\p{N}]*)(\p{Ll})/u, (all, lead, c) => lead + c.toLocaleUpperCase())
+
 /** An editable ingredient ({ qty, unit, name }) with a unit or "of" moved out of its name. */
 export function tidyIngredient(i) {
   const name = i.name ?? ''

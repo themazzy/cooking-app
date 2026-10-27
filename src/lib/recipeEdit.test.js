@@ -20,6 +20,26 @@ describe('editable recipe', () => {
     expect(r.steps).toBe('Preheat the oven.\nBake 20 min.')
   })
 
+  it('starts imported ingredient names with a capital letter and keeps the rest as written', () => {
+    const r = toEditable({
+      ingredients: [
+        { quantity: 2, unit: null, name: 'cloves of garlic' },
+        { quantity: 1, unit: null, name: 'лук' },
+        { quantity: 200, unit: 'g', name: 'hladká mouka' },
+        { quantity: 1, unit: null, name: '"extra" virgin olive oil' },
+        { quantity: 1, unit: 'tbsp', name: 'soy sauce (low sodium)' },
+      ],
+      steps: [],
+    })
+    expect(r.ingredients.map((i) => i.name)).toEqual([
+      'Garlic',
+      'Лук',
+      'Hladká mouka',
+      '"Extra" virgin olive oil',
+      'Soy sauce (low sodium)',
+    ])
+  })
+
   it('writes the recipe as text with groups and numbered steps', () => {
     expect(recipeToText(toEditable(parsed), 'Shawarma')).toBe(
       'Shawarma\n\n• 400 g Ground beef\n\nTzatziki sauce:\n• 1,5–2 tbsp Dill\n• Salt and pepper, to taste\n\nSteps:\n1. Preheat the oven.\n2. Bake 20 min.',

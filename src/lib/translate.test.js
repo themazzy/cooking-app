@@ -27,7 +27,7 @@ describe('translate', () => {
     ])
     const t = applyTranslation(recipe, map)
     expect(t.title).toBe('Apple cake')
-    expect(t.ingredients[0]).toEqual({ qty: '200', unit: 'g', name: 'flour', group: 'Dough' })
+    expect(t.ingredients[0]).toEqual({ qty: '200', unit: 'g', name: 'Flour', group: 'Dough' })
     expect(t.ingredients[2].name).toBe('')
     expect(t.steps).toBe('Sift the flour.\n\nCut the apples.')
   })
@@ -85,6 +85,6 @@ describe('applyTranslation and groups', () => {
       ['polévkové lžíce vody', 'tablespoons of water'],
     ])
     const out = applyTranslation({ title: '', steps: '', ingredients: [{ qty: '2', unit: '', name: 'polévkové lžíce vody', group: 'Na omáčku' }] }, map)
-    expect(out.ingredients).toEqual([{ qty: '2', unit: 'tbsp', name: 'water', group: 'For the sauce' }])
+    expect(out.ingredients).toEqual([{ qty: '2', unit: 'tbsp', name: 'Water', group: 'For the sauce' }])
   })
 })
