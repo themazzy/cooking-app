@@ -1,6 +1,6 @@
 import { pickRecipe } from './recipeSource.js'
 import { toEditable } from './recipeEdit.js'
-import { parseRecipeText } from './ingredients.js'
+import { isRecipeWord, parseRecipeText, startsList } from './ingredients.js'
 import { detectServings, tagsFromHashtags, timeFromSteps, timesFromText } from './recipeMeta.js'
 import { mergeTags, tagsFromHashtags as styleHashtags } from './recipeTags.js'
 import { decodeEntities } from './reel/html.js'
@@ -42,7 +42,11 @@ export function draftFromTranslatedSource(draft, title, lines, from) {
 
 /** A readable title: the first line that is not just hashtags or emoji. */
 export function titleFrom(text, fallback) {
-  for (const line of decodeEntities(text ?? '').split('\n')) {
+  const lines = decodeEntities(text ?? '').split('\n')
+  for (const [at, line] of lines.entries()) {
+    if (isRecipeWord(line)) continue
+    // A pasted recipe that starts with its ingredients has no title in it
+    if (startsList(line, lines.slice(at + 1).find((l) => l.trim()))) return fallback
     const t = line.replace(/#\S+/g, '').replace(/[^\p{L}\p{N}\s,.'’&()-]/gu, '').replace(/\s+/g, ' ').trim()
     if (t.length >= 3) return t.length > 80 ? `${t.slice(0, 77)}…` : t
   }

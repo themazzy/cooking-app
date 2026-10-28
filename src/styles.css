@@ -845,7 +845,7 @@ input.chip-input { min-height: 34px; padding: 4px 12px; border-radius: 999px; wi
 .photo-pages img { width: 72px; height: 96px; object-fit: cover; border-radius: 8px; display: block; }
 .photo-pages .page-no { position: absolute; left: 4px; bottom: 4px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 0.75rem; border-radius: 6px; padding: 1px 6px; }
 .photo-pages button.remove { position: absolute; top: 2px; right: 2px; min-height: 0; width: 26px; height: 26px; padding: 0; border-radius: 50%; background: rgb(0 0 0 / 60%); color: #fff; }
-button.read-pages { width: 100%; margin-top: 10px; }
+button.read-pages, button.read-paste { width: 100%; margin-top: 10px; }
 
 /* Meal plan */
 .week-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
