@@ -1,0 +1,31 @@
+# Downloads real recipe pages (scripts/recipe-corpus/seeds.txt) and saves them to the
+# recipe-corpus branch, to test the website import against, since the build containers can't
+# reach recipe sites.
+name: Download recipe pages
+on:
+  workflow_dispatch:
+    inputs:
+      extra:
+        description: More recipes to follow from each listed page
+        default: '1'
+permissions:
+  contents: write
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/recipe-corpus/fetch.mjs
+        env:
+          EXTRA: ${{ inputs.extra }}
+      - name: Save to the recipe-corpus branch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout -B recipe-corpus
+          git add recipe-corpus
+          git commit -m "Recipe pages for the parser tests"
+          git push -f origin recipe-corpus

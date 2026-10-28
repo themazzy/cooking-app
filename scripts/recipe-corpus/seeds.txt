@@ -1,0 +1,67 @@
+# Recipe pages to download for the parser tests (scripts/recipe-corpus/fetch.mjs).
+# From each one the script also follows up to EXTRA links to other recipes on the same site.
+
+# Czech blogs without recipe data
+https://www.slepicarna-blog.cz/2026/10/15/rychla-vecere-v-podobe-knedliku-s-vajickem-a-slaninou/
+https://www.slepicarna-blog.cz/2026/07/08/jak-na-retro-dabelskou-smes-z-mleteho-masa-s-topinkami/
+https://www.slepicarna-blog.cz/2026/04/08/naucime-vas-burtgulas-polevku-co-pripomina-prazdniny-u-babicky/
+https://kitchenette.cz/clanek/17-borsc
+https://kitchenette.cz/clanek/178-hrnkovy-cuketovy-pernik
+https://cukrfree.cz/zapecena-quinoa/
+https://cukrfree.cz/makovy-kolac/
+https://www.skrblik.cz/navod/jak-uvarit-svickovou
+https://www.skrblik.cz/?p=69473
+
+# Czech news and magazine sites
+https://www.denik.cz/gastronomie/bramborak-recept.html
+https://www.denik.cz/gastronomie/gulas-s-bramboracky.html
+https://www.denik.cz/gastronomie/pecene-knedlicky-s-makem.html
+https://forbes.cz/babickovsky-comfort-food-naucte-se-perfektni-kure-na-paprice/
+https://forbes.cz/rajda-co-ma-stavu-a-nezabere-pul-dne-v-kuchyni/
+https://forbes.cz/vlacne-krupave-zlatave-knedliky-s-vejci-vypilovane-k-dokonalosti/
+https://www.novinky.cz/clanek/zena-zdravi-gulas-ctyrikrat-jinak-40326634
+https://fresh.iprima.cz/kyselica-s-klobasou-a-bramborem-podle-receptu-kvety-fialove-456101
+
+# Czech recipe sites
+https://www.recepty.cz/recept/svickova-na-smetane-233
+https://www.recepty.cz/recept/hospodska-svickova-na-smetane-14405
+https://www.recepty.cz/recept/jednoducha-svickova-12574
+https://www.toprecepty.cz/recept/1642-leco/
+https://www.toprecepty.cz/recept/4007-klasicky-hospodsky-gulas-vidensky/
+https://www.toprecepty.cz/recept/31621-kureci-cina/
+https://www.apetitonline.cz/recept/cevabcici
+https://www.apetitonline.cz/recept/zakladni-recept-na-palacinky
+https://www.apetitonline.cz/recept/vydatne-chilli-con-carne
+https://kuchynelidlu.cz/recept/kure-na-paprice
+https://kuchynelidlu.cz/recept/cesnecka
+https://kuchynelidlu.cz/recept/bramboraky-v-troube
+https://www.rohlik.cz/chef/1047-bramboraky-s-kozim-syrem
+https://www.rohlik.cz/chef/59-rajska-omacka-s-hovezim-masem
+https://www.albert.cz/recepty/recky-salat/r/a10989
+https://www.albert.cz/recepty/testoviny-s-kurecim-masem-rajcaty-a-mozzarellou/r/a2528
+https://www.weber.com/CZ/cs/recepty/krevety-v-raj%C4%8Datov%C3%A9-om%C3%A1%C4%8Dce/weber-57503.html
+https://www.austria.info/cs/recepty/vidensky-gulas/
+https://www.suedtirol.info/cs/cz/jidlo-a-piti/plp-recepty/pdp-recept.39E29AE3-D0D1-910C-EFBA-954B175EBD95.placate-knedliky-syrove-knedliky
+
+# Slovak
+https://varecha.pravda.sk/recepty/gulas-fotorecept/42275-recept.html
+https://varecha.pravda.sk/recepty/moj-borsc/77279-recept.html
+https://varecha.pravda.sk/recepty/tvarohove-kolace-videorecept/90471-recept.html
+https://www.austria.info/sk/recepty/kocissky-gulas/
+https://www.zlavomat.sk/magazin/1300-cesta-k-tradiciam-pripravte-si-vychodniarske-halusky-s-kapustou-alias-hickose
+
+# Bulgarian
+https://recepti.gotvach.bg/r-1390-%D0%A2%D1%80%D0%B0%D0%B4%D0%B8%D1%86%D0%B8%D0%BE%D0%BD%D0%B5%D0%BD_%D0%91%D1%8A%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8_%D0%93%D1%8E%D0%B2%D0%B5%D1%87
+https://recepti.gotvach.bg/r-5658-%D0%9A%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0_%D0%B1%D0%BE%D0%B1_%D1%87%D0%BE%D1%80%D0%B1%D0%B0
+https://recepti.gotvach.bg/r-58035-%D0%A1%D1%83%D0%BF%D0%B0_%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0_%D0%B7%D0%B0_%D1%86%D0%B5%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D0%B8
+https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/320/%D0%BC%D1%83%D1%81%D0%B0%D0%BA%D0%B0
+https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/328/%D1%81%D1%83%D0%BF%D0%B0-%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0
+https://www.bonapeti.bg/recepti/leshta-yahniya/
+https://www.bonapeti.bg/recepti/kefal-plakiya/
+https://receptite.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/%D0%BA%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE-%D0%BA%D0%B5%D0%B1%D0%B0%D0%BF%D1%87%D0%B5
+
+# English
+https://cooklikeczechs.com/koprova-omacka-czech-dill-sauce/
+https://chasingthedonkey.com/how-to-make-bulgarian-moussaka-recipe
+https://www.lacademie.com/banitsa-cheese-pie-recipe/
+https://expats.cz/czech-news/article/in-the-czech-kitchen-make-tender-perfectly-spiced-chicken-paprikash
