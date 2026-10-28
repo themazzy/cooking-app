@@ -2,6 +2,8 @@
 
 Personal recipe app for two: import recipes from Instagram, TikTok and Facebook reels and from web pages, scale quantities, and build a shared shopping list. Everything runs on the device, with no paid services.
 
+Website version: **https://themazzy.github.io/cooking-app/** (built from `main` by `.github/workflows/website.yml`). Reel import needs the Android app; see below.
+
 Plan: [Cooking app: architecture and MVP plan](https://claude.ai/artifact/Rynt9iWqeLzTsi2GALbCK7)
 
 ## Current state: reel import test
