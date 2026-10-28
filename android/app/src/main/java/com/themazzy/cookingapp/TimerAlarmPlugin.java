@@ -21,10 +21,30 @@ import com.getcapacitor.annotation.PermissionCallback;
  * Cooking timers that ring with the phone locked or another app open. Android
  * wakes the app at the exact time (an alarm clock alarm, which also works in
  * battery saving) and TimerAlarmReceiver shows a notification that keeps
- * ringing until it is stopped.
+ * ringing until it is stopped. While a timer runs, an ongoing notification
+ * counts it down (on the lock screen too), with Pause and +1 min buttons that
+ * cooking mode hears as "action" events.
  */
 @CapacitorPlugin(name = "TimerAlarm", permissions = { @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notifications") })
 public class TimerAlarmPlugin extends Plugin {
+
+    // The plugin while the app runs, for the countdown notifications' buttons
+    private static TimerAlarmPlugin running;
+
+    @Override
+    public void load() {
+        running = this;
+    }
+
+    /** A countdown notification's button was tapped: tells cooking mode, if it is still open. */
+    static void fromNotification(int id, String action) {
+        TimerAlarmPlugin plugin = running;
+        if (plugin == null) return;
+        JSObject data = new JSObject();
+        data.put("id", id);
+        data.put("action", action);
+        plugin.notifyListeners("action", data);
+    }
 
     @PluginMethod
     public void schedule(PluginCall call) {
@@ -52,17 +72,28 @@ public class TimerAlarmPlugin extends Plugin {
         } else {
             alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         }
+        if (call.getBoolean("countdown", false)) {
+            TimerAlarmReceiver.countdown(context, id, call.getString("label", "Timer"), call.getString("text", ""), at, 0);
+        }
         call.resolve();
     }
 
+    /** A paused timer: no alarm, and a notification that says how long is left, with Resume. */
     @PluginMethod
-    public void cancel(PluginCall call) {
+    public void paused(PluginCall call) {
         Integer id = call.getInt("id");
-        if (id == null) {
-            call.reject("id is needed");
+        Long left = call.getLong("left");
+        if (id == null || left == null) {
+            call.reject("id and left are needed");
             return;
         }
         Context context = getContext();
+        cancelPending(context, id);
+        TimerAlarmReceiver.countdown(context, id, call.getString("label", "Timer"), call.getString("text", ""), 0, left);
+        call.resolve();
+    }
+
+    private static void cancelPending(Context context, int id) {
         PendingIntent pending = PendingIntent.getBroadcast(
             context,
             id,
@@ -73,6 +104,17 @@ public class TimerAlarmPlugin extends Plugin {
             ((AlarmManager) context.getSystemService(Context.ALARM_SERVICE)).cancel(pending);
             pending.cancel();
         }
+    }
+
+    @PluginMethod
+    public void cancel(PluginCall call) {
+        Integer id = call.getInt("id");
+        if (id == null) {
+            call.reject("id is needed");
+            return;
+        }
+        Context context = getContext();
+        cancelPending(context, id);
         TimerAlarmReceiver.dismiss(context, id);
         call.resolve();
     }
