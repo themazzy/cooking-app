@@ -176,7 +176,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   // Translation (in the edit screen): switch to the original text and back, or translate an older recipe
   const [translating, setTranslating] = useState(null) // null, 'busy' or a message
   const changeText = (r) => {
-    const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original }
+    const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original, translatedBy: r.translatedBy ?? null }
     return edit || !recipe.id ? set(patch) : onSavePatch(patch)
   }
   const translate = async () => {
@@ -205,6 +205,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           </button>
         </>
       )}
+      {recipe.translatedBy && <span className="note"> · translated by {recipe.translatedBy}</span>}
       {translating && translating !== 'busy' && <span className="note"> {translating}</span>}
     </div>
   ) : translateTo ? (
