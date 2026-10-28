@@ -26,7 +26,7 @@ import { isOut, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { formatGrams, formatKcal, recipeCalories, recipeMacros } from './lib/calories.js'
-import { languageName, swapOriginal, translateRecipe } from './lib/translate.js'
+import { languageName, swapOriginal, translateAgain, translateRecipe } from './lib/translate.js'
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
 
@@ -185,15 +185,18 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   // Translation (in the edit screen): switch to the original text and back, or translate an older recipe
   const [translating, setTranslating] = useState(null) // null, 'busy' or a message
   const changeText = (r) => {
-    const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original, translatedBy: r.translatedBy ?? null }
+    const patch = { title: r.title, ingredients: r.ingredients, steps: r.steps, lang: r.lang, original: r.original, translatedBy: r.translatedBy ?? null, translatedFrom: r.translatedFrom ?? null }
     return edit || !recipe.id ? set(patch) : onSavePatch(patch)
   }
   const translate = async () => {
     setTranslating('busy')
     try {
-      // Translating again starts from the original text
-      const source = recipe.original && recipe.lang === translateTo ? swapOriginal(recipe) : recipe
-      const t = await translateRecipe({ ...source, original: null }, translateTo, { from: recipe.original ? source.lang : null })
+      // Translating again starts from the original text but keeps what was edited in the translation;
+      // shown in the original's language, that (edited) text is what gets translated
+      const t =
+        recipe.original && recipe.lang === translateTo
+          ? await translateAgain(recipe, translateTo)
+          : await translateRecipe({ ...recipe, original: null }, translateTo, { from: recipe.original ? recipe.lang : null })
       if (t) changeText(t)
       setTranslating(t ? null : `This recipe already looks like ${languageName(translateTo)}.`)
     } catch (err) {
