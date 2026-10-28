@@ -1,0 +1,785 @@
+[
+ {
+  "url": "https://www.slepicarna-blog.cz/2026/10/15/rychla-vecere-v-podobe-knedliku-s-vajickem-a-slaninou/",
+  "finalUrl": "https://www.slepicarna-blog.cz/2026/10/15/rychla-vecere-v-podobe-knedliku-s-vajickem-a-slaninou/",
+  "status": 200,
+  "file": "slepicarna-blog.cz__2026-10-15-rychla-vecere-v-podobe-knedliku-s-vajickem-a-slaninou.html",
+  "seed": true,
+  "bytes": 193897,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.slepicarna-blog.cz/2026/07/08/jak-na-retro-dabelskou-smes-z-mleteho-masa-s-topinkami/",
+  "finalUrl": "https://www.slepicarna-blog.cz/2026/07/08/jak-na-retro-dabelskou-smes-z-mleteho-masa-s-topinkami/",
+  "status": 200,
+  "file": "slepicarna-blog.cz__2026-07-08-jak-na-retro-dabelskou-smes-z-mleteho-masa-s-topinkami.html",
+  "seed": true,
+  "bytes": 194956,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.slepicarna-blog.cz/2026/04/08/naucime-vas-burtgulas-polevku-co-pripomina-prazdniny-u-babicky/",
+  "finalUrl": "https://www.slepicarna-blog.cz/2026/04/08/naucime-vas-burtgulas-polevku-co-pripomina-prazdniny-u-babicky/",
+  "status": 200,
+  "file": "slepicarna-blog.cz__2026-04-08-naucime-vas-burtgulas-polevku-co-pripomina-prazdniny-u-babicky.html",
+  "seed": true,
+  "bytes": 195825,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kitchenette.cz/clanek/17-borsc",
+  "finalUrl": "https://kitchenette.cz/clanek/17-borsc",
+  "status": 200,
+  "file": "kitchenette.cz__clanek-17-borsc.html",
+  "seed": true,
+  "bytes": 38324,
+  "jsonLd": false
+ },
+ {
+  "url": "https://kitchenette.cz/clanek/178-hrnkovy-cuketovy-pernik",
+  "finalUrl": "https://kitchenette.cz/clanek/178-hrnkovy-cuketovy-pernik",
+  "status": 200,
+  "file": "kitchenette.cz__clanek-178-hrnkovy-cuketovy-pernik.html",
+  "seed": true,
+  "bytes": 39151,
+  "jsonLd": false
+ },
+ {
+  "url": "https://cukrfree.cz/zapecena-quinoa/",
+  "finalUrl": "https://cukrfree.cz/zapecena-quinoa/",
+  "status": 503,
+  "file": null,
+  "seed": true,
+  "bytes": 807,
+  "jsonLd": false
+ },
+ {
+  "url": "https://cukrfree.cz/makovy-kolac/",
+  "finalUrl": "https://cukrfree.cz/makovy-kolac/",
+  "status": 503,
+  "file": null,
+  "seed": true,
+  "bytes": 807,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.skrblik.cz/navod/jak-uvarit-svickovou",
+  "finalUrl": "https://www.skrblik.cz/navod/jak-uvarit-svickovou/",
+  "status": 200,
+  "file": "skrblik.cz__navod-jak-uvarit-svickovou.html",
+  "seed": true,
+  "bytes": 535256,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.skrblik.cz/?p=69473",
+  "finalUrl": "https://www.skrblik.cz/navod/jak-uvarit-gulas/",
+  "status": 200,
+  "file": "skrblik.cz__p-69473.html",
+  "seed": true,
+  "bytes": 534477,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/bramborak-recept.html",
+  "finalUrl": "https://www.denik.cz/gastronomie/bramborak-recept/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-bramborak-recept-html.html",
+  "seed": true,
+  "bytes": 156762,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/gulas-s-bramboracky.html",
+  "finalUrl": "https://www.denik.cz/gastronomie/gulas-s-bramboracky/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-gulas-s-bramboracky-html.html",
+  "seed": true,
+  "bytes": 114126,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/pecene-knedlicky-s-makem.html",
+  "finalUrl": "https://www.denik.cz/gastronomie/pecene-knedlicky-s-makem/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-pecene-knedlicky-s-makem-html.html",
+  "seed": true,
+  "bytes": 113418,
+  "jsonLd": true
+ },
+ {
+  "url": "https://forbes.cz/babickovsky-comfort-food-naucte-se-perfektni-kure-na-paprice/",
+  "finalUrl": "https://forbes.cz/babickovsky-comfort-food-naucte-se-perfektni-kure-na-paprice/",
+  "status": 200,
+  "file": "forbes.cz__babickovsky-comfort-food-naucte-se-perfektni-kure-na-paprice.html",
+  "seed": true,
+  "bytes": 262766,
+  "jsonLd": true
+ },
+ {
+  "url": "https://forbes.cz/rajda-co-ma-stavu-a-nezabere-pul-dne-v-kuchyni/",
+  "finalUrl": "https://forbes.cz/rajda-co-ma-stavu-a-nezabere-pul-dne-v-kuchyni/",
+  "status": 200,
+  "file": "forbes.cz__rajda-co-ma-stavu-a-nezabere-pul-dne-v-kuchyni.html",
+  "seed": true,
+  "bytes": 262100,
+  "jsonLd": true
+ },
+ {
+  "url": "https://forbes.cz/vlacne-krupave-zlatave-knedliky-s-vejci-vypilovane-k-dokonalosti/",
+  "finalUrl": "https://forbes.cz/vlacne-krupave-zlatave-knedliky-s-vejci-vypilovane-k-dokonalosti/",
+  "status": 200,
+  "file": "forbes.cz__vlacne-krupave-zlatave-knedliky-s-vejci-vypilovane-k-dokonalosti.html",
+  "seed": true,
+  "bytes": 261329,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.novinky.cz/clanek/zena-zdravi-gulas-ctyrikrat-jinak-40326634",
+  "finalUrl": "https://www.novinky.cz/clanek/zena-zdravi-gulas-ctyrikrat-jinak-40326634?noredirect=1",
+  "status": 200,
+  "file": "novinky.cz__clanek-zena-zdravi-gulas-ctyrikrat-jinak-40326634.html",
+  "seed": true,
+  "bytes": 404450,
+  "jsonLd": true
+ },
+ {
+  "url": "https://fresh.iprima.cz/kyselica-s-klobasou-a-bramborem-podle-receptu-kvety-fialove-456101",
+  "finalUrl": "https://fresh.iprima.cz/kyselica-s-klobasou-a-bramborem-podle-receptu-kvety-fialove-456101",
+  "status": 200,
+  "file": "fresh.iprima.cz__kyselica-s-klobasou-a-bramborem-podle-receptu-kvety-fialove-456101.html",
+  "seed": true,
+  "bytes": 293416,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.recepty.cz/recept/svickova-na-smetane-233",
+  "finalUrl": "https://www.recepty.cz/recept/svickova-na-smetane-233",
+  "status": 200,
+  "file": "recepty.cz__recept-svickova-na-smetane-233.html",
+  "seed": true,
+  "bytes": 348869,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.recepty.cz/recept/hospodska-svickova-na-smetane-14405",
+  "finalUrl": "https://www.recepty.cz/recept/hospodska-svickova-na-smetane-14405",
+  "status": 200,
+  "file": "recepty.cz__recept-hospodska-svickova-na-smetane-14405.html",
+  "seed": true,
+  "bytes": 184964,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.recepty.cz/recept/jednoducha-svickova-12574",
+  "finalUrl": "https://www.recepty.cz/recept/jednoducha-svickova-12574",
+  "status": 200,
+  "file": "recepty.cz__recept-jednoducha-svickova-12574.html",
+  "seed": true,
+  "bytes": 190217,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.toprecepty.cz/recept/1642-leco/",
+  "finalUrl": "https://www.toprecepty.cz/recept/1642-leco/",
+  "status": 200,
+  "file": "toprecepty.cz__recept-1642-leco.html",
+  "seed": true,
+  "bytes": 448163,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.toprecepty.cz/recept/4007-klasicky-hospodsky-gulas-vidensky/",
+  "finalUrl": "https://www.toprecepty.cz/recept/4007-klasicky-hospodsky-gulas-vidensky/",
+  "status": 200,
+  "file": "toprecepty.cz__recept-4007-klasicky-hospodsky-gulas-vidensky.html",
+  "seed": true,
+  "bytes": 496793,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.toprecepty.cz/recept/31621-kureci-cina/",
+  "finalUrl": "https://www.toprecepty.cz/recept/31621-kureci-cina/",
+  "status": 200,
+  "file": "toprecepty.cz__recept-31621-kureci-cina.html",
+  "seed": true,
+  "bytes": 443562,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.apetitonline.cz/recept/cevabcici",
+  "finalUrl": "https://www.apetitonline.cz/recept/cevabcici",
+  "status": 200,
+  "file": "apetitonline.cz__recept-cevabcici.html",
+  "seed": true,
+  "bytes": 244112,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.apetitonline.cz/recept/zakladni-recept-na-palacinky",
+  "finalUrl": "https://www.apetitonline.cz/recept/zakladni-recept-na-palacinky",
+  "status": 200,
+  "file": "apetitonline.cz__recept-zakladni-recept-na-palacinky.html",
+  "seed": true,
+  "bytes": 250570,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.apetitonline.cz/recept/vydatne-chilli-con-carne",
+  "finalUrl": "https://www.apetitonline.cz/recept/vydatne-chilli-con-carne",
+  "status": 200,
+  "file": "apetitonline.cz__recept-vydatne-chilli-con-carne.html",
+  "seed": true,
+  "bytes": 273031,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kuchynelidlu.cz/recept/kure-na-paprice",
+  "finalUrl": "https://kuchynelidlu.cz/recept/kure-na-paprice",
+  "status": 200,
+  "file": "kuchynelidlu.cz__recept-kure-na-paprice.html",
+  "seed": true,
+  "bytes": 74715,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kuchynelidlu.cz/recept/cesnecka",
+  "finalUrl": "https://kuchynelidlu.cz/recept/cesnecka",
+  "status": 200,
+  "file": "kuchynelidlu.cz__recept-cesnecka.html",
+  "seed": true,
+  "bytes": 69620,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kuchynelidlu.cz/recept/bramboraky-v-troube",
+  "finalUrl": "https://kuchynelidlu.cz/recept/bramboraky-v-troube",
+  "status": 200,
+  "file": "kuchynelidlu.cz__recept-bramboraky-v-troube.html",
+  "seed": true,
+  "bytes": 68031,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.rohlik.cz/chef/1047-bramboraky-s-kozim-syrem",
+  "finalUrl": "https://www.rohlik.cz/chef/1047-bramboraky-s-kozim-syrem",
+  "status": 200,
+  "file": "rohlik.cz__chef-1047-bramboraky-s-kozim-syrem.html",
+  "seed": true,
+  "bytes": 987694,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.rohlik.cz/chef/59-rajska-omacka-s-hovezim-masem",
+  "finalUrl": "https://www.rohlik.cz/chef/59-rajska-omacka-s-hovezim-masem",
+  "status": 200,
+  "file": "rohlik.cz__chef-59-rajska-omacka-s-hovezim-masem.html",
+  "seed": true,
+  "bytes": 1014915,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.albert.cz/recepty/recky-salat/r/a10989",
+  "finalUrl": "https://www.albert.cz/recepty/recky-salat/r/a10989",
+  "status": 200,
+  "file": "albert.cz__recepty-recky-salat-r-a10989.html",
+  "seed": true,
+  "bytes": 968495,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.albert.cz/recepty/testoviny-s-kurecim-masem-rajcaty-a-mozzarellou/r/a2528",
+  "finalUrl": "https://www.albert.cz/recepty/testoviny-s-kurecim-masem-rajcaty-a-mozzarellou/r/a2528",
+  "status": 200,
+  "file": "albert.cz__recepty-testoviny-s-kurecim-masem-rajcaty-a-mozzarellou-r-a2528.html",
+  "seed": true,
+  "bytes": 971123,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.weber.com/CZ/cs/recepty/krevety-v-raj%C4%8Datov%C3%A9-om%C3%A1%C4%8Dce/weber-57503.html",
+  "finalUrl": "https://www.weber.com/CZ/cs/recepty/krevety-v-raj%C4%8Datov%C3%A9-om%C3%A1%C4%8Dce/weber-57503.html",
+  "status": 200,
+  "file": "weber.com__CZ-cs-recepty-krevety-v-rajčatové-omáčce-weber-57503-html.html",
+  "seed": true,
+  "bytes": 275486,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.austria.info/cs/recepty/vidensky-gulas/",
+  "finalUrl": "https://www.austria.info/cs/recepty/vidensky-gulas/",
+  "status": 200,
+  "file": "austria.info__cs-recepty-vidensky-gulas.html",
+  "seed": true,
+  "bytes": 2929330,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.suedtirol.info/cs/cz/jidlo-a-piti/plp-recepty/pdp-recept.39E29AE3-D0D1-910C-EFBA-954B175EBD95.placate-knedliky-syrove-knedliky",
+  "finalUrl": "https://www.suedtirol.info/cs/cz/jidlo-a-piti/plp-recepty/pdp-recept.39E29AE3-D0D1-910C-EFBA-954B175EBD95.placate-knedliky-syrove-knedliky",
+  "status": 200,
+  "file": "suedtirol.info__cs-cz-jidlo-a-piti-plp-recepty-pdp-recept-39E29AE3-D0D1-910C-EFBA-954B175EBD95-p.html",
+  "seed": true,
+  "bytes": 315208,
+  "jsonLd": true
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/gulas-fotorecept/42275-recept.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/gulas-fotorecept/42275-recept.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-gulas-fotorecept-42275-recept-html.html",
+  "seed": true,
+  "bytes": 141786,
+  "jsonLd": true
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/moj-borsc/77279-recept.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/moj-borsc/77279-recept.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-moj-borsc-77279-recept-html.html",
+  "seed": true,
+  "bytes": 115526,
+  "jsonLd": true
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/tvarohove-kolace-videorecept/90471-recept.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/tvarohove-kolace-videorecept/90471-recept.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-tvarohove-kolace-videorecept-90471-recept-html.html",
+  "seed": true,
+  "bytes": 119301,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.austria.info/sk/recepty/kocissky-gulas/",
+  "finalUrl": "https://www.austria.info/sk/recepty/kocissky-gulas/",
+  "status": 200,
+  "file": "austria.info__sk-recepty-kocissky-gulas.html",
+  "seed": true,
+  "bytes": 2842227,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.zlavomat.sk/magazin/1300-cesta-k-tradiciam-pripravte-si-vychodniarske-halusky-s-kapustou-alias-hickose",
+  "finalUrl": "https://www.zlavomat.sk/magazin/1300-cesta-k-tradiciam-pripravte-si-vychodniarske-halusky-s-kapustou-alias-hickose",
+  "status": 403,
+  "file": null,
+  "seed": true,
+  "bytes": 482067,
+  "jsonLd": false
+ },
+ {
+  "url": "https://recepti.gotvach.bg/r-1390-%D0%A2%D1%80%D0%B0%D0%B4%D0%B8%D1%86%D0%B8%D0%BE%D0%BD%D0%B5%D0%BD_%D0%91%D1%8A%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8_%D0%93%D1%8E%D0%B2%D0%B5%D1%87",
+  "finalUrl": "https://recepti.gotvach.bg/r-1390-%D0%A2%D1%80%D0%B0%D0%B4%D0%B8%D1%86%D0%B8%D0%BE%D0%BD%D0%B5%D0%BD_%D0%91%D1%8A%D0%BB%D0%B3%D0%B0%D1%80%D1%81%D0%BA%D0%B8_%D0%93%D1%8E%D0%B2%D0%B5%D1%87",
+  "status": 200,
+  "file": "recepti.gotvach.bg__r-1390-Традиционен-Български-Гювеч.html",
+  "seed": true,
+  "bytes": 70366,
+  "jsonLd": true
+ },
+ {
+  "url": "https://recepti.gotvach.bg/r-5658-%D0%9A%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0_%D0%B1%D0%BE%D0%B1_%D1%87%D0%BE%D1%80%D0%B1%D0%B0",
+  "finalUrl": "https://recepti.gotvach.bg/r-5658-%D0%9A%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0_%D0%B1%D0%BE%D0%B1_%D1%87%D0%BE%D1%80%D0%B1%D0%B0",
+  "status": 200,
+  "file": "recepti.gotvach.bg__r-5658-Класическа-боб-чорба.html",
+  "seed": true,
+  "bytes": 78591,
+  "jsonLd": true
+ },
+ {
+  "url": "https://recepti.gotvach.bg/r-58035-%D0%A1%D1%83%D0%BF%D0%B0_%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0_%D0%B7%D0%B0_%D1%86%D0%B5%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D0%B8",
+  "finalUrl": "https://recepti.gotvach.bg/r-58035-%D0%A1%D1%83%D0%BF%D0%B0_%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0_%D0%B7%D0%B0_%D1%86%D0%B5%D0%BD%D0%B8%D1%82%D0%B5%D0%BB%D0%B8",
+  "status": 200,
+  "file": "recepti.gotvach.bg__r-58035-Супа-топчета-за-ценители.html",
+  "seed": true,
+  "bytes": 80269,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/320/%D0%BC%D1%83%D1%81%D0%B0%D0%BA%D0%B0",
+  "finalUrl": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/320/%D0%BC%D1%83%D1%81%D0%B0%D0%BA%D0%B0",
+  "status": 200,
+  "file": "supichka.com__рецепта-320-мусака.html",
+  "seed": true,
+  "bytes": 287317,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/328/%D1%81%D1%83%D0%BF%D0%B0-%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0",
+  "finalUrl": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/328/%D1%81%D1%83%D0%BF%D0%B0-%D1%82%D0%BE%D0%BF%D1%87%D0%B5%D1%82%D0%B0",
+  "status": 200,
+  "file": "supichka.com__рецепта-328-супа-топчета.html",
+  "seed": true,
+  "bytes": 231821,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.bonapeti.bg/recepti/leshta-yahniya/",
+  "finalUrl": "https://www.bonapeti.bg/recepti/leshta-yahniya/",
+  "status": 200,
+  "file": "bonapeti.bg__recepti-leshta-yahniya.html",
+  "seed": true,
+  "bytes": 90813,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.bonapeti.bg/recepti/kefal-plakiya/",
+  "finalUrl": "https://www.bonapeti.bg/recepti/kefal-plakiya/",
+  "status": 200,
+  "file": "bonapeti.bg__recepti-kefal-plakiya.html",
+  "seed": true,
+  "bytes": 83756,
+  "jsonLd": true
+ },
+ {
+  "url": "https://receptite.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/%D0%BA%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE-%D0%BA%D0%B5%D0%B1%D0%B0%D0%BF%D1%87%D0%B5",
+  "finalUrl": "https://receptite.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/%D0%BA%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE-%D0%BA%D0%B5%D0%B1%D0%B0%D0%BF%D1%87%D0%B5",
+  "status": 200,
+  "file": "receptite.com__рецепта-класическо-кебапче.html",
+  "seed": true,
+  "bytes": 132847,
+  "jsonLd": false
+ },
+ {
+  "url": "https://cooklikeczechs.com/koprova-omacka-czech-dill-sauce/",
+  "finalUrl": "https://www.cooklikeczechs.com/koprova-omacka-czech-dill-sauce/",
+  "status": 200,
+  "file": "cooklikeczechs.com__koprova-omacka-czech-dill-sauce.html",
+  "seed": true,
+  "bytes": 323269,
+  "jsonLd": true
+ },
+ {
+  "url": "https://chasingthedonkey.com/how-to-make-bulgarian-moussaka-recipe",
+  "finalUrl": "https://www.chasingthedonkey.com/how-to-make-bulgarian-moussaka-recipe",
+  "status": 200,
+  "file": "chasingthedonkey.com__how-to-make-bulgarian-moussaka-recipe.html",
+  "seed": true,
+  "bytes": 171776,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.lacademie.com/banitsa-cheese-pie-recipe/",
+  "finalUrl": "https://www.lacademie.com/banitsa-cheese-pie-recipe/",
+  "status": 200,
+  "file": "lacademie.com__banitsa-cheese-pie-recipe.html",
+  "seed": true,
+  "bytes": 292056,
+  "jsonLd": true
+ },
+ {
+  "url": "https://expats.cz/czech-news/article/in-the-czech-kitchen-make-tender-perfectly-spiced-chicken-paprikash",
+  "finalUrl": "https://www.expats.cz/czech-news/article/in-the-czech-kitchen-make-tender-perfectly-spiced-chicken-paprikash",
+  "status": 200,
+  "file": "expats.cz__czech-news-article-in-the-czech-kitchen-make-tender-perfectly-spiced-chicken-pap.html",
+  "seed": true,
+  "bytes": 68268,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.slepicarna-blog.cz/2026/09/15/ceska-kuchyne-koprova-omacka-s-masem-vejci-a-knedliky/",
+  "finalUrl": "https://www.slepicarna-blog.cz/2026/09/15/ceska-kuchyne-koprova-omacka-s-masem-vejci-a-knedliky/",
+  "status": 200,
+  "file": "slepicarna-blog.cz__2026-09-15-ceska-kuchyne-koprova-omacka-s-masem-vejci-a-knedliky.html",
+  "seed": false,
+  "bytes": 196152,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.slepicarna-blog.cz/2026/10/25/recept-na-vyprostovaci-cesnekovou-polevku-s-uzenym-a-syrem/",
+  "finalUrl": "https://www.slepicarna-blog.cz/2026/10/25/recept-na-vyprostovaci-cesnekovou-polevku-s-uzenym-a-syrem/",
+  "status": 200,
+  "file": "slepicarna-blog.cz__2026-10-25-recept-na-vyprostovaci-cesnekovou-polevku-s-uzenym-a-syrem.html",
+  "seed": false,
+  "bytes": 197309,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kitchenette.cz/clanek/64-ovesne-susenky",
+  "finalUrl": "https://kitchenette.cz/clanek/64-ovesne-susenky",
+  "status": 200,
+  "file": "kitchenette.cz__clanek-64-ovesne-susenky.html",
+  "seed": false,
+  "bytes": 37941,
+  "jsonLd": false
+ },
+ {
+  "url": "https://kitchenette.cz/clanek/toastovy-chleb-z-kvasku",
+  "finalUrl": "https://kitchenette.cz/clanek/toastovy-chleb-z-kvasku",
+  "status": 200,
+  "file": "kitchenette.cz__clanek-toastovy-chleb-z-kvasku.html",
+  "seed": false,
+  "bytes": 49575,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.skrblik.cz/navod/jak-uvarit-svickovou/",
+  "finalUrl": "https://www.skrblik.cz/navod/jak-uvarit-svickovou/",
+  "status": 200,
+  "file": "skrblik.cz__navod-jak-uvarit-svickovou.html",
+  "seed": false,
+  "bytes": 535283,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/bramborak-recept/",
+  "finalUrl": "https://www.denik.cz/gastronomie/bramborak-recept/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-bramborak-recept.html",
+  "seed": false,
+  "bytes": 156762,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/gulas-s-bramboracky/",
+  "finalUrl": "https://www.denik.cz/gastronomie/gulas-s-bramboracky/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-gulas-s-bramboracky.html",
+  "seed": false,
+  "bytes": 114126,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.denik.cz/gastronomie/pecene-knedlicky-s-makem/",
+  "finalUrl": "https://www.denik.cz/gastronomie/pecene-knedlicky-s-makem/",
+  "status": 200,
+  "file": "denik.cz__gastronomie-pecene-knedlicky-s-makem.html",
+  "seed": false,
+  "bytes": 113418,
+  "jsonLd": true
+ },
+ {
+  "url": "https://forbes.cz/forbes-zebricky/",
+  "finalUrl": "https://forbes.cz/forbes-zebricky/",
+  "status": 200,
+  "file": "forbes.cz__forbes-zebricky.html",
+  "seed": false,
+  "bytes": 251228,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.novinky.cz/clanek/zena-zdravi-tipy-na-recepty-co-dum-dal-snadno-a-levne-40321619",
+  "finalUrl": "https://www.novinky.cz/clanek/zena-zdravi-tipy-na-recepty-co-dum-dal-snadno-a-levne-40321619?noredirect=1",
+  "status": 200,
+  "file": "novinky.cz__clanek-zena-zdravi-tipy-na-recepty-co-dum-dal-snadno-a-levne-40321619.html",
+  "seed": false,
+  "bytes": 419138,
+  "jsonLd": true
+ },
+ {
+  "url": "https://fresh.iprima.cz/25-nejlepsich-receptu-na-kure",
+  "finalUrl": "https://fresh.iprima.cz/25-nejlepsich-receptu-na-kure",
+  "status": 200,
+  "file": "fresh.iprima.cz__25-nejlepsich-receptu-na-kure.html",
+  "seed": false,
+  "bytes": 248936,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.recepty.cz/recept/vsechny-vypisy-receptu",
+  "finalUrl": "https://www.recepty.cz/recept/vsechny-vypisy-receptu",
+  "status": 200,
+  "file": "recepty.cz__recept-vsechny-vypisy-receptu.html",
+  "seed": false,
+  "bytes": 136916,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.toprecepty.cz/recept/18981-nadychany-hrneckovy-pernik/",
+  "finalUrl": "https://www.toprecepty.cz/recept/18981-nadychany-hrneckovy-pernik/",
+  "status": 200,
+  "file": "toprecepty.cz__recept-18981-nadychany-hrneckovy-pernik.html",
+  "seed": false,
+  "bytes": 464138,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.apetitonline.cz/recept/kvasove-brownies-podle-kuchtyny",
+  "finalUrl": "https://www.apetitonline.cz/recept/kvasove-brownies-podle-kuchtyny",
+  "status": 200,
+  "file": "apetitonline.cz__recept-kvasove-brownies-podle-kuchtyny.html",
+  "seed": false,
+  "bytes": 234340,
+  "jsonLd": true
+ },
+ {
+  "url": "https://kuchynelidlu.cz/recept/halloweenske-pizza-mumie",
+  "finalUrl": "https://kuchynelidlu.cz/recept/halloweenske-pizza-mumie",
+  "status": 200,
+  "file": "kuchynelidlu.cz__recept-halloweenske-pizza-mumie.html",
+  "seed": false,
+  "bytes": 67934,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.rohlik.cz/chef/137-slavky-na-vine",
+  "finalUrl": "https://www.rohlik.cz/chef/137-slavky-na-vine",
+  "status": 200,
+  "file": "rohlik.cz__chef-137-slavky-na-vine.html",
+  "seed": false,
+  "bytes": 988536,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.weber.com/CZ/cs/firma/weber-original-stores/weber-48967.html",
+  "finalUrl": "https://www.weber.com/CZ/cs/firma/weber-original-stores/weber-48967.html",
+  "status": 200,
+  "file": "weber.com__CZ-cs-firma-weber-original-stores-weber-48967-html.html",
+  "seed": false,
+  "bytes": 212973,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.austria.info/cs/inspirace/jidlo-a-piti/",
+  "finalUrl": "https://www.austria.info/cs/inspirace/jidlo-a-piti/",
+  "status": 200,
+  "file": "austria.info__cs-inspirace-jidlo-a-piti.html",
+  "seed": false,
+  "bytes": 2952309,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.suedtirol.info/cs/cz/oblasti/poklidna-mista/ticha-udoli-jizniho-tyrolska",
+  "finalUrl": "https://www.suedtirol.info/cs/cz/oblasti/poklidna-mista/ticha-udoli-jizniho-tyrolska",
+  "status": 200,
+  "file": "suedtirol.info__cs-cz-oblasti-poklidna-mista-ticha-udoli-jizniho-tyrolska.html",
+  "seed": false,
+  "bytes": 371170,
+  "jsonLd": true
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/gulas-fotorecept/42275-vytlacit.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/gulas-fotorecept/42275-vytlacit.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-gulas-fotorecept-42275-vytlacit-html.html",
+  "seed": false,
+  "bytes": 8994,
+  "jsonLd": false
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/moj-borsc/77279-vytlacit.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/moj-borsc/77279-vytlacit.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-moj-borsc-77279-vytlacit-html.html",
+  "seed": false,
+  "bytes": 7877,
+  "jsonLd": false
+ },
+ {
+  "url": "https://varecha.pravda.sk/recepty/tvarohove-kolace-videorecept/90471-vytlacit.html",
+  "finalUrl": "https://varecha.pravda.sk/recepty/tvarohove-kolace-videorecept/90471-vytlacit.html",
+  "status": 200,
+  "file": "varecha.pravda.sk__recepty-tvarohove-kolace-videorecept-90471-vytlacit-html.html",
+  "seed": false,
+  "bytes": 8116,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.austria.info/sk/technical-content/prehlasenie-o-ochrane-udajov/",
+  "finalUrl": "https://www.austria.info/sk/technical-content/prehlasenie-o-ochrane-udajov/",
+  "status": 404,
+  "file": null,
+  "seed": false,
+  "bytes": 1638883,
+  "jsonLd": false
+ },
+ {
+  "url": "https://recepti.gotvach.bg/%D1%8F%D1%81%D1%82%D0%B8%D1%8F/",
+  "finalUrl": "https://recepti.gotvach.bg/%D1%8F%D1%81%D1%82%D0%B8%D1%8F/",
+  "status": 200,
+  "file": "recepti.gotvach.bg__ястия.html",
+  "seed": false,
+  "bytes": 65343,
+  "jsonLd": true
+ },
+ {
+  "url": "https://recepti.gotvach.bg/comments-5658",
+  "finalUrl": "https://recepti.gotvach.bg/comments-5658",
+  "status": 200,
+  "file": "recepti.gotvach.bg__comments-5658.html",
+  "seed": false,
+  "bytes": 30366,
+  "jsonLd": true
+ },
+ {
+  "url": "https://recepti.gotvach.bg/cooked-58035",
+  "finalUrl": "https://recepti.gotvach.bg/cooked-58035",
+  "status": 200,
+  "file": "recepti.gotvach.bg__cooked-58035.html",
+  "seed": false,
+  "bytes": 49580,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/423/%D1%82%D0%B0%D1%80%D0%B0%D1%82%D0%BE%D1%80-%D0%BF%D1%8A%D0%BB%D0%BD%D0%B0%D1%82%D0%B0-%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0",
+  "finalUrl": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/423/%D1%82%D0%B0%D1%80%D0%B0%D1%82%D0%BE%D1%80-%D0%BF%D1%8A%D0%BB%D0%BD%D0%B0%D1%82%D0%B0-%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0",
+  "status": 200,
+  "file": "supichka.com__рецепта-423-таратор-пълната-рецепта.html",
+  "seed": false,
+  "bytes": 216414,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/411/%D0%BF%D0%B8%D0%BB%D0%B5%D1%88%D0%BA%D0%B0-%D1%81%D1%83%D0%BF%D0%B0-%D0%BF%D0%BE-%D0%BA%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0-%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0",
+  "finalUrl": "https://www.supichka.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/411/%D0%BF%D0%B8%D0%BB%D0%B5%D1%88%D0%BA%D0%B0-%D1%81%D1%83%D0%BF%D0%B0-%D0%BF%D0%BE-%D0%BA%D0%BB%D0%B0%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0-%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0",
+  "status": 200,
+  "file": "supichka.com__рецепта-411-пилешка-супа-по-класическа-рецепта.html",
+  "seed": false,
+  "bytes": 347308,
+  "jsonLd": false
+ },
+ {
+  "url": "https://www.bonapeti.bg/recepti/sirene-po-shopski/",
+  "finalUrl": "https://www.bonapeti.bg/recepti/sirene-po-shopski/",
+  "status": 200,
+  "file": "bonapeti.bg__recepti-sirene-po-shopski.html",
+  "seed": false,
+  "bytes": 85496,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.bonapeti.bg/recepti/midi-trahana/",
+  "finalUrl": "https://www.bonapeti.bg/recepti/midi-trahana/",
+  "status": 200,
+  "file": "bonapeti.bg__recepti-midi-trahana.html",
+  "seed": false,
+  "bytes": 81671,
+  "jsonLd": true
+ },
+ {
+  "url": "https://receptite.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/%D1%81%D0%BE%D1%87%D0%BD%D0%B8-%D0%BA%D1%8E%D1%84%D1%82%D0%B5%D1%82%D0%B0",
+  "finalUrl": "https://receptite.com/%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82%D0%B0/%D1%81%D0%BE%D1%87%D0%BD%D0%B8-%D0%BA%D1%8E%D1%84%D1%82%D0%B5%D1%82%D0%B0",
+  "status": 200,
+  "file": "receptite.com__рецепта-сочни-кюфтета.html",
+  "seed": false,
+  "bytes": 137270,
+  "jsonLd": false
+ },
+ {
+  "url": "https://cooklikeczechs.com/houskove-knedliky-czech-bread-dumplings/",
+  "finalUrl": "https://www.cooklikeczechs.com/houskove-knedliky-czech-bread-dumplings/",
+  "status": 200,
+  "file": "cooklikeczechs.com__houskove-knedliky-czech-bread-dumplings.html",
+  "seed": false,
+  "bytes": 466488,
+  "jsonLd": true
+ },
+ {
+  "url": "https://www.lacademie.com/mediterranean/",
+  "finalUrl": "https://www.lacademie.com/mediterranean/",
+  "status": 200,
+  "file": "lacademie.com__mediterranean.html",
+  "seed": false,
+  "bytes": 161904,
+  "jsonLd": true
+ },
+ {
+  "url": "https://expats.cz/czech-news/article/expatscz-advertising",
+  "finalUrl": "https://www.expats.cz/czech-news/article/expatscz-advertising",
+  "status": 200,
+  "file": "expats.cz__czech-news-article-expatscz-advertising.html",
+  "seed": false,
+  "bytes": 91154,
+  "jsonLd": true
+ }
+]
