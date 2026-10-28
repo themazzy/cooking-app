@@ -2,8 +2,8 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
 import Stars from './Stars.jsx'
-import { allowAlarms, audio, cancelAlarm, nativeAlarms, ring, scheduleAlarm } from './lib/alarm.js'
-import { canListen, canSpeak, listen, speak, voiceCommand } from './lib/voice.js'
+import { alarmId, allowAlarms, audio, cancelAlarm, nativeAlarms, onAlarmAction, pauseAlarm, ring, scheduleAlarm } from './lib/alarm.js'
+import { canListen, canSpeak, listen, speak, voiceCommand, voiceQuestion } from './lib/voice.js'
 import { scrollByBlock } from './lib/blockScroll.js'
 import { toast } from './lib/toast.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, stepParts, stepTextScale, timeLeft } from './lib/cook.js'
@@ -39,10 +39,26 @@ const store = (key, value) => {
 const voiceWanted = () => stored(VOICE_KEY) === 'on'
 const rememberVoice = (on) => store(VOICE_KEY, on ? 'on' : 'off')
 
+// Turned sideways, or on a wide screen, the ingredients sit beside the step
+const WIDE = '(orientation: landscape) and (min-width: 600px), (min-width: 960px)'
+function useWide() {
+  const query = typeof window !== 'undefined' ? window.matchMedia?.(WIDE) : null
+  const [wide, setWide] = useState(!!query?.matches)
+  useEffect(() => {
+    if (!query) return
+    const on = () => setWide(query.matches)
+    on()
+    query.addEventListener('change', on)
+    return () => query.removeEventListener('change', on)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return wide
+}
+
 /** A tick box with the ingredient: ticked once it is measured out or in the pan. */
-function Ingredient({ ing, match, done, onToggle }) {
+function Ingredient({ ing, match, done, now = false, onToggle }) {
   return (
-    <li className={done ? 'done' : ''}>
+    <li className={[done && 'done', now && 'now'].filter(Boolean).join(' ')}>
       <button type="button" role="checkbox" aria-checked={done} onClick={onToggle}>
         <span className="cook-tick" aria-hidden="true">
           {done && <Icon name="check" size={14} strokeWidth={3} />}
@@ -132,6 +148,7 @@ export default function CookMode({
   onClose,
 }) {
   const { match } = useCatalog()
+  const wide = useWide()
   const steps = splitSteps(stepsText)
   const [at, setAt] = useState(0) // steps.length means "done"
   const [view, setView] = useState(steps.length ? 'ingredients' : 'steps')
@@ -141,7 +158,12 @@ export default function CookMode({
   const [sheet, setSheet] = useState(null) // 'timer' (new one), 'steps', or a timer id
   const [custom, setCustom] = useState('5') // minutes typed for a new timer
   const [customName, setCustomName] = useState('')
-  const [textSize, setTextSize] = useState(() => Math.max(0, TEXT_SIZES.findIndex(([v]) => String(v) === stored(TEXT_KEY))))
+  const [textSize, setTextSize] = useState(() =>
+    Math.max(
+      0,
+      TEXT_SIZES.findIndex(([v]) => String(v) === stored(TEXT_KEY)),
+    ),
+  )
   const [voice, setVoice] = useState(false) // listening for "next", "back"…
   const [reading, setReading] = useState(null) // stop() while a step is read aloud
   const [cookedNote, setCookedNote] = useState('')
@@ -156,23 +178,45 @@ export default function CookMode({
   const scheduled = useRef({}) // timer id → the time Android is set to ring it
 
   // Android rings each running timer at its end, even with the phone locked or
-  // another app open; pausing or removing a timer takes its alarm off
+  // another app open, and counts it down in a notification until then; a paused
+  // timer's notification says what is left, and removing a timer takes it all off
   useEffect(() => {
     if (!nativeAlarms) return
     const was = scheduled.current
     const next = {}
     for (const t of timers) {
+      const text = [title || 'Cooking', t.step != null ? `step ${t.step + 1}` : null].filter(Boolean).join(', ')
       if (t.done) {
         if (was[t.id]) next[t.id] = was[t.id] // ringing until stopped
       } else if (t.endsAt != null) {
-        if (was[t.id] !== t.endsAt)
-          scheduleAlarm(t.id, t.endsAt, { title: `${t.label} timer is done`, text: [title || 'Cooking', t.step != null ? `step ${t.step + 1}` : null].filter(Boolean).join(', '), ...alarmRef.current })
-        next[t.id] = t.endsAt
+        if (was[t.id] !== `at${t.endsAt}`) scheduleAlarm(t.id, t.endsAt, { title: `${t.label} timer is done`, text, label: `${t.label} timer`, ...alarmRef.current })
+        next[t.id] = `at${t.endsAt}`
+      } else {
+        if (was[t.id] !== `left${t.left}`) pauseAlarm(t.id, (t.left ?? 0) * 1000, { label: `${t.label} timer`, text })
+        next[t.id] = `left${t.left}`
       }
     }
     for (const id of Object.keys(was)) if (!next[id]) cancelAlarm(id)
     scheduled.current = next
   }, [timers, title])
+  // Pause, Resume and +1 min tapped on a timer's notification
+  useEffect(
+    () =>
+      onAlarmAction((id, action) => {
+        const now = Date.now()
+        setTimers((list) =>
+          list.map((t) => {
+            if (alarmId(t.id) !== id) return t
+            if (action === 'pause') return pauseTimer(t, now)
+            if (action === 'resume') return resumeTimer(t, now)
+            if (action === 'more') return adjustTimer(t, 60, now)
+            return t
+          }),
+        )
+        setNow(now)
+      }),
+    [],
+  )
   // Closing cooking mode removes its timers, and their alarms with them
   useEffect(() => () => Object.keys(scheduled.current).forEach(cancelAlarm), [])
 
@@ -226,12 +270,14 @@ export default function CookMode({
     return () => clearInterval(id)
   }, [active])
 
-  const showList = view === 'ingredients' && steps.length > 0
-  // Back from the ingredients list, the track shows the step you were on
+  // The ingredients instead of the steps; side by side on a wide screen, where both show
+  const showList = !wide && view === 'ingredients' && steps.length > 0
+  const listOpen = steps.length > 0 && (wide || showList)
+  // Back from the ingredients list (or turned), the track shows the step you were on
   useEffect(() => {
     if (!showList) track.current?.children[at]?.scrollIntoView({ inline: 'center', block: 'nearest' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showList])
+  }, [showList, wide])
 
   const goTo = (n) => {
     const to = Math.max(0, Math.min(steps.length, n))
@@ -240,7 +286,8 @@ export default function CookMode({
   }
   const showStep = (n) => {
     setView('steps')
-    if (showList) setAt(Math.max(0, Math.min(steps.length, n))) // the effect above scrolls there
+    if (showList)
+      setAt(Math.max(0, Math.min(steps.length, n))) // the effect above scrolls there
     else goTo(n)
   }
   const goRef = useRef(goTo)
@@ -366,6 +413,22 @@ export default function CookMode({
     }
     toast(SAID[command], { kind: 'info', ms: 1200 })
   }
+  // "How much garlic?" is answered aloud; "timer 10 minutes" starts one
+  const onQuestionRef = useRef(null)
+  onQuestionRef.current = ({ ask, timer }) => {
+    if (readingRef.current) return
+    if (timer != null) {
+      const t = findTimers(timer)[0]
+      if (!t) return
+      addTimer(t.label, t.seconds, at < steps.length ? at : null)
+      return toast(`Timer ${t.label}`, { kind: 'info', ms: 1500 })
+    }
+    const found = stepIngredients(ask, ingredients, match).map((n) => ingredients[n])
+    const answer = found.length ? found.map((i) => [amount(i) || 'some', i.name].join(' ')).join(', ') : `No ${ask} in this recipe`
+    toast(answer, { kind: 'info', ms: 4000 })
+    const stop = speak(answer, () => setReading((r) => (r === stop ? null : r)))
+    setReading(() => stop)
+  }
   const open = useRef(true)
   useEffect(() => {
     open.current = true
@@ -376,7 +439,9 @@ export default function CookMode({
       const stop = await listen(
         (text) => {
           const command = voiceCommand(text)
-          if (command) onCommandRef.current(command)
+          if (command) return onCommandRef.current(command)
+          const question = voiceQuestion(text)
+          if (question) onQuestionRef.current(question)
         },
         (message) => {
           setVoice(false)
@@ -421,13 +486,23 @@ export default function CookMode({
     }
   }
 
+  // A tap on the left or right edge of the step goes back or on: a bigger target for messy hands
+  const onCardTap = (e, n) => {
+    if (n !== at) return goTo(n)
+    if (e.target.closest('button, input, textarea, a, label')) return
+    const box = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - box.left) / box.width
+    if (x < 0.22) goTo(at - 1)
+    else if (x > 0.78) goTo(at + 1)
+  }
+  const nowUsed = wide && at < steps.length ? stepIngredients(steps[at], ingredients, match) : []
   const named = ingredients.map((ing, n) => ({ ing, n })).filter(({ ing }) => ing.name?.trim())
   const readyCount = named.filter(({ n }) => ticked.has(n)).length
   // Ringing first, then the one that ends soonest
   const dock = [...timers].sort((a, b) => (b.done ? 1 : 0) - (a.done ? 1 : 0) || timeLeft(a, now) - timeLeft(b, now))
 
   return (
-    <div className="cook" role="dialog" aria-label={`Cooking ${title}`} style={{ '--cook-text': TEXT_SIZES[textSize][0] }}>
+    <div className={`cook${wide ? ' wide' : ''}`} role="dialog" aria-label={`Cooking ${title}`} style={{ '--cook-text': TEXT_SIZES[textSize][0] }}>
       <div className="cook-top">
         <button className="icon-button" aria-label="Close cooking mode" onClick={onClose}>
           <Icon name="close" />
@@ -461,7 +536,7 @@ export default function CookMode({
         </button>
       </div>
 
-      {steps.length > 0 && (
+      {steps.length > 0 && !wide && (
         <div className="segmented cook-switch" role="group" aria-label="Show">
           <button className={showList ? 'on' : ''} aria-pressed={showList} onClick={() => setView('ingredients')}>
             Ingredients
@@ -479,109 +554,111 @@ export default function CookMode({
         </div>
       )}
 
-      {voice && <p className="cook-voice">Listening: “next”, “back”, “scroll down”, “read”, “timer”, “ingredients”.</p>}
+      {voice && <p className="cook-voice">Listening: “next”, “back”, “read”, “timer 10 minutes”, “how much garlic?”</p>}
 
-      {showList && (
-        <div className="cook-all" ref={listRef}>
-          {notes.map((note) => (
-            <div key={note.label} className="cook-note">
-              <span>{note.label}</span>
-              <p>{note.text}</p>
-            </div>
-          ))}
-          {onPortions && (
-            <div className="cook-portions">
-              <span>{servings ? 'Portions' : 'Recipe'}</span>
-              <div className="stepper">
-                <button className="secondary round" aria-label="Fewer portions" disabled={portions <= 1} onClick={() => onPortions(Math.max(1, portions - 1))}>
-                  <Icon name="minus" />
-                </button>
-                <span className="count">{servings ? portions : `×${portions}`}</span>
-                <button className="secondary round" aria-label="More portions" onClick={() => onPortions(Math.min(99, portions + 1))}>
-                  <Icon name="plus" />
-                </button>
+      <div className={`cook-main${wide ? ' wide' : ''}`}>
+        {listOpen && (
+          <div className="cook-all" ref={listRef}>
+            {notes.map((note) => (
+              <div key={note.label} className="cook-note">
+                <span>{note.label}</span>
+                <p>{note.text}</p>
               </div>
-            </div>
-          )}
-          <ul className="cook-ingredients all">
-            {named.map(({ ing, n }, k) => (
-              <Fragment key={n}>
-                {ing.group && ing.group !== named[k - 1]?.ing.group && <li className="group-title">{ing.group}</li>}
-                <Ingredient ing={ing} match={match} done={ticked.has(n)} onToggle={() => toggle(n)} />
-              </Fragment>
             ))}
-          </ul>
-          {named.length > 0 && (
-            <p className="cook-ready">
-              {readyCount === named.length ? 'Everything is ready' : `${readyCount} of ${named.length} ready`}
-              {readyCount === 0 && <span>Tap to tick what you have out</span>}
-            </p>
-          )}
-        </div>
-      )}
-
-      <div className="cook-track" ref={track} onScroll={onScroll} style={showList ? { display: 'none' } : undefined}>
-        {steps.length === 0 ? (
-          <section className="cook-card current">
-            <p className="cook-step">This recipe has no steps yet. Add them with Edit.</p>
-          </section>
-        ) : (
-          steps.map((step, n) => {
-            const used = stepIngredients(step, ingredients, match)
-            return (
-              <section key={n} className={`cook-card${n === at ? ' current' : ''}`} aria-label={`Step ${n + 1} of ${steps.length}`} onClick={() => n !== at && goTo(n)}>
-                <div className="cook-count">
-                  <span>
-                    Step {n + 1} of {steps.length}
-                  </span>
-                  <button type="button" className="link" onClick={() => setSheet('steps')}>
-                    <Icon name="list" size={16} /> All steps
+            {onPortions && (
+              <div className="cook-portions">
+                <span>{servings ? 'Portions' : 'Recipe'}</span>
+                <div className="stepper">
+                  <button className="secondary round" aria-label="Fewer portions" disabled={portions <= 1} onClick={() => onPortions(Math.max(1, portions - 1))}>
+                    <Icon name="minus" />
+                  </button>
+                  <span className="count">{servings ? portions : `×${portions}`}</span>
+                  <button className="secondary round" aria-label="More portions" onClick={() => onPortions(Math.min(99, portions + 1))}>
+                    <Icon name="plus" />
                   </button>
                 </div>
-                {used.length > 0 && (
-                  <ul className="cook-ingredients">
-                    {used.map((k) => (
-                      <Ingredient key={k} ing={ingredients[k]} match={match} done={ticked.has(k)} onToggle={() => toggle(k)} />
-                    ))}
-                  </ul>
-                )}
-                <StepText step={step} running={runningAt(n)} onTimer={(t) => stepTimer(n, t)} />
-                <p className="cook-next">
-                  <strong>Up next:</strong> {n + 1 < steps.length ? steps[n + 1] : 'Finish and enjoy'}
-                </p>
-              </section>
-            )
-          })
+              </div>
+            )}
+            <ul className="cook-ingredients all">
+              {named.map(({ ing, n }, k) => (
+                <Fragment key={n}>
+                  {ing.group && ing.group !== named[k - 1]?.ing.group && <li className="group-title">{ing.group}</li>}
+                  <Ingredient ing={ing} match={match} done={ticked.has(n)} now={wide && nowUsed.includes(n)} onToggle={() => toggle(n)} />
+                </Fragment>
+              ))}
+            </ul>
+            {named.length > 0 && (
+              <p className="cook-ready">
+                {readyCount === named.length ? 'Everything is ready' : `${readyCount} of ${named.length} ready`}
+                {readyCount === 0 && <span>Tap to tick what you have out</span>}
+              </p>
+            )}
+          </div>
         )}
-        {steps.length > 0 && (
-          <section className={`cook-card cook-finish${at === steps.length ? ' current' : ''}`} aria-label="Finished">
-            <h2 className="cook-done-title">Enjoy your meal</h2>
-            {(onRate || onCooked) && (
-              <div className="cook-finish-card">
-                {onRate && (
-                  <div className="cook-rate">
-                    <strong>Your rating</strong>
-                    <Stars value={rating} onChange={onRate} />
+
+        <div className="cook-track" ref={track} onScroll={onScroll} style={showList ? { display: 'none' } : undefined}>
+          {steps.length === 0 ? (
+            <section className="cook-card current">
+              <p className="cook-step">This recipe has no steps yet. Add them with Edit.</p>
+            </section>
+          ) : (
+            steps.map((step, n) => {
+              const used = stepIngredients(step, ingredients, match)
+              return (
+                <section key={n} className={`cook-card${n === at ? ' current' : ''}`} aria-label={`Step ${n + 1} of ${steps.length}`} onClick={(e) => onCardTap(e, n)}>
+                  <div className="cook-count">
+                    <span>
+                      Step {n + 1} of {steps.length}
+                    </span>
+                    <button type="button" className="link" onClick={() => setSheet('steps')}>
+                      <Icon name="list" size={16} /> All steps
+                    </button>
                   </div>
-                )}
-                {onCooked && (
-                  <>
-                    <textarea rows="2" placeholder="A note for next time (optional)" value={cookedNote} onChange={(e) => setCookedNote(e.target.value)} aria-label="Note for next time" />
-                    <label className="check-row">
-                      <input type="checkbox" checked={logIt} onChange={(e) => setLogIt(e.target.checked)} />
-                      Add to the cooking history (today)
-                    </label>
-                  </>
-                )}
-              </div>
-            )}
-            {onUseStock && stockPlan.length > 0 && (
-              <div className="cook-finish-card">
-                <StockReview rows={stockPlan} onApply={onUseStock} embedded onChoose={setStockRows} />
-              </div>
-            )}
-          </section>
-        )}
+                  {used.length > 0 && (
+                    <ul className="cook-ingredients">
+                      {used.map((k) => (
+                        <Ingredient key={k} ing={ingredients[k]} match={match} done={ticked.has(k)} onToggle={() => toggle(k)} />
+                      ))}
+                    </ul>
+                  )}
+                  <StepText step={step} running={runningAt(n)} onTimer={(t) => stepTimer(n, t)} />
+                  <p className="cook-next">
+                    <strong>Up next:</strong> {n + 1 < steps.length ? steps[n + 1] : 'Finish and enjoy'}
+                  </p>
+                </section>
+              )
+            })
+          )}
+          {steps.length > 0 && (
+            <section className={`cook-card cook-finish${at === steps.length ? ' current' : ''}`} aria-label="Finished">
+              <h2 className="cook-done-title">Enjoy your meal</h2>
+              {(onRate || onCooked) && (
+                <div className="cook-finish-card">
+                  {onRate && (
+                    <div className="cook-rate">
+                      <strong>Your rating</strong>
+                      <Stars value={rating} onChange={onRate} />
+                    </div>
+                  )}
+                  {onCooked && (
+                    <>
+                      <textarea rows="2" placeholder="A note for next time (optional)" value={cookedNote} onChange={(e) => setCookedNote(e.target.value)} aria-label="Note for next time" />
+                      <label className="check-row">
+                        <input type="checkbox" checked={logIt} onChange={(e) => setLogIt(e.target.checked)} />
+                        Add to the cooking history (today)
+                      </label>
+                    </>
+                  )}
+                </div>
+              )}
+              {onUseStock && stockPlan.length > 0 && (
+                <div className="cook-finish-card">
+                  <StockReview rows={stockPlan} onApply={onUseStock} embedded onChoose={setStockRows} />
+                </div>
+              )}
+            </section>
+          )}
+        </div>
       </div>
 
       {dock.length > 0 && (

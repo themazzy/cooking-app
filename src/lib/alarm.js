@@ -77,7 +77,7 @@ const TimerAlarm = registerPlugin('TimerAlarm')
 export const nativeAlarms = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('TimerAlarm')
 
 // Android wants a whole number for each alarm
-const alarmId = (id) => {
+export const alarmId = (id) => {
   let h = 0
   for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) | 0
   return Math.abs(h) || 1
@@ -94,10 +94,29 @@ export async function allowAlarms() {
   }
 }
 
-/** Has Android ring at `at` (ms), replacing an earlier alarm for the same timer. */
-export function scheduleAlarm(id, at, { title, text, sound = 'beep', vibrate = true }) {
+/**
+ * Has Android ring at `at` (ms), replacing an earlier alarm for the same timer.
+ * With `label`, a notification counts the timer down until then (lock screen too).
+ */
+export function scheduleAlarm(id, at, { title, text, label, sound = 'beep', vibrate = true }) {
   if (!nativeAlarms) return
-  TimerAlarm.schedule({ id: alarmId(id), at: Math.round(at), title, text, sound, vibrate }).catch((e) => console.warn('Alarm not set', e))
+  TimerAlarm.schedule({ id: alarmId(id), at: Math.round(at), title, text, sound, vibrate, countdown: !!label, label }).catch((e) => console.warn('Alarm not set', e))
+}
+
+/** A paused timer: its alarm is off and its notification says how much is left (`left` in ms). */
+export function pauseAlarm(id, left, { label, text }) {
+  if (!nativeAlarms) return
+  TimerAlarm.paused({ id: alarmId(id), left: Math.round(left), label, text }).catch(() => {})
+}
+
+/**
+ * Pause, Resume and +1 min tapped on a timer's notification: onAction(alarm id, 'pause' | 'resume' | 'more').
+ * Returns a function that stops listening.
+ */
+export function onAlarmAction(onAction) {
+  if (!nativeAlarms) return () => {}
+  const sub = TimerAlarm.addListener('action', ({ id, action }) => onAction(id, action))
+  return () => sub.then((h) => h.remove())
 }
 
 /** Stops a timer's alarm, whether it is still waiting or already ringing. */

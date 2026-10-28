@@ -44,6 +44,36 @@ export function voiceCommand(text) {
   return best?.command ?? null
 }
 
+// Numbers said as words, for "timer ten minutes" when the recognizer writes them out
+const NUMBER_WORDS = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20,
+  thirty: 30, forty: 40, fifty: 50, sixty: 60, ninety: 90,
+}
+const ASK = /^(?:how much|how many|what amount of|kolik|колко)\s+(.+)$/u
+const TIMER_WORD = /(?:^|\s)(?:timer|časovač|minutk[au]|таймер)(?:\s|$)/u
+const TIMER_LEAD = /^(?:set|start|put|add|nastav|spusť|пусни|сложи)?\s*(?:a|the)?\s*(?:timer|časovač|minutk[au]|таймер)?\s*(?:for|na|за)?\s*/u
+
+/**
+ * A question or a timer said in cooking mode: "how much garlic?" → { ask: 'garlic' },
+ * "set a timer for 10 minutes" / "ten minute timer" → { timer: '10 minutes' }, or null.
+ * The timer text is read by cook.js findTimers.
+ */
+export function voiceQuestion(text) {
+  const heard = String(text ?? '').toLowerCase().normalize('NFC').replace(/[^\p{L}\d\s]+/gu, ' ').split(/\s+/).filter(Boolean)
+  if (!heard.length || heard.length > 8) return null
+  const said = heard.map((w) => NUMBER_WORDS[w] ?? w).join(' ')
+  const ask = said.match(ASK)
+  if (ask) {
+    const what = ask[1].replace(/^(?:of|the|do i need|is|are|we need)\s+/u, '').replace(/\s+(?:do i need|do we need|is it|please)$/u, '').trim()
+    return what ? { ask: what } : null
+  }
+  if (TIMER_WORD.test(said) && /\d/.test(said)) {
+    return { timer: said.replace(TIMER_LEAD, '').replace(TIMER_WORD, ' ').replace(/(\d+)\s+(?:minute|min)(?=\s|$)/u, '$1 minutes').trim() }
+  }
+  return null
+}
+
 const Native = registerPlugin('VoiceCommands')
 const nativeVoice = Capacitor.isNativePlatform() && Capacitor.isPluginAvailable('VoiceCommands')
 const BrowserRecognition = typeof window !== 'undefined' ? (window.SpeechRecognition ?? window.webkitSpeechRecognition) : null
