@@ -1,35 +1,19 @@
-// One-off: saves albert.cz recipe page raw + JS chunks that mention recipes, to find where steps load from.
+// One-off: asks albert.cz's GraphQL API for a recipe's steps.
 import { mkdirSync, writeFileSync } from 'node:fs'
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
-const H = { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml,*/*', 'Accept-Language': 'cs,en;q=0.7' }
-const base = 'https://www.albert.cz'
-const page = base + '/recepty/dusene-cervene-zeli-jako-od-maminky/r/R00000806'
-mkdirSync('probe/js', { recursive: true })
-const r = await fetch(page, { headers: H })
-const html = await r.text()
-writeFileSync('probe/page.html', html)
-console.log(r.status, html.length)
-const srcs = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => new URL(m[1], base).href)
-const log = []
-const seen = new Set()
-const queue = [...srcs]
-while (queue.length && seen.size < 200) {
-  const u = queue.shift()
-  if (seen.has(u)) continue
-  seen.add(u)
-  try {
-    const t = await (await fetch(u, { headers: H })).text()
-    const hit = /recipe|Recipe|recept/.test(t)
-    log.push(`${hit ? 'HIT' : '   '} ${t.length} ${u}`)
-    if (hit) writeFileSync('probe/js/' + u.split('/').pop().replace(/[^\w.-]/g, '_'), t)
-    // webpack chunk names referenced
-    for (const m of t.matchAll(/static\/chunks\/[\w\/.\-\[\]]+\.js/g)) queue.push(base + '/_next/' + m[0])
-  } catch (e) { log.push('ERR ' + u + ' ' + e.message) }
+mkdirSync('probe', { recursive: true })
+const query = 'query getRecipe($code:String!$lang:String!){getRecipe(code:$code lang:$lang){id title servings preparationTime preparationTimeName cookingTimeDescription recipeCookingSteps{description stepNumber} cookingTips{code type title description} execution description}}'
+const out = []
+for (const code of ['R00000806', 'a10989', 'A10989', 'a2528']) {
+  for (const [name, init] of [
+    ['post', { method: 'POST', headers: { 'User-Agent': UA, 'content-type': 'application/json', 'x-apollo-operation-name': 'getRecipe', 'apollographql-client-name': 'cz-alb-web-stores' }, body: JSON.stringify({ operationName: 'getRecipe', query, variables: { code, lang: 'cs' } }) }],
+    ['get', { headers: { 'User-Agent': UA, 'apollo-require-preflight': 'true', 'x-apollo-operation-name': 'getRecipe' } }],
+  ]) {
+    const url = name === 'get' ? 'https://www.albert.cz/api/v1/?' + new URLSearchParams({ operationName: 'getRecipe', query, variables: JSON.stringify({ code, lang: 'cs' }) }) : 'https://www.albert.cz/api/v1/'
+    try {
+      const r = await fetch(url, init)
+      out.push(`### ${code} ${name} ${r.status} ${r.headers.get('content-type')}\n${(await r.text()).slice(0, 15000)}`)
+    } catch (e) { out.push(`### ${code} ${name} ERR ${e.message}`) }
+  }
 }
-writeFileSync('probe/scripts.txt', log.join('\n'))
-// Guesses at APIs
-for (const [name, url, opts] of [
-  ['gql-get', base + '/api/v1/?operationName=RecipeDetail', {}],
-]) {
-  try { const x = await fetch(url, { headers: H, ...opts }); writeFileSync('probe/' + name + '.txt', x.status + '\n' + (await x.text()).slice(0, 20000)) } catch (e) {}
-}
+writeFileSync('probe/gql.txt', out.join('\n\n'))
