@@ -1,0 +1,37 @@
+PAGE | Česká kuchyně koprová omáčka s masem, vejci a knedlíky | servings 4 | prep 300 cook null total null
+  800 | g | Hovězího (nebo telecího) zadního  [Hovězí vývar]
+  1 |  | Petržel  [Hovězí vývar]
+  0,25 |  | Celeru  [Hovězí vývar]
+  1 |  | Mrkev  [Hovězí vývar]
+  1 |  | Rajče  [Hovězí vývar]
+  1 |  | Cibule  [Hovězí vývar]
+  1 |  | Houba (například žampion)  [Hovězí vývar]
+  1 | clove | Česneku  [Hovězí vývar]
+  5 | pcs | Nového koření  [Hovězí vývar]
+  8 | pcs | Pepře  [Hovězí vývar]
+  1 |  | Bobkový list  [Hovězí vývar]
+  1 | handful | Sušeného tymiánu  [Hovězí vývar]
+  1 | tsp | Soli  [Hovězí vývar]
+  4 |  | Rohlíky (ideálně den staré)  [Knedlíky]
+  500 | g | Polohrubé mouky  [Knedlíky]
+  1 |  | Prášek do pečiva  [Knedlíky]
+   |  | Větší špetku soli  [Knedlíky]
+  1 |  | Vejce  [Knedlíky]
+  250 | ml | Vody (ideálně sodovky)  [Knedlíky]
+  50 | g | Másla  [Koprovou omáčku]
+  1 | tbsp | Másla na zjemnění omáčky  [Koprovou omáčku]
+  3 | tbsp | Hladké mouky  [Koprovou omáčku]
+  800 | ml | Hovězího vývaru  [Koprovou omáčku]
+  4 | tbsp | Krupicového cukru  [Koprovou omáčku]
+  3 | tbsp | Octa  [Koprovou omáčku]
+   |  | Sůl a pepř  [Koprovou omáčku]
+  250 | ml | Smetany ke šlehání (33%)  [Koprovou omáčku]
+  4 | handful | Nasekaného čerstvého kopru  [Koprovou omáčku]
+  4 | slice | Hovězího masa  [Koprovou omáčku]
+  4 |  | Vařená vejce  [Koprovou omáčku]
+steps:
+  Uvař si vývar. Hovězí nebo telecí maso dej do velkého hrnce, přidej kousky očištěné zeleniny, rajče, rozpůlenou cibuli, houbu a stroužek česneku. Nasyp koření a sůl a vař při nízké teplotě (nepřiklopené, nesmí se vařit, ale bublat) asi 5 hodin. Ze začátku lžící odstraň pěnu (sražené bílkoviny) a nemíchej. Hotový vývar si slij, uvařené maso dej stranou.
+  Rohlíky nakrájej na menší kostičky, přendej je do větší mísy, přisyp mouku, prášek do pečiva, špetku soli a vejce. Postupně přilévej sodovku (nebo vodu). Rukama vypracuj těsto. Rozděl ho na dvě části a uválej z nich dvě stejně velké šišky.
+  Knedlíky vař v páře (parní troubě), naplň zásobník vody, zapni páru, nastav teplotu 95°C a peč s párou 25 minut. Nezapomeň využít dírkovaný plech AirFry. Ještě teplé knedlíky propíchej párátkem. Nech je chvilku odpočinout a pak nakrájej. Nebo ve velkém hrnci s vroucí vodou 14 minut, otoč a ještě vař 14 minut.
+  Zatímco se vaří knedlíky, připrav si koprovku. V hrnci rozehřej máslo, zasyp hladkou moukou a restuj ve světlou jíšku. Zalij postupně hovězím vývarem, průběžně metličkou šlehej, ať se ti nevytvoří hrudky. Vař za občasného míchání při nižší teplotě 25 minut. Vyvaříš chuť mouky.
+  Přidej cukr, ocet a vař ještě 3 minuty. Pak osol a opepři. Vmíchej smetanu, nasekaný kopr a ještě zjemni máslem. Uvař si vejce na tvrdo. Oloupej je a rozkroj napůl. Koprovou omáčku podávej s masem, vejci a houskovými knedlíky.

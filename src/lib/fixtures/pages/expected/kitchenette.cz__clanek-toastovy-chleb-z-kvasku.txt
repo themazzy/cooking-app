@@ -1,0 +1,20 @@
+PAGE | Toustový chléb z kvásku | servings null | prep null cook 650 total null
+  6 | g | Zralého kvasu (odloženého z minulého pečení)  [Na kvas]
+  55 | g | Hladké pšeničné mouky  [Na kvas]
+  55 | g | Vody (ideálně filtrované)  [Na kvas]
+  695 | g | Hladké pšeničné mouky  [Na těsto]
+  165 | g | Mléka  [Na těsto]
+  305 | g | Vody (ideálně filtrované)  [Na těsto]
+  54 | g | Medu  [Na těsto]
+  90 | g | Másla (změklého, pokojové teploty)  [Na těsto]
+  16 | g | Soli  [Na těsto]
+  1 |  | Šťastné vejce  [Na potření]
+steps:
+  Den předen si připravte kvas smícháním všech ingrediencí a nechte ho zrát při pokojové teplotě přes noc.
+  Když je kvas hotový, do mixovací nádoby robotu dejte mouku, všechno mléko, vodu, krátce vše promíchejte a nechte 30 minut „nabobtnat“. Autolyzovat. (To je proces, kdy dáváte mouce čas, aby rovnoměrně nasála všechnu tekutinu. Zapojí vlastní enzymy, prospěla výsledné struktuře těsta a tento krok i pomáhá, aby těsto později méně lepilo.)
+  Nyní do těsta přidejte připravený kvas a začněte hníst. Jakmile ho těsto pojme, přidejte i med a potom sůl. Ještě chvíli těsto hněťte a na závěr po kouskách přidávejte změklé máslo. Vždy přidejte malou kostku až poté, co se první podařilo hezky zapracovat. Kompletní těsto ještě pár minut hněťte, dokud nebude krásně hladké a uvidíte, že se uvolnilo dostatek lepku a hezky se táhne.
+  Teď je na řadě první fáze kynutí/fermentace, kdy budete každých 30 minut těsto natahovat a překládat. A zopakujete to alespoň 3x. Tedy těsto nechte v přikryté míse, pokud je dost velká anebo ho přesuňte do velké plastové krabice s víkem a po 30 minutách odpočinku těsto několikrát přeložte. (To znamená, že těsto na jedné straně podeberete „kartou“, přidržíte palcem, natáhnete a přes zbylé těsto přeložíte, to samé uděláte z protilehlé strany a pak i z obou boků. Tedy jej překládáte skoro jako obálku s tím, že se ovšem vrstvy více překrývají. Nezapomeňte, že by se to mělo dít ideálně při teplotě kolem 24°C.) Toto zabere přibližně 2 hodiny.
+  Druhá fáze kynutí proběhne bez vaší velké účasti. Pouze těsto nechte zakryté a zajistěte mu příjemnou teplotu kolem 24 °C anebo pokud je teplota chladnější, počítejte s delším časem zrání. Tato fáze by měla zabrat 2-3 hodiny a na konci byste měli vidět, že těsto je pružnější, méně lepivé a tvoří sem tam velké bubliny.
+  Těsto přesuňte na lehce pomoučený vál. Pokud jste pekly, jak jsem v úvodu doporučovala, dvojnásobné množství, teď je ten správný čas těsto rozdělit na dva stejné kusy. Nechte je na vále odpočinout dalších 30 minut, než je budete tvarovat. Formu na toustový chléb vymažte tukem ve spreji.
+  Odpočinuté těsto lehce podeberte z vrchní strany a přeložte jej do středu. Teď těsto přeložte ze strany levé i pravé a opět pouze do středu. Poslední část bude z vaší strany těsta a to pohybem, jako když rolujete papír nebo karimatku. Tedy vezměte těsto za spodní kraj a začněte ho jemně, jen s mírným utahováním, rolovat směrem nahoru. A je hotovo! Vzniklý váleček vložte spojem dolů a hladkou stranou nahoru do formy a formu spolu s těstem zase vložte do igelitového sáčku nebo tašky na poslední fázi kynutí. Tato fáze by měla trvat kolem 3 hodin. Těsto by mělo téměř zdvojnásobit svůj objem.
+  Rozehřejte troubu na 220 °C funkce horký vzduch. Rozehřívejte ji alespoň 30 minut. Když je připravená, přepněte na funkci horní a spodní ohřev, Povrch chlebu potřete rozšlehaným vejcem a vložte formu na střední polohu roštu. Pečte 30 minut, pak stáhněte výkon na 190 °C a dopékejte dalších 15-20 minut. Hotový chléb opatrně vysuňte z formy a nechte úplně vychladnout.

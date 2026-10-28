@@ -1,0 +1,3 @@
+PAGE | Jak uvařit svíčkovou | servings 4 | prep null cook null total null
+  1000 | ml | K přípravě svíčkové na smetaně budeme potřebovat maso, zhruba pro 4 osoby, které očistíme od případných blan. Dále si připravíme špek , 900, vývaru nebo vody, 3 – 4 mrkve, 2 – 3 petržele, polovinu 1 celeru, 2 – 3 cibule, 5 lžic sádla, koření (8x celý pepř, 6x nové koření a 3x bobkový list), sůl, pepř, 2 – 3 lžíce cukru, ocet, 1 citrón, 1 lžíci plnotučné horčice, máslo a 200 ml smetany ke šlehání. Milovníci dýně přidají i kousek hokkaido.
+steps:

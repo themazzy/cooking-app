@@ -1,0 +1,25 @@
+JSON-LD | Vídeňský guláš | servings null | prep null cook 300 total null
+  750 | g | Prorostlého hovězího masa
+  500 | g | Cibule
+  2 | tbsp | Mleté sladké papriky
+   |  | Trochu octa
+  1 | tsp | Rajčatového protlaku
+  2 |  | Prolisované stroužky česneku
+  1 | pinch | Mletého kmínu
+   |  | Majoránka
+   |  | Sůl
+   |  | Pepř
+  4 | tbsp | Přepuštěného másla nebo rostlinného oleje
+  2 |  | Páry frankfurtských párků nebo debrecínských párků
+  4 |  | Vejce
+  4 |  | Nakládané okurky
+  1 |  | Na proužky nakrájená červená paprika
+   |  | Máslo dle potřeby na smažení
+steps:
+  Z hovězího masa odstraníme šlachy, ne ale želatinové kližky (ty jsou pro guláš typické a dodávají šťávě chuť). Maso poté nakrájíme na kostičky a cibuli nahrubo.
+  Ve velkém hrnci si rozehřejeme tuk a na mírném plameni na něm za stálého míchání velmi pomalu orestujeme cibuli - čím déle restujeme, tím lepší bude z cibule šťáva.
+  Cibuli posypeme mletou paprikou, ochutíme trochou octa a vmícháme rajčatový protlak. Přidáme maso, krátce promícháme a dochutíme stroužky česneku, kmínem, solí, pepřem a špetkou majoránky. Poté zalijeme vodou a přikryjeme pokličkou. Vaříme přibližně 2-3 hodiny do měkka, v závislosti na kvalitě masa. Guláš občas promícháme a pokud omáčka příliš zhoustne, dolijeme ji vodou.
+  Jakmile je maso měkké, přidáme trochu vody a omáčku vaříme ještě 10 až 15 minut. Poté maso znovu ochutnáme.
+  Mezitím si uvaříme párky na mírném plameni, maximálně po dobu 10 minut a usmažíme si na másle volská oka. Nakládané okurky nakrájíme do tvaru vějíře.
+  Guláš podáváme na velkých talířích, na každý dáme horký párek a smažené volské oko. Ozdobíme vějířem z kyselé okurky. Dle chuti ještě přidáme proužky červené papriky.
+  Podáváme s křupavým, solí posypaným rohlíkem, houskou nebo vařenými brambory.

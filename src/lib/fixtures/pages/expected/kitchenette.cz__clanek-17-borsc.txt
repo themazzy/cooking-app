@@ -1,0 +1,26 @@
+PAGE | Boršč | servings null | prep null cook 10 total null
+  300 | g | Hovězího masa (např. kližka)
+  200 | g | Jehněčího masa
+  200 | g | Vepřového masa
+   |  | Trochu másla nebo olivového oleje pod maso
+  1 |  | Větší mrkev
+  1 |  | Petržel
+  0,25 |  | Celerové bulvy
+  1 |  | Velká červená řepa
+  1 |  | Větší cibule
+  0,5 |  | Hlávky bílého zelí
+  4 |  | Rajčata (nebo protlak)
+   |  | Sůl
+   |  | Pepř
+  2 |  | Bobkové listy
+  6–10 | pcs | Nového koření
+  1 |  | Citrón nebo vinný ocet na dochucení
+   |  | Cukr
+   |  | Zakysaná smetana na servírování
+steps:
+  Maso osolte, opepřete a zprudka osmažte ze všech stran, zalijte vodou a pomalu vařte do měkka. Pravděpodobně jehněčí a vepřové bude měkčí dříve, než hovězí, tak je třeba občas zkontrolovat hrnec a vyjmout hotové kusy.. (záleží z jakých kousků masa boršč vaříte)
+  Po uvaření sceďte vývar (ideálně přes namočené pláténko, ale není nutné), maso pokrájejte na 1,5-2 cm kusy.
+  V hrnci orestujte cibulku krájenou najemno, přidejte mrkev, petržel, celer , vše nakrájené jako do polévky, ještě chvíli restujte a zalijte vývarem z masa, přidejte na nudličky zelí, řepu a rajčata na kostičky, koření (můžete si udělat na bobkový list a nové koření gázový pytlíček, usnadní vám to servírování bez kuliček a lístečků).
+  Takto jemně vařte cca 10 minut (dokud není zelenina měkká), přidejte maso, dochuťte vinným octem nebo citrónem, doslaďte, dosolte, …
+  Někdo boršč lehce dohušťuje jíškou, nebo přidá do základu 2-3 brambory, které se rozvaří a také lehce zahustí.
+  Servírujte se lžící kyselé smetany.

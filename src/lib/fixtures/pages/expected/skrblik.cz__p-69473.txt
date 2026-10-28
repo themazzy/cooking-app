@@ -1,0 +1,15 @@
+PAGE | Jak uvařit guláš | servings null | prep null cook null total null
+  2 | tbsp | Do základu guláše můžeme použít i rajčatový protlak. Přidává se 1, až po přidání sladké papriky. Není to ale nutností.
+  2 | tbsp | Hladké mouky dobře rozkvedláme v malém množství studené vody a přes cedník nalijeme do hrnce s gulášem. Cedník nám pochytá případné hrudky
+  1,5 | kg | Připravíme si 1, masa (hovězí či vepřové)
+  7 | clove | Které nakrájíme na kostky. Dále nadrobno pokrájíme 4 velké cibule a nasekáme 5, česneku. Z koření si připravíme 4 čajové lžičky sladké papriky
+  3 | tbsp | Bramborového škrobu (zajistí nám zhoustnutí guláše)
+  1 | tbsp | Gulášového koření
+  1 | tsp | Pálivé papriky a sůl dle chuti. K ruce si přichystáme také 2 kostky bujónu (masox)
+  1 |  | Rajčatový protlak
+  0,75–1 | l | Vody
+steps:
+  Velmi zajímavě chutnají v guláši z trouby i čerstvé papriky (kusů dle chuti), které stačí pouze omýt, očistit od semínek a pokrájet na menší kousky.
+  Všechny uvedené suroviny dáme do vyššího pekáče, poprvé a zároveň naposledy zamícháme, přiklopíme víkem (lze místo víka použít třeba alobal) a celý pekáč vložíme do trouby vyhřáté na 250 stupňů Celsia.
+  Použijeme-li vepřové maso, guláš bude hotový zhruba za hodinu. V případě masa hovězího pak musíme počítat i s hodinou a půl.
+  Jakmile je pekáč jednou v troubě, nemusíme si ho zmiňovaný čas vůbec všímat. Rozhodně gulášem nemícháme, ani neodklápíme víko. Po uplynutí času ochutnáme maso. Bude-li měkké, máme hotovo. Pokud ne, ještě na chvíli vrátíme pekáč do trouby. Guláš z trouby výtečně chutná s knedlíkem nebo chlebem.

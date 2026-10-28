@@ -1,0 +1,26 @@
+PAGE | Guláš čtyřikrát jinak | servings null | prep null cook null total null
+  1 | kg | Hovězí kližky
+  100 | g | Sádla
+  1 | kg | Cibule
+  2 | tbsp | Rajského protlaku
+  2 | tbsp | Mleté sladké papriky
+  50 | g | Česneku
+  0,5 | l | Černého piva
+  0,5 | l | Vývaru nebo vody
+   |  | Sůl
+   |  | Pepř
+   |  | Majoránka
+   |  | Kmín
+  1 |  | Cibule
+  2 | tbsp | Hl. mouky
+  2 | tbsp | Sádla nebo oleje
+steps:
+  Cibuli nakrájejte na kostičky a orestujte dozlatova na sádle.
+  Přidejte na kostky nakrájenou hovězí kližku, osolte a nechte maso zatáhnout ze všech stran.
+  Přidejte protlak, koření, drcený česnek, to vše osmahněte, poté zalijte větší částí piva.
+  Pivo nechte přejít varem a podle potřeby podlijte maso ještě horkou vodou nebo vývarem.
+  Nezapomínejte guláš průběžně podlévat zbylým pivem a vodou nebo vývarem, aby se maso nepřipálilo.
+  Duste zvolna pod pokličkou přibližně tři až čtyři hodiny, až maso změkne.
+  Jakmile je maso dostatečně měkké, guláš ještě dochuťte dle potřeby.
+  Mezitím připravte vídeňskou cibulku: cibuli nakrájejte na kolečka, obalte v hladké mouce a poté pomalu dozlatova osmažte.
+  Guláš podávejte s vídeňskou cibulkou a s houskovým knedlíkem nebo chlebem.

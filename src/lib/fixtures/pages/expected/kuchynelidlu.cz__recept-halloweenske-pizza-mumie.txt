@@ -1,0 +1,13 @@
+JSON-LD | Halloweenské pizza mumie | servings 6 | prep 30 cook null total 30
+  1 | pack | Listové těsto Chef Select
+  7 | slice | Plátkový sýr gouda Pilos
+  1 | tbsp | Rajčatový protlak Kania
+  100 | g | Vepřová šunka Pikok  [Na potření vejce “M”]
+  6 |  | Zelené olivy Baresa  [Na potření vejce “M”]
+steps:
+  Listové těsto rozrolujeme a asi ⅔ potřeme rajčatovým protlakem.
+  Poklademe šunkou a plátky sýra a nakrájíme na 6 obdélníků.
+  Obdélníky zarolujeme a pokládáme na plech vyložený pečicím papírem.
+  Ze zbylé části těsta nakrájíme tenké proužky, kterými pak mumie nepravidelně omotáme.
+  Mumie potřeme rozšlehaným vejcem a pečeme v troubě předehřáté na 180 °C 15–20 minut dozlatova.
+  Olivy nakrájíme na plátky a po upečení je naaranžujeme na mumie jako oči.

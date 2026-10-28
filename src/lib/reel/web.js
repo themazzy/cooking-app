@@ -3,6 +3,8 @@ import { runInPage } from '../pageReader.js'
 import { decodeEntities, htmlToText, metaContent } from './html.js'
 import { categoriesFrom, cuisineFrom, detectServings, durationMinutes, servingsFrom } from '../recipeMeta.js'
 import { tagsFromSchema } from '../recipeTags.js'
+import { recipeFromPage, recipePart } from './pageRecipe.js'
+import { sectionHeading } from '../ingredients.js'
 
 const isType = (node, type) => [].concat(node?.['@type'] ?? []).some((t) => String(t).toLowerCase() === type)
 
@@ -21,11 +23,15 @@ export function findRecipeJsonLd(html) {
     return visit(node['@graph'], depth + 1) ?? visit(node.mainEntity, depth + 1)
   }
   for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
-    try {
-      const found = visit(JSON.parse(m[1].trim()))
-      if (found) return found
-    } catch {
-      // some sites ship broken JSON-LD; try the next block
+    // Some sites put raw line breaks inside the strings, which JSON.parse refuses
+    for (const raw of [m[1].trim(), m[1].trim().replace(/[\u0000-\u001f]+/g, ' ')]) {
+      try {
+        const found = visit(JSON.parse(raw))
+        if (found) return found
+        break
+      } catch {
+        // broken JSON-LD; try it without control characters, then the next block
+      }
     }
   }
   return null
@@ -34,23 +40,26 @@ export function findRecipeJsonLd(html) {
 const clean = (s) => decodeEntities(htmlToText(String(s ?? ''))).replace(/\s+/g, ' ').trim()
 
 /** Steps from recipeInstructions: a string, HowToSteps, or HowToSections of steps. */
+// A shop's note in place of the method: "Našli jste v receptu chybu? Napište nám…"
+const NOT_A_STEP = /^(?:našli jste v receptu chybu|našli ste v recepte chybu|found (?:a mistake|an error) in (?:this|the) recipe)/i
+
 function instructionLines(value) {
   if (!value) return []
-  if (typeof value === 'string') return htmlToText(value).split('\n').map((s) => s.trim()).filter(Boolean)
+  if (typeof value === 'string') return htmlToText(value).split('\n').map((s) => s.trim()).filter((s) => s && !NOT_A_STEP.test(s))
   if (Array.isArray(value)) return value.flatMap(instructionLines)
   if (isType(value, 'howtosection')) {
     const steps = instructionLines(value.itemListElement)
     return value.name ? [`${clean(value.name)}:`, ...steps] : steps
   }
   const text = clean(value.text ?? value.name ?? '')
-  return text ? [text] : []
+  return text && !NOT_A_STEP.test(text) ? [text] : []
 }
 
 /**
  * The recipe written out as text with "Ingredients:" and "Instructions:"
  * headers, so the same parser reads it as a reel caption.
  */
-export function recipeJsonLdToText(recipe, groups = []) {
+export function recipeJsonLdToText(recipe, groups = [], pageSteps = []) {
   const lines = []
   const name = clean(recipe.name)
   if (name) lines.push(name)
@@ -68,7 +77,9 @@ export function recipeJsonLdToText(recipe, groups = []) {
       for (const item of g.items) lines.push(`- ${lineUp ? ingredients[n++] : item}`)
     }
   } else if (ingredients.length) lines.push('', 'Ingredients:', ...ingredients.map((i) => `- ${i}`))
-  const steps = instructionLines(recipe.recipeInstructions)
+  // Some shops leave recipeInstructions empty and write the method only on the page
+  const own = instructionLines(recipe.recipeInstructions)
+  const steps = own.length ? own : pageSteps
   if (steps.length) lines.push('', 'Instructions:', ...steps)
   return lines.join('\n').trim()
 }
@@ -91,6 +102,13 @@ const GROUP_HEADINGS = 'h2, h3, h4, h5, h6, .wprm-recipe-group-name, p > strong:
  * has no place for them, so they only exist in the HTML. Empty when the
  * list is not split into at least two named parts.
  */
+/** Text a reader sees: without screen-reader labels ("Completed step") and tick buttons. */
+const ownText = (el) => {
+  const copy = el.cloneNode(true)
+  for (const hidden of copy.querySelectorAll('.screen-reader-text, .sr-only, .visually-hidden, button, input, label, script')) hidden.remove()
+  return copy.textContent
+}
+
 export function ingredientGroups(html) {
   if (typeof DOMParser === 'undefined') return []
   const doc = new DOMParser().parseFromString(html, 'text/html')
@@ -103,13 +121,14 @@ export function ingredientGroups(html) {
       for (const el of found) {
         if (el.tagName === 'LI') {
           if (el.querySelector('li')) continue
-          const text = clean(el.textContent)
+          const text = clean(ownText(el))
           if (!text) continue
           if (!current) groups.push((current = { name: '', items: [] }))
           current.items.push(text)
         } else if (!el.closest('li')) {
           const name = clean(el.textContent).replace(/:$/, '')
-          if (name && !/^ingredients?$/i.test(name)) groups.push((current = { name, items: [] }))
+          // "Ingredients", or Weber's "the Přísady", is the list's title, not a group
+          if (name && sectionHeading(name.replace(/^the\s+/i, '')) !== 'ingredients') groups.push((current = { name, items: [] }))
         }
       }
       const filled = groups.filter((g) => g.items.length)
@@ -152,17 +171,34 @@ export function parseRecipePage(html) {
     const author = [].concat(recipe.author ?? [])[0]
     const meta = recipeJsonLdMeta(recipe)
     meta.servings ??= microdataServings(html)
+    const pageSteps = instructionLines(recipe.recipeInstructions).length ? [] : recipeFromPage(html)?.steps ?? []
     return {
-      description: recipeJsonLdToText(recipe, ingredientGroups(html)),
+      description: recipeJsonLdToText(recipe, ingredientGroups(html), pageSteps),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
       image: jsonLdImage(recipe.image) ?? metaContent(html, 'og:image'),
       meta,
       structured: true,
     }
   }
-  // No structured data: hand the page's main text to the parser
+  // No structured data: read the recipe from the page's lists and headings
+  const page = recipeFromPage(html)
+  if (page) {
+    return {
+      description: page.text,
+      author: metaContent(html, 'og:site_name'),
+      image: metaContent(html, 'og:image'),
+      meta: {
+        servings: microdataServings(html) ?? page.servings,
+        prepMin: page.prepMin,
+        cookMin: page.cookMin,
+        totalMin: page.totalMin,
+      },
+      structured: false,
+    }
+  }
+  // No list of ingredients found: hand the page's main text to the parser
   const body = html.match(/<(article|main)\b[\s\S]*?<\/\1>/i)?.[0] ?? html.match(/<body\b[\s\S]*<\/body>/i)?.[0] ?? ''
-  const text = htmlToText(body.replace(/<(script|style|nav|header|footer|aside|form)\b[\s\S]*?<\/\1>/gi, ''))
+  const text = recipePart(htmlToText(body.replace(/<(script|style|nav|header|footer|aside|form)\b[\s\S]*?<\/\1>/gi, '')))
   return {
     description: text ? text.slice(0, 20000) : metaContent(html, 'og:description'),
     author: metaContent(html, 'og:site_name'),

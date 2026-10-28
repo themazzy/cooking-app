@@ -1,0 +1,21 @@
+JSON-LD | Nadýchaný hrnečkový perník | servings 1 | prep 30 cook 20 total 50
+  2 | cup | Hladké mouky  [Těsto]
+  1 | cup | Cukru krupice  [Těsto]
+  1 | cup | Mléka  [Těsto]
+  0,5 | cup | Oleje  [Těsto]
+  1 |  | Vejce  [Těsto]
+  1 |  | Kypřicí prášek do perníku  [Těsto]
+  1 |  | Vanilkový cukr  [Těsto]
+  2 | tbsp | Kakaa  [Těsto]
+   |  | Nasekané ořechy (možno vynechat)  [Těsto]
+   |  | Čokoládová poleva  [K dokončení]
+   |  | Marmeláda  [K dokončení]
+   |  | Strouhaný kokos  [K dokončení]
+   |  | Tuk  [Na vymazání a vysypání plechu]
+   |  | Hrubá mouka  [Na vymazání a vysypání plechu]
+steps:
+  Hluboký plech vymažeme tukem a vysypeme hrubou moukou nebo plech pouze vyložíme pečicím papírem. Troubu předehřejeme na 170 °C.
+  Do mísy vsypeme prosátou mouku, cukr, vanilkový cukr, kakao, kypřicí prášek do perníku a promícháme. Přidáme mléko, olej, vejce a vymícháme hladké těsto. Můžeme přidat i nahrubo nasekané ořechy.
+  Těsto vylijeme na připravený plech a rovnoměrně ho rozetřeme. Vložíme do předehřáté trouby a pečeme zhruba 20 minut (řídíme se zkušeností s vlastní troubou). Správné propečení těsta můžeme zkontrolovat špejlí, kterou zapíchneme do těsta, a pokud je po vytažení suchá, perník je hotový.
+  Hotový perník necháme vychladnout, potřeme ho marmeládou, polijeme čokoládovou polevou a posypeme kokosem.
+  Po zatuhnutí polevy nakrájíme moučník na řezy a podáváme.

@@ -1,0 +1,16 @@
+JSON-LD | Kyselica s klobásou a bramborem podle receptu Květy Fialové | servings null | prep null cook null total 45
+  2 | pcs | Cibule
+  150 | g | Papriková klobása, nebo slovenská uzená slanina
+  3 | pcs | Brambory, větší
+  2 | tbsp | Sádlo, nebo řepkový olej
+  4 | pcs | Jalovec
+  1 | pcs | Bobkový list
+  400 | g | Bílé kysané zelí, včetně nálevu
+  300 | g | Zakysaná smetana
+   |  | Sůl
+   |  | Pepř, čerstvě namletý
+   |  | Cukr, podle chuti
+steps:
+  Cibuli nakrájejte nadrobno, klobásu na plátky, slaninu na kostičky. Brambory oloupejte a nakrájejte na kostky.
+  V hrnci rozehřejte olej nebo sádlo, vsypte cibuli a klobásu nebo slaninu, opékejte je zhruba 2 minuty, až cibule začne měknout a z uzenin se vypeče tuk. Přidejte koření a brambory, osolte, restujte 1 minutu, přidejte kysané zelí a přilijte i část nálevu. Pokud je moc kyselý, použijte ho raději méně, dolijte vroucí vodou tak, aby bylo vše ponořené (zhruba 0,75–1 l), zamíchejte, přiklopte a vařte na mírném stupni, až brambory změknou.
+  Vmíchejte zakysanou smetanu, dolaďte chuť cukrem, solí, pepřem a případně i nálevem ze zelí a podávejte.

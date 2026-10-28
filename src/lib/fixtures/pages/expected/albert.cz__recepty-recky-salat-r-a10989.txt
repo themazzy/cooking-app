@@ -1,0 +1,9 @@
+JSON-LD | Řecký salát | servings 1 | prep null cook null total 120
+  1 | pcs | Salátová okurka
+  16 | pcs | Olivy černé
+  4 | pcs | Rajče
+  1 | tsp | Oregano sušené
+  0,5 | pcs | Cibule červená
+  100 | g | Feta
+  4 | tbsp | Olej olivový
+steps:

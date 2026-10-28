@@ -1,0 +1,21 @@
+PAGE | Tipy na recepty Co dům dal, snadno a levně | servings null | prep null cook null total null
+   |  | Větší miska červené čočky
+  3 | tbsp | Kokosového oleje (lze nahradit rostlinným olejem a šálkem strouhaného kokosu)
+  1 |  | Cibule
+  1 |  | Mrkev
+   |  | Na špičku nože: kari pasta
+   |  | Římský kmín
+   |  | Sůl
+   |  | Citronová tráva (jde to i bez ní)
+  1 | tbsp | Rybí omáčky (nebo kostka bujónu)
+  1 | handful | Sušených hub (nemusí být)
+  1 | tbsp | Másla nebo smetana podle chuti
+steps:
+  Na oleji zpěňte koření, nakrájenou cibuli a nastrouhanou mrkev (kokos).
+  Přisypte čočku, přidejte ostatní přísady kromě hub a zalijte litrem horké vody.
+  Vařte deset minut.
+  Vyndejte citronovou trávu, polévku rozmixujte a přeceďte přes jemné síto.
+  Přidejte houby a nechte ještě pět minut zvolna probublávat.
+  Polévku odstavte z plotny a zjemněte ji máslem nebo smetanou.
+  Nenáviděné bujóny!?:
+  Gurmeti mě možná ukamenují, ale já bujónové kostky používám. Pravda, většinou obsahují nezdravé složky, především tuk s transmastnými kyselinami a glutaman, ale myslím, že v tak malém množství si to při občasné konzumaci můžeme dovolit. A chuť umami bez kostky nevykouzlíme. Náhradou může být rybí nebo ústřicová omáčka.
