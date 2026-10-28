@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { pantryError } from './lib/pantry.js'
 import { formatStock, parseStock, takeUsed, usesUp } from './lib/stock.js'
 
@@ -10,9 +10,11 @@ const usedUp = (amount) => {
 /**
  * After cooking: what comes out of the stock, for the cook to check. Each
  * ingredient kept at home can be left out, or have how much was used (or how
- * much is left) changed. Nothing changes until Update.
+ * much is left) changed. Nothing changes until Update. Embedded (on the cooking
+ * mode's finish card) it has no button of its own: onChoose gets the chosen
+ * rows each time they change, and the card saves them with everything else.
  */
-export default function StockReview({ rows: start, onApply }) {
+export default function StockReview({ rows: start, onApply, embedded = false, onChoose }) {
   const [rows, setRows] = useState(start)
   const [state, setState] = useState(null) // null, 'saving', 'done' or an error
   // Starts again when the pantry loads or changes (not while the cook types)
@@ -21,6 +23,11 @@ export default function StockReview({ rows: start, onApply }) {
     setRows(start)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature])
+  const chooseRef = useRef(onChoose)
+  chooseRef.current = onChoose
+  useEffect(() => {
+    if (embedded) chooseRef.current?.(rows.filter((r) => r.on).map((r) => ({ item: r.item, next: r.next.trim() })))
+  }, [rows, embedded])
   if (!rows.length) return null
 
   const set = (n, patch) => setRows((list) => list.map((r, i) => (i === n ? { ...r, ...patch } : r)))
@@ -36,9 +43,9 @@ export default function StockReview({ rows: start, onApply }) {
   }
 
   return (
-    <div className="card stock-plan">
-      <h2>Take it out of the stock?</h2>
-      <p className="hint">Check what you used. Nothing changes until you tap Update.</p>
+    <div className={embedded ? 'stock-plan embedded' : 'card stock-plan'}>
+      <h2>{embedded ? 'Take out of At home' : 'Take it out of the stock?'}</h2>
+      <p className="hint">{embedded ? 'Check what you used. It is saved when you tap Done.' : 'Check what you used. Nothing changes until you tap Update.'}</p>
       <ul className="stock-review">
         {rows.map((r, n) => {
           const compares = !r.used || takeUsed(r.item.amount, r.used) != null
@@ -77,6 +84,7 @@ export default function StockReview({ rows: start, onApply }) {
           )
         })}
       </ul>
+      {!embedded && (
       <button
         className="secondary"
         disabled={!chosen.length || state === 'saving'}
@@ -92,6 +100,7 @@ export default function StockReview({ rows: start, onApply }) {
       >
         {state === 'saving' ? 'Updating…' : `Update ${chosen.length} item${chosen.length === 1 ? '' : 's'}`}
       </button>
+      )}
       {state && state !== 'saving' && <p className="hint error">{state}</p>}
     </div>
   )

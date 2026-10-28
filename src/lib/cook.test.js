@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, resumeTimer, sameWord, splitSteps, stepIngredients, timeLeft } from './cook.js'
+import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, resumeTimer, sameWord, splitSteps, stepIngredients, stepParts, stepTextScale, timeLeft } from './cook.js'
 
 describe('splitSteps', () => {
   it('drops numbering and empty lines', () => {
@@ -84,5 +84,31 @@ describe('timers', () => {
     t = adjustTimer({ ...t, done: true }, 60, 200_000)
     expect(t.done).toBe(false)
     expect(timeLeft(t, 200_000)).toBe(60)
+  })
+})
+
+describe('stepParts', () => {
+  const marked = (text) => stepParts(text).filter((p) => p.timer || p.amount).map((p) => (p.timer ? `T:${p.text}=${p.timer.seconds}` : `A:${p.text}`))
+
+  it('marks times as timers and amounts in bold, keeping all the text', () => {
+    const text = 'Fry the onion for 5 minutes, add 400 ml coconut milk and 2 tbsp paste, then bake at 180 °C for 1 hour 30 minutes.'
+    expect(marked(text)).toEqual(['T:5 minutes=300', 'A:400 ml', 'A:2 tbsp', 'A:180 °C', 'T:1 hour 30 minutes=5400'])
+    expect(stepParts(text).map((p) => p.text).join('')).toBe(text)
+  })
+
+  it('reads Czech and Bulgarian amounts', () => {
+    expect(marked('Vařte 10 minut, přidejte 2 lžíce mouky.')).toEqual(['T:10 minut=600', 'A:2 lžíce'])
+    expect(marked('Печете 25-30 минути на 200 градуса, 1 ч.л. сол.')).toEqual(['T:25-30 минути=1800', 'A:200 градуса', 'A:1 ч.л.'])
+  })
+
+  it('leaves plain numbers alone', () => {
+    expect(marked('Cut into 4 pieces and serve 2 people.')).toEqual([])
+  })
+})
+
+describe('stepTextScale', () => {
+  it('shrinks only long steps', () => {
+    expect(stepTextScale('Chop the onion.')).toBe(1)
+    expect(stepTextScale('x'.repeat(300))).toBeLessThan(1)
   })
 })
