@@ -545,8 +545,9 @@ export default function App() {
 
   const deleteEditing = async () => {
     if (!editing?.recipe.id) return
-    await deleteRecipe(editing.recipe.id)
+    // Marked first: if the app closes in between, the next sync still deletes it everywhere
     markDeleted(editing.recipe.id)
+    await deleteRecipe(editing.recipe.id)
     toast(`Deleted ${editing.recipe.title || 'the recipe'}`)
     setEditing(null)
     refreshRecipes()
