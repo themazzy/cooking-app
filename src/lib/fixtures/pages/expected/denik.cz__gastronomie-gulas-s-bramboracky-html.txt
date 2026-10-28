@@ -1,0 +1,42 @@
+PAGE | Recept nejen pro chlapy Guláš s bramboráčky | servings 4 | prep null cook 200 total null
+  600 | g | Hovězí kližky  [Na guláš]
+  350 | g | Cibule  [Na guláš]
+  1,5 | tbsp | Sádla  [Na guláš]
+  2 | tsp | Rajčat. protlaku  [Na guláš]
+  1 | tbsp | Papriky (pálivé)  [Na guláš]
+  1 | tbsp | Hladké mouky  [Na guláš]
+  1 | tsp | Nového koření  [Na guláš]
+  2 | tsp | Jalovce  [Na guláš]
+  4 | pcs | Bobkového listu  [Na guláš]
+   |  | Sůl a pepř  [Na guláš]
+  2 | l | Vývaru/vody  [Na guláš]
+  5 | clove | Česneku  [Na guláš]
+  2 | tbsp | Majoránky  [Na guláš]
+  1 | kg | Brambor typu C  [Na bramboráčky]
+  300 | ml | Mléka  [Na bramboráčky]
+  2 |  | Vejce  [Na bramboráčky]
+  6 | clove | Česneku  [Na bramboráčky]
+  2 | tsp | Kmínu  [Na bramboráčky]
+  1,5 | tbsp | Majoránky  [Na bramboráčky]
+   |  | Hladká mouka, dle potřeby  [Na bramboráčky]
+   |  | Sůl a pepř  [Na bramboráčky]
+steps:
+  Do hrnce přidáme sádlo a rozpálíme.
+  Vložíme nakrájenou cibuli a zprudka opékáme.
+  Jakmile se začne barvit přilijeme trochu vody, aby se připáleniny odvařily.
+  Snížíme plamen, dále opékáme a občas přilijeme opět trochu vody a odvaříme.
+  Čím tmavší základ máme, tím mírnější plamen použijeme.
+  Opékáme do vzniknutí tmavě hnědého základu (po částech přilijeme litr vody a odvaříme).
+  Plamen zvýšíme a přidáme maso, promícháme, přiklopíme pokličkou a necháme 2 minuty pustit šťávu.
+  Poklici sundáme a 3 minuty opékáme.
+  Přidáme rajčatový protlak a opékáme 2 minuty.
+  Přidáme papriku a 30 vteřin opečeme.
+  Zalijeme vodou, jen tak, aby bylo maso ponořeno.
+  Přidáme česnek, nové koření, jalovec, bobkový list, osolíme a opepříme. Přiklopíme pokličkou a dáme péct při 160° C do měkka. Cca 3 hodiny.
+  Občas promícháme.
+  Brambory nastrouháme na hrubo, osolíme a zalijeme mlékem. Necháme 10 minut odpočinout.
+  Poté slijeme a vymačkáme většinu tekutiny.
+  Přidáme vejce a koření, promícháme.
+  Přidáme mouku, aby se vše spojilo a promícháme.
+  Smažíme (nejlépe na sádle) malé bramboráčky dozlatova. Po usmažení necháme okapat na papírové utěrce.
+  Po upečení dochutíme majoránkou a 3 minuty provaříme. Servírujeme, bramboráčky a cibulí.

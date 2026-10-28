@@ -1,0 +1,20 @@
+JSON-LD | Česnečka | servings 4 | prep 30 cook null total 30
+  1 | l | Voda
+   |  | Sůl Kania
+  1 | tbsp | Celý kmín Kania
+  200 | g | Brambory
+  1 | tbsp | Sádlo Pikok
+  50 | g | Anglická slanina Pikok
+  100 | g | Vařené kroupy
+  6 | clove | Česnek
+   |  | Mletý černý pepř Kania
+  1 | tsp | Sušená majoránka Kania
+  1 | tsp | Čerstvá majoránka
+  2 |  | Vejce „M“
+  1 |  | Lahůdková cibulka
+  1 | handful | Chlebové krutonky
+steps:
+  Brambory oloupeme, nakrájíme a uvaříme v osolené vodě s kmínem skoro doměkka.
+  V hrnci rozehřejeme sádlo, na kterém orestujeme slaninu nakrájenou na kostičky.
+  Zalijeme skoro vařenými brambory i s vodou, ve které se vařily, přidáme předem uvařené kroupy, prolisované stroužky česneku podle chuti a brambory dovaříme. Ochutíme pepřem, sušenou i čerstvou majoránkou a do vroucí polévky zavaříme rozšlehané vejce.
+  Pravou česnečku podáváme posypanou nakrájenou lahůdkovou cibulkou a chlebovými krutonky.

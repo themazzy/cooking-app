@@ -1,0 +1,18 @@
+PAGE | Spojit brambory a mák Těmto pečeným knedlíčkům neodoláte | servings null | prep null cook null total null
+  500 | g | Brambor  [Na knedlíčky]
+  220 | g | Špaldové hladké mouky  [Na knedlíčky]
+  1 | pcs | Vejce  [Na knedlíčky]
+   |  | Máslo  [Na knedlíčky]
+   |  | Pomletý mák  [Na posypání]
+   |  | Pomletý třtinový cukr  [Na posypání]
+   |  | Máslo  [Na posypání]
+steps:
+  Brambory uvaříme ve slupce. Po dovaření je necháme vychladnout.
+  Brambory oloupeme a nastrouháme najemno. Smícháme je s moukou, vejcem a vypracujeme nelepivé těsto. Podle potřeby dosypeme ještě mouku.
+  V hrnci si dáme vařit vodu.
+  Než se začne voda vařit, vypracované těsto rozdělíme na čtyři části. Každou část rozválíme na dlouhý, tenký váleček, ze kterého odkrajujeme přibližně 2 cm knedlíčky.
+  Knedlíčky po částech přidáváme do vody (já jsem vždy uvařila knedlíčky z jednoho válečku, ať se jich nevaří moc najednou).
+  Vaříme je, dokud nevyplavou na povrch.
+  Hotové knedlíčky dáme na pánev a osmahneme je na másle do zlatova.
+  Mák smícháme s cukrem podle potřeby.
+  Knedlíčky posypeme makovou drobenkou, polijeme rozpuštěným máslem a podáváme.

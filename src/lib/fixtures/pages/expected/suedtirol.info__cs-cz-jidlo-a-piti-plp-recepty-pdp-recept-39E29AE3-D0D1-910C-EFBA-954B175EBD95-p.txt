@@ -1,0 +1,14 @@
+JSON-LD | Placaté knedlíky (sýrové knedlíky) | servings null | prep 40 cook 40 total null
+  3 | handful | Dobře se krájejícího bílého chleba nebo sušené kostičky z bílého pečiva
+  140 | g | Šedého sýra
+  100 | ml | Mléka
+  2 |  | Vejce
+  20 | g | Mouky
+  20 | g | Pohankové mouky
+  1 | tbsp | Petrželky
+   |  | Sůl, pepř
+  600 | ml | Masové polévky  [Ostatní]
+  20 | g | Cibule, nakrájené na kolečka  [Ostatní]
+   |  | Máslo, množství, podle chuti  [Ostatní]
+steps:
+  Nakrájejte chléb na kostičky a dejte do mísy. Nakrájejte šedý sýr na kostičky a přidejte ke chlebu. Ušlehejte vejce s mlékem a s moukou, pohankovou moukou a petrželkou přidejte k sušeným kostičkám z bílého pečiva, osolte a opepřete. Všechny přísady zvolna uhněťte do těsta a nechte 15 minut odpočívat. Vytvarujte knedlíky, mírně je stlačte naplocho a po obou stranách smažte na pánvi s máslem do zlatohněda. V případě potřeby vařte 8 minut ve vroucí osolené vodě. Cibulové kroužky osmahněte na pánvi do zlatova. Placaté knedlíky podávejte s masovou polévkou a smaženými cibulovými kroužky.

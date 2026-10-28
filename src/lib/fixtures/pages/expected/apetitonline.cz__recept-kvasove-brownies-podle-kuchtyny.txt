@@ -1,0 +1,12 @@
+JSON-LD | Kvasové brownies podle Kuchtýny | servings 20 | prep 25 cook 35 total 60
+  100 | g | Kvásek
+  200 | g | Máslo
+  200 | g | Třtinový cukr
+  0 | tsp | Sůl
+  300 | g | Tmavá čokoláda
+  3 | tbsp | Kakao
+steps:
+  Plech vyložte pečicím papírem a troubu předehřejte na 160 °C.
+  Máslo a rozlámanou čokoládu rozpusťte v rendlíku. Za občasného míchání nechte vychladnout.
+  Vejce s cukrem a solí vyšlehejte do nadýchané světlé pěny. Stěrkou do ní vmíchejte pšeničný kvas zchladlou čokoládu s máslem a kakao. Těsto vlijte na připravený plech a dle chuti jej můžete doplnit ovocem nebo oříšky.
+  Pečte v rozehřáté troubě na 160 °C cca 35–40 minut. Vnitřek by měl zůstat vlhký.

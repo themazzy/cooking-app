@@ -1,0 +1,24 @@
+JSON-LD | Easy Bulgarian Moussaka Recipe | servings null | prep null cook 40 total null
+  700 | g | Potatoes - diced into small cubes  [Filling]
+  500 | g | Ground meat - beef, pork, or a mix of both  [Filling]
+  100 | ml | Passata (or you can use around 150 g fresh diced tomatoes)  [Filling]
+  1 |  | Small onion - diced  [Filling]
+  2–3 | tbsp | Sunflower oil  [Filling]
+   |  | Salt  [Filling]
+   |  | Black pepper  [Filling]
+  1 | tbsp | Chubritsa (traditional Bulgarian spice) or dried oregano  [Filling]
+  400 | g | Greek yogurt (plus extra for serving if you wish)  [Topping]
+  1 |  | Egg - room temperature  [Topping]
+  1 | tbsp | All-purpose-flour  [Topping]
+  50 | g | Yellow cheese  [Topping]
+steps:
+  Preheat the oven to 200 °C
+  Fry the ground meat in a tablespoon (or more if needed) in oil on medium heat; add salt and pepper to taste
+  When the meat is cooked, add the onion and tomato paste and stir through
+  Place the diced potatoes in an oven-proof dish (we used one that was 22cm x 22cm)
+  Add the meat and spices to the potatoes and mix to combine
+  Pour warm water over the combination up to the level of the mixture
+  Bake at 200 °C for 40 min
+  In a bowl, mix the egg, yogurt, and flour, then pour over the meat at potatoes
+  Sprinkle the grated cheese on top and bake for 7-10 more minutes
+  Serve with fresh chopped parsley.

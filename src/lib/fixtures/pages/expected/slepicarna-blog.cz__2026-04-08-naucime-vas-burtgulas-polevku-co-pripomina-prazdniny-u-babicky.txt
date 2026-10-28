@@ -1,0 +1,21 @@
+PAGE | Naučíme vás buřtguláš, polévku, co připomíná prázdniny u babičky | servings 4 | prep 60 cook null total null
+  4 |  | Buřty
+  1 | tbsp | Vepřového sádla (nebo oleje)
+  1 |  | Velká cibule
+  1 | tsp | Drceného kmínu
+  1 | tsp | Sušeného česneku (nebo 2 stroužky)
+  2 | tbsp | Hladké mouky
+  1 | tbsp | Sladké papriky
+  1 | tbsp | Uzené papriky
+  1 | l | Domácího vývaru (např. kuřecí)
+  8 |  | Středně velkých brambor typu B
+  1 | tbsp | Sušené majoránky
+   |  | Sůl a pepř
+  4 |  | Vejce vařená natvrdo
+   |  | Čerstvá petrželka
+   |  | Pečivo na podávání
+steps:
+  Na sádle orestuj nadrobno nakrájenou cibuli do zlatova, přidej na menší kousky nakrájené buřty. Orestuj a poté přidej česnek, mouku, prorestuj a vmíchej obě papriky. Zalij vývarem a přidej na kostičky nakrájené brambory.
+  Přiveď k varu, zasyp sušenou majoránkou, dochuď solí a pepřem. Vař, dokud nebudou brambory měkké, asi 20 minut. Měly by být trošku rozvařené, škrob ti pomůže jídlo zahustit.
+  Mezitím uvař vejce natvrdo, oloupej, nakrájej na kostičky a vmíchej do buřtguláše.
+  Hotový buřtguláš ozdob čerstvou petrželkou a podávej s pečivem.

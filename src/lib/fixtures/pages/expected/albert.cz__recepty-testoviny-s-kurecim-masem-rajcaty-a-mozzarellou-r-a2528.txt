@@ -1,0 +1,12 @@
+JSON-LD | Těstoviny s kuřecím masem, rajčaty a mozzarellou | servings 4 | prep null cook null total 120
+  1 | pcs | Cibule červená
+  1,2 | kg | Kuře celé grilované
+  250 | g | Rajčata cherry
+  400 | g | Těstoviny
+  125 | g | Mozzarella
+  1 | tbsp | Citronová kůra
+   |  | Sůl
+  60 | ml | Vinný červený ocet
+  60 | ml | Olej olivový
+   |  | Pepř
+steps:

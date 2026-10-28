@@ -1,0 +1,13 @@
+PAGE | Rychlá večeře v podobě knedlíků s vajíčkem a slaninou | servings 4 | prep 20 cook null total null
+  12 | slice | Knedlíků (houskových – najdete je např. tady)
+  10 |  | Vajec
+   |  | Sůl a pepř
+  100 | ml | Smetany ke šlehání (33 %)
+  200 | g | Anglické slaniny
+  5 |  | Jarních cibulek
+  2 | tbsp | Olivového oleje
+   |  | Kyselé okurky na podávání
+steps:
+  Knedlíky nakrájej na kostičky. V míse vyšlehej vejce se solí, pepřem a smetanou. Slaninu nakrájej na kostičky, jarní cibulku nasekej na kolečka (světlá odděl od zelených částí).
+  Na velké pánvi rozehřej olej, přidej knedlíky, restuj za občasného míchání dozlatova (snaž se je protočit, aby byly osmažené ze všech stran). Pak přidej slaninu, orestuj, aby pustila šťávu. Přidej bílou část jarní cibulky a orestuj, knedlíky musí být opečené (křupavé).
+  Stáhni teplotu, směs na pánvi musí trošku vychladnout, aby se vajíčka nezačaly smažit. Pak vmíchej vaječnou směs, přidej teplotu a za stálého míchání osmahni tak, jak máš rád/a vejce. Krémovější nebo více „udělané“. Podávej s kyselými okurkami.

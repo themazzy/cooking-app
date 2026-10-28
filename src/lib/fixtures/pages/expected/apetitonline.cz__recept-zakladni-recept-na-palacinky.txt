@@ -1,0 +1,9 @@
+JSON-LD | Základní recept na palačinky | servings 10 | prep 45 cook 20 total 65
+  250 | ml | Mléko
+  1 | pinch | Sůl
+  140 | g | Mouka pšeničná hladká
+steps:
+  Mléko vlijte do mísy přidejte vejce vanilkový cukr i sůl. Prošlehejte metlou dohladka. Postupně přidávejte mouku a dále šlehejte až získáte hladké těsto. Pokud je těsto příliš husté nařeďte ho dalším mlékem.
+  Hotové těsto nechte půl hodiny odpočinout v lednici. Díky tomu už nebude těsto dále houstnout.
+  Na středním ohni rozehřejte nepřilnavou pánev (nejlépe pánev na palačinky s nízkým okrajem) a slabě ji potřete olejem nebo máslem. Těsto vyndejte z lednice a dobře promíchejte.
+  Do rozehřáté pánve vlijte asi naběračku těsta a nakláněním pánve ho rozlijte po celé ploše. Opékejte do chvíle až vrchní strana zcela oschne a tenoučké okraje se zkroutí a vypadají jako krajka. Poté palačinku obracečkou otočte a opečte ji dozlatova i z druhé strany. Palačinku vyjměte z pánve a odložte na talíř. Opakujte do spotřebování těsta.

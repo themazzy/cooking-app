@@ -1,0 +1,16 @@
+PAGE | Jak připravit nejlepší bramboráky S tímto návodem budou luxusní jako od babičky | servings null | prep null cook 3 total null
+  1 | kg | Brambor
+  4 | tbsp | Hladké mouky
+  4 | clove | Česneku
+  4 | tsp | Majoránky
+  2 |  | Vejce
+   |  | Sůl a pepř
+   |  | Můžete přidat uzené maso nebo slaninu
+steps:
+  Oloupejte brambory a nastrouhejte je. Vyberte struhadlo pro jemnější strouhání.
+  Z nastrouhaných brambor vymačkejte pokud možno všechnu vodu.
+  Dejte na pánev trochu sádla nebo oleje a rozehřejte.
+  Posypejte brambory moukou, přidejte vejce a prolisujte do směsi česnek.
+  Přidejte majoránku a podle chuti osolte a opepřete.
+  Postupujte rychle, protože pokud necháte brambory dlouho na vzduchu, začnou hnědnout. Těsto ještě promíchejte, aby se chutě dobře propojily a pusťte se do smažení.
+  Placky smažte na rozpálené pánvi asi 2-3 minuty z každé strany.

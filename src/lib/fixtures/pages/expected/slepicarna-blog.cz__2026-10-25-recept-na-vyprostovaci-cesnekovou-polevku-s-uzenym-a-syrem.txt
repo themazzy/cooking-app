@@ -1,0 +1,21 @@
+PAGE | Recept na vyprošťovací česnekovou polévku s uzeným a sýrem | servings 4 | prep 45 cook null total null
+  1 |  | Cibule
+  1 | tbsp | Oleje
+  200 | g | Uzené krkovice
+  1 | tsp | Drceného kmínu
+  8–10 | clove | Česneku
+  8 |  | Větších brambor
+  1 | l | Domácího vývaru (např. uzeného, kuřecího)
+  3 |  | Bobkové listy
+  6 | pcs | Nového koření
+  6 | pcs | Pepře
+  1 | handful | Sušené majoránky
+  2 |  | Vejce
+  1 | handful | Nasekané petrželky
+   |  | Sůl a pepř, dle potřeby
+  100 | g | Sýru (ementálového typu)
+   |  | Chlebové krutony
+steps:
+  Nadrobno nakrájenou cibuli orestuj v hrnci na oleji dozlatova. Poté přidej na kostičky nakrájené uzené maso a orestuj. Zasyp kmínem, orestuj. Přidej nasekaný česnek, krátce orestuj.
+  Vmíchej na malé kousky oloupané a nakrájené brambory. Zalij vývarem, přidej bobkový list, nové koření, pepř a majoránku. Vař do změknutí, asi 15 minut. Na závěr vmíchej rozšlehané vejce a nasekanou petrželku. Vař ještě 1 minutu. Na závěr dle potřeby dochuť solí a pepřem.
+  Na talíře rozděl nastrouhaný sýr, zalij česnečkou. Ozdob nasekanou petrželkou a podávej s chlebovými krutony.

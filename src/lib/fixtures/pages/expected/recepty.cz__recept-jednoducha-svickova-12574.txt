@@ -1,0 +1,9 @@
+JSON-LD | Jednoduchá svíčková | servings null | prep null cook null total null
+   |  | Sůl
+   |  | Ocet
+  500 | g | Hovězí maso
+   |  | Smetana ke šlehání
+  1 |  | Sklenice zelenina
+   |  | Cukr
+steps:
+  Do hrnce dáme maso a halali a vodu uvaříme. Potom maso vyjmeme, zahustíme smetanou a hladkou moukou. Vedle na pánvi z cca půl hrnku cukru uděláme karamel, který přilejeme k omáčce. Dochutíme buď cukrem nebo octem. Pokud je omáčka moc řídká, dohustíme vodou a moukou.
