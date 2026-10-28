@@ -239,13 +239,143 @@ export async function translateRecipe(recipe, to, { from = null, onStep = () => 
   const texts = recipeTexts(recipe)
   const done = await translateTexts(texts, lang, to, onStep)
   const map = new Map(texts.map((t, n) => [t, done[n] ?? t]))
+  const out = applyTranslation(recipe, map)
   return {
-    ...applyTranslation(recipe, map),
+    ...out,
     lang: to,
     translatedBy: lastEngine,
     // A recipe read through English (an unknown language) keeps its real original
     original: recipe.original ?? { lang, title: recipe.title, ingredients: recipe.ingredients, steps: recipe.steps },
+    translatedFrom: recipe.original ? null : pairsOf(recipe, out, to),
   }
+}
+
+/**
+ * Which text each translated text came from: { lang, map: { translated: source } }.
+ * Saved with the recipe, so translating again can tell the lines the cook
+ * edited (not in the map) from the ones still as the translation made them.
+ */
+export function pairsOf(source, translated, lang) {
+  const map = {}
+  const add = (t, s) => {
+    if (t?.trim() && s?.trim() && !(t.trim() in map)) map[t.trim()] = s.trim()
+  }
+  for (const [t, s] of alignTexts(translated, source)) add(t, s)
+  return { lang, map }
+}
+
+/** [text, text at the same place in `other`] for the title, ingredient names and groups, and step lines that line up. */
+export function alignTexts(recipe, other) {
+  const out = [[recipe.title, other.title]]
+  const a = recipe.ingredients ?? []
+  const b = other.ingredients ?? []
+  if (a.length === b.length) a.forEach((i, n) => out.push([i.name, b[n].name], [i.group, b[n].group]))
+  const lines = (r) => (r.steps ?? '').split('\n').filter((l) => l.trim())
+  const sa = lines(recipe)
+  const sb = lines(other)
+  if (sa.length === sb.length) sa.forEach((l, n) => out.push([l, sb[n]]))
+  return out.filter(([x, y]) => x?.trim() && y?.trim())
+}
+
+/** Czech or Bulgarian letters in a short line the language detector was unsure about. */
+function lettersLanguage(text) {
+  if (/[\u0400-\u04ff]/.test(text)) return 'bg'
+  if (/[ěščřžůťďň]/i.test(text)) return 'cs'
+  return null
+}
+
+/** The language of one line the cook typed: "cs", or null when unsure. */
+export async function lineLanguage(text) {
+  try {
+    if (canFetchCrossSite()) {
+      const { language } = await Translator.identify({ text })
+      if (language && language !== 'und') return language.split('-')[0]
+      return lettersLanguage(text)
+    }
+    // The website asks Google, but only about lines with letters English has not
+    const letters = lettersLanguage(text)
+    if (letters || !/[^\x00-\x7f]/.test(text)) return letters
+    const { lang } = await google([text], null, 'en')
+    if (lang && lang !== 'und') return lang.split('-')[0]
+  } catch {
+    // Unsure: guessed from its letters below
+  }
+  return lettersLanguage(text)
+}
+
+/**
+ * A translated recipe translated again from its original, keeping what the
+ * cook changed: lines still as the last translation made them are translated
+ * afresh, edited or added lines stay (or are translated, when they were typed
+ * in another language, such as steps pasted from the website). The original
+ * follows the edits, so switching languages shows them too.
+ */
+export async function translateAgain(recipe, to, { onStep = () => {}, translate = translateTexts, detect = lineLanguage } = {}) {
+  const from = recipe.original?.lang
+  if (!from || recipe.lang !== to) return null
+  const known = recipe.translatedFrom?.lang === to ? (recipe.translatedFrom.map ?? {}) : {}
+  // Older recipes saved no pairs: all their lines count as edited (kept), and
+  // their original lines up by place, where it still does
+  const older = !Object.keys(known).length
+  const byPlace = new Map(alignTexts(recipe, recipe.original).map(([t, s]) => [t.trim(), s.trim()]))
+  const texts = recipeTexts(recipe)
+  const fromSource = texts.filter((t) => known[t])
+  const edited = texts.filter((t) => !known[t])
+
+  const shown = new Map() // current text → new text in `to`
+  const source = new Map() // current text → text in the original's language
+  let engine = recipe.translatedBy ?? null
+
+  if (fromSource.length) {
+    const sources = fromSource.map((t) => known[t])
+    const done = await translate(sources, from, to, onStep)
+    engine = lastEngine ?? engine
+    fromSource.forEach((t, n) => {
+      shown.set(t, done[n] ?? t)
+      source.set(t, sources[n])
+    })
+  }
+
+  // Edited lines: translated when typed in another language, else kept as they are
+  const langs = await Promise.all(edited.map((t) => detect(t)))
+  const kept = []
+  const foreign = new Map() // lang → texts
+  edited.forEach((t, n) => {
+    const lang = langs[n]
+    if (lang && lang !== to) foreign.set(lang, [...(foreign.get(lang) ?? []), t])
+    else kept.push(t)
+  })
+  for (const [lang, group] of foreign) {
+    try {
+      const done = await translate(group, lang, to, onStep)
+      engine = lastEngine ?? engine
+      group.forEach((t, n) => {
+        shown.set(t, done[n] ?? t)
+        // Typed in the original's language: that is its original text
+        if (lang === from) source.set(t, t)
+      })
+    } catch {
+      kept.push(...group)
+    }
+  }
+  for (const t of kept) shown.set(t, t)
+
+  // The original of an edited line: what stood in its place before, unless the cook changed it there
+  for (const t of edited) if (!source.has(t) && older && byPlace.has(t)) source.set(t, byPlace.get(t))
+  const back = edited.filter((t) => !source.has(t))
+  if (back.length) {
+    try {
+      const done = await translate(back, to, from, () => {})
+      back.forEach((t, n) => source.set(t, done[n] ?? t))
+    } catch {
+      for (const t of back) source.set(t, t)
+    }
+  }
+
+  const out = applyTranslation(recipe, shown)
+  const orig = applyTranslation(recipe, source)
+  const original = { lang: from, title: orig.title, ingredients: orig.ingredients, steps: orig.steps }
+  return { ...out, lang: to, translatedBy: engine, original, translatedFrom: pairsOf(original, out, to) }
 }
 
 /** Texts translated with Gemini Nano on the phone, else Google Translate, else MyMemory. Same order. */

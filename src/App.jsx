@@ -467,6 +467,7 @@ export default function App() {
         lang: out.original ? out.lang : (recipe.lang ?? null),
         original: out.original ?? null,
         translatedBy: out.original ? (out.translatedBy ?? recipe.translatedBy ?? null) : null,
+        translatedFrom: out.translatedFrom ?? null,
       }
     },
     [readThroughEnglish, translateDraft],

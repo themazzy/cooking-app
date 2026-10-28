@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyTranslation, batches, googleLines, languageName, nanoLines, nanoPrompt, pieces, recipeTexts, swapOriginal } from './translate.js'
+import { applyTranslation, batches, googleLines, languageName, nanoLines, nanoPrompt, pieces, recipeTexts, pairsOf, swapOriginal, translateAgain } from './translate.js'
 
 const recipe = {
   title: 'Apfelkuchen',
@@ -86,5 +86,71 @@ describe('applyTranslation and groups', () => {
     ])
     const out = applyTranslation({ title: '', steps: '', ingredients: [{ qty: '2', unit: '', name: 'polévkové lžíce vody', group: 'Na omáčku' }] }, map)
     expect(out.ingredients).toEqual([{ qty: '2', unit: 'tbsp', name: 'Water', group: 'For the sauce' }])
+  })
+})
+
+describe('translateAgain', () => {
+  // A fake engine: "cs:" lines become "en:" lines and back; it notes what it was asked
+  const asked = []
+  const translate = async (texts, from, to) => {
+    asked.push({ texts, from, to })
+    return texts.map((t) => `${to}(${t})`)
+  }
+  const detect = async (t) => (/[ěščřžůíá]/.test(t) ? 'cs' : 'en')
+  const czech = {
+    title: 'Zelí',
+    ingredients: [{ name: 'Zelí', amount: 1 }, { name: 'Cibule', amount: 2 }],
+    steps: '',
+  }
+
+  it('keeps edited and added lines, translates typed-in Czech, and the original follows', async () => {
+    // As translateRecipe saves it
+    const shown = { title: 'Cabbage', ingredients: [{ name: 'Cabbage', amount: 1 }, { name: 'Onion', amount: 2 }], steps: '' }
+    const recipe = {
+      ...shown,
+      lang: 'en',
+      original: { lang: 'cs', ...czech },
+      translatedFrom: pairsOf({ lang: 'cs', ...czech }, shown, 'en'),
+    }
+    // The cook renamed Onion and pasted Czech steps from the website
+    const edited = {
+      ...recipe,
+      ingredients: [{ name: 'Cabbage', amount: 1 }, { name: 'Red onion', amount: 2 }],
+      steps: 'Zelí nakrájíme.\nAdd salt.',
+    }
+    asked.length = 0
+    const t = await translateAgain(edited, 'en', { translate, detect })
+    expect(t.title).toBe('en(Zelí)')
+    expect(t.ingredients.map((i) => i.name)).toEqual(['En(Zelí)', 'Red onion'])
+    expect(t.steps).toBe('en(Zelí nakrájíme.)\nAdd salt.')
+    expect(t.lang).toBe('en')
+    // The original has the pasted Czech step as it was typed, and the English edits translated back
+    expect(t.original.lang).toBe('cs')
+    expect(t.original.ingredients.map((i) => i.name)).toEqual(['Zelí', 'Cs(Red onion)'])
+    expect(t.original.steps).toBe('Zelí nakrájíme.\ncs(Add salt.)')
+    expect(t.original.ingredients[1].amount).toBe(2)
+    // Translating again after that keeps the cook's lines once more
+    const again = await translateAgain(t, 'en', { translate, detect })
+    expect(again.ingredients.map((i) => i.name)).toContain('En(Cs(Red onion))')
+  })
+
+  it('keeps every line of an older recipe that saved no pairs, translating only foreign ones', async () => {
+    const recipe = {
+      title: 'Cabbage',
+      ingredients: [{ name: 'Cabbage' }, { name: 'Onion' }],
+      steps: 'Cut it.',
+      lang: 'en',
+      original: { lang: 'cs', ...czech, steps: 'Nakrájet.' },
+    }
+    const t = await translateAgain({ ...recipe, steps: 'Cut it.\nOsolíme.' }, 'en', { translate, detect })
+    expect(t.title).toBe('Cabbage')
+    expect(t.ingredients.map((i) => i.name)).toEqual(['Cabbage', 'Onion'])
+    expect(t.steps).toBe('Cut it.\nen(Osolíme.)')
+    expect(t.original.ingredients.map((i) => i.name)).toEqual(['Zelí', 'Cibule'])
+    expect(t.original.steps).toBe('cs(Cut it.)\nOsolíme.')
+  })
+
+  it('does nothing when the recipe is not shown in the target language', async () => {
+    expect(await translateAgain({ ...czech, lang: 'cs' }, 'en', { translate, detect })).toBe(null)
   })
 })
