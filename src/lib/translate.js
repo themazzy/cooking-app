@@ -185,16 +185,35 @@ async function nano(texts, from, to) {
 
 /** "available" when this phone can translate with Gemini Nano. Asked once per app start. */
 let nanoState = null
+let nanoReason = null
 export async function nanoStatus() {
-  if (!canFetchCrossSite()) return 'unavailable'
+  if (!canFetchCrossSite()) {
+    nanoReason = 'Only the Android app can use Gemini Nano'
+    return 'unavailable'
+  }
   if (nanoState === 'available' || nanoState === 'unavailable') return nanoState
   try {
-    nanoState = (await Translator.nanoStatus()).status
-  } catch {
+    const answer = await Translator.nanoStatus()
+    nanoState = answer.status
+    nanoReason = answer.reason ?? null
+  } catch (err) {
     nanoState = 'unavailable'
+    nanoReason = err?.message ?? String(err)
   }
   return nanoState
 }
+/** Why Gemini Nano is not available on this phone, after nanoStatus(); null when it is. */
+export const nanoUnavailableReason = () => nanoReason
+
+/** A short line translated with Gemini Nano, for the check in Settings: { text, ms }. */
+export async function tryNano(text = 'Hladká mouka, 2 lžíce másla', from = 'cs', to = 'en') {
+  const started = Date.now()
+  const [out] = await nano([text], from, to)
+  return { text: out, ms: Date.now() - started }
+}
+
+// Which service did the last translateTexts(): saved with the recipe as translatedBy
+let lastEngine = null
 
 /** The recipe's language from its own text: "de", or null when unsure. */
 export async function detectLanguage(recipe) {
@@ -223,6 +242,7 @@ export async function translateRecipe(recipe, to, { from = null, onStep = () => 
   return {
     ...applyTranslation(recipe, map),
     lang: to,
+    translatedBy: lastEngine,
     // A recipe read through English (an unknown language) keeps its real original
     original: recipe.original ?? { lang, title: recipe.title, ingredients: recipe.ingredients, steps: recipe.steps },
   }
@@ -233,7 +253,9 @@ export async function translateTexts(texts, from, to, onStep = () => {}) {
   if ((await nanoStatus()) === 'available') {
     onStep(`Translating from ${languageName(from)} with Gemini Nano on the phone…`)
     try {
-      return await nano(texts, from, to)
+      const done = await nano(texts, from, to)
+      lastEngine = 'Gemini Nano'
+      return done
     } catch (err) {
       onStep(`Gemini Nano could not translate it (${err?.message ?? err}), using Google Translate.`)
     }
@@ -242,10 +264,13 @@ export async function translateTexts(texts, from, to, onStep = () => {}) {
   try {
     const done = []
     for (const batch of batches(texts, 4000)) done.push(...(await google(batch.map((n) => texts[n]), from, to)).texts)
+    lastEngine = 'Google Translate'
     return done
   } catch (err) {
     onStep(`Google Translate refused (${err?.message ?? err}), trying MyMemory…`)
-    return myMemory(texts, from, to)
+    const done = await myMemory(texts, from, to)
+    lastEngine = 'MyMemory'
+    return done
   }
 }
 

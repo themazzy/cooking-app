@@ -57,13 +57,14 @@ public class TranslatorPlugin extends Plugin {
     }
 
     /**
-     * → { status }: "available", "downloading", "downloadable" (a download is
-     * started) or "unavailable" (this phone has no Gemini Nano).
+     * → { status, reason }: "available", "downloading", "downloadable" (a download is
+     * started) or "unavailable" (this phone has no Gemini Nano; reason says why).
      */
     @PluginMethod
     public void nanoStatus(PluginCall call) {
         worker.execute(() -> {
             String status;
+            String reason = null;
             try {
                 int s = model().checkStatus().get();
                 if (s == FeatureStatus.AVAILABLE) status = "available";
@@ -76,13 +77,19 @@ public class TranslatorPlugin extends Plugin {
                         @Override public void onDownloadCompleted() {}
                         @Override public void onDownloadFailed(@NonNull GenAiException e) {}
                     });
-                } else status = "unavailable";
+                } else {
+                    status = "unavailable";
+                    reason = "AICore says this phone has no Gemini Nano";
+                }
             } catch (Throwable e) {
                 // No AICore, an unsupported phone or an unlocked bootloader
                 status = "unavailable";
+                Throwable cause = e.getCause() != null ? e.getCause() : e;
+                reason = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
             }
             JSObject ret = new JSObject();
             ret.put("status", status);
+            if (reason != null) ret.put("reason", reason);
             call.resolve(ret);
         });
     }

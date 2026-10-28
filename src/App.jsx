@@ -36,6 +36,7 @@ import { mergeLists } from './lib/listMerge.js'
 import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import VoicePicker from './VoicePicker.jsx'
+import NanoCheck from './NanoCheck.jsx'
 import { canSpeak } from './lib/voice.js'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
@@ -400,7 +401,7 @@ export default function App() {
         if (!from || from === to || (!recipe.original && settings.keepOwnLanguages && TARGETS[from])) return recipe
         const translated = await translateRecipe(recipe, to, { from, onStep: (t) => step(t) })
         if (!translated) return recipe
-        step(`Translated from ${languageName(from)}. The recipe page can show the original.`, 'ok')
+        step(`Translated from ${languageName(from)} by ${translated.translatedBy}. The recipe page can show the original.`, 'ok')
         return translated
       } catch (err) {
         step(`Not translated: ${err?.message ?? err}`, 'warn')
@@ -466,6 +467,7 @@ export default function App() {
         source: first.source,
         lang: out.original ? out.lang : (recipe.lang ?? null),
         original: out.original ?? null,
+        translatedBy: out.original ? (out.translatedBy ?? recipe.translatedBy ?? null) : null,
       }
     },
     [readThroughEnglish, translateDraft],
@@ -1178,6 +1180,7 @@ export default function App() {
               Phones with Gemini Nano translate on the phone; others use Google Translate (needs internet). The translation is saved with the recipe, and the
               recipe page can switch back to the original.
             </p>
+            {settings.translateTo !== 'off' && <NanoCheck />}
             <label>
               <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}
               Save a copy of the video with each recipe (on this phone only)
