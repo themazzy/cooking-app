@@ -50,18 +50,22 @@ jobs:
           fi
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/cookingapp.keystore
 
-      - name: Build debug APK
+      # Release, not debug: a debug APK lets anyone with the unlocked phone and a USB cable read the app's data
+      - name: Build release APK
         working-directory: android
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon
 
+      # Pull requests have no signing key, so their APK is unsigned (it builds, but won't install)
       - name: Name the APK
-        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/Simmer-${{ github.run_number }}.apk
+        run: |
+          cd android/app/build/outputs/apk/release
+          mv app-release.apk Simmer-${{ github.run_number }}.apk 2>/dev/null || mv app-release-unsigned.apk Simmer-${{ github.run_number }}.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v7
         with:
           name: Simmer-${{ github.run_number }}
-          path: android/app/build/outputs/apk/debug/Simmer-${{ github.run_number }}.apk
+          path: android/app/build/outputs/apk/release/Simmer-${{ github.run_number }}.apk
           retention-days: 30
