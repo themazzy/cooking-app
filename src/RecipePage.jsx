@@ -60,6 +60,15 @@ function OtherRatings({ recipe, me }) {
   )
 }
 
+/** Notes to see before cooking: the recipe's own note and the last note from the cooking history. */
+function cookNotes(recipe) {
+  const out = []
+  if (recipe.note?.trim()) out.push({ label: 'Recipe note', text: recipe.note.trim() })
+  const last = [...(recipe.cooked ?? [])].filter((c) => c.note?.trim()).sort((a, b) => b.at - a.at)[0]
+  if (last) out.push({ label: `Last time · ${cookedAgo(last.at)}`, text: last.note.trim() })
+  return out
+}
+
 export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
@@ -819,6 +828,12 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           title={recipe.title}
           ingredients={shown}
           steps={stepsText}
+          portions={cookFor}
+          servings={recipe.servings}
+          onPortions={setCookFor}
+          notes={cookNotes(recipe)}
+          rating={recipe.id ? myRating(recipe, me) : null}
+          onRate={recipe.id ? (stars) => onSavePatch(ratePatch(recipe, me, stars)) : null}
           alarm={alarm}
           stockPlan={stockReview(scaled, pantry, canonical)}
           onUseStock={onUseStock}

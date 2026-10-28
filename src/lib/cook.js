@@ -102,10 +102,13 @@ const clockLabel = (seconds) => {
  * Reads English, Czech and Bulgarian units, fractions ("1 1/2 hours", "½ hr", "half an hour")
  * and hours with minutes after them ("1 hour 30 minutes") as one timer.
  */
-export function findTimers(text) {
+export const findTimers = (text) => timerSpans(text).map(({ label, seconds }) => ({ label, seconds }))
+
+/** The times in a step with where they are written: [{ start, end, label, seconds }]. */
+export function timerSpans(text) {
   const out = []
   for (const m of String(text ?? '').matchAll(TIME)) {
-    const [, lo, hi, unit, more, moreUnit] = m
+    const [whole, lo, hi, unit, more] = m
     const per = isUnit(T_HOURS, unit) ? 3600 : isUnit(T_MINS, unit) ? 60 : 1
     // "a"/"an" only before a whole word: "an hour", not "a m"
     if (/^an?$/i.test(lo) && unit.length < 3) continue
@@ -115,9 +118,46 @@ export function findTimers(text) {
     const plain = (s) => /^\d+(?:[.,]\d+)?$/.test(s)
     const short = per === 1 ? 's' : per === 60 ? 'min' : 'h'
     const label = plain(lo) && (!hi || plain(hi)) && !(more && per === 3600) && (per !== 3600 || Number.isInteger(timeNumber(hi ?? lo))) ? `${hi ? `${lo}–${hi}` : lo} ${short}` : clockLabel(seconds)
-    out.push({ label, seconds })
+    out.push({ start: m.index, end: m.index + whole.length, label, seconds })
   }
   return out
+}
+
+// An amount written in a step: "400 ml", "2 tbsp", "180 °C", "1 1/2 cups", "2 lžíce", "200 гр"
+const AMOUNT = new RegExp(
+  '(?<![\\p{L}\\d])(?:\\d+\\s+\\d\\/\\d|\\d+\\/\\d|\\d+[½¼¾⅓⅔]|\\d+(?:[.,]\\d+)?|[½¼¾⅓⅔])\\s*' +
+    '(?:°\\s*[CF]?|kg|mg|g|ml|cl|dl|l|cm|mm|cups?|tbsps?|tsps?|tablespoons?|teaspoons?|oz|lbs?|pinch(?:es)?|cloves?|lžíc[ei]?|lžičk[ayu]|lžičky|hrnk[ yu]?|hrnek|stupň[ůu]|gr|г|кг|мл|л|ч\\.\\s*л\\.?|с\\.\\s*л\\.?|градуса)(?![\\p{L}])',
+  'giu',
+)
+
+/**
+ * A step split for showing: plain text, times (tap to start a timer) and amounts (bold).
+ * [{ text }, { text, timer: { label, seconds } }, { text, amount: true }]
+ */
+export function stepParts(text) {
+  const s = String(text ?? '')
+  const marks = timerSpans(s).map((t) => ({ start: t.start, end: t.end, timer: { label: t.label, seconds: t.seconds } }))
+  for (const m of s.matchAll(AMOUNT)) {
+    const start = m.index
+    const end = start + m[0].length
+    if (!marks.some((t) => start < t.end && end > t.start)) marks.push({ start, end, amount: true })
+  }
+  marks.sort((a, b) => a.start - b.start)
+  const out = []
+  let at = 0
+  for (const m of marks) {
+    if (m.start > at) out.push({ text: s.slice(at, m.start) })
+    out.push(m.timer ? { text: s.slice(m.start, m.end), timer: m.timer } : { text: s.slice(m.start, m.end), amount: true })
+    at = m.end
+  }
+  if (at < s.length) out.push({ text: s.slice(at) })
+  return out
+}
+
+/** Smaller text for longer steps, so a step fits on its card: 1 for short ones, down to 0.72. */
+export const stepTextScale = (text) => {
+  const n = String(text ?? '').length
+  return n <= 160 ? 1 : n <= 260 ? 0.88 : n <= 380 ? 0.8 : 0.72
 }
 
 // Words that say how an ingredient is prepared, not what it is

@@ -542,40 +542,108 @@ ul.catalog li.editable { cursor: pointer; }
   flex-direction: column;
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 }
-.cook-top { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
-.cook-title { flex: 1 1 auto; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
-.cook-progress { height: 4px; background: var(--sunken); margin: 0 16px; border-radius: 2px; overflow: hidden; }
-.cook-progress div { height: 100%; background: var(--accent); transition: width 0.25s ease; }
-.cook-timers { display: grid; gap: 6px; padding: 10px 16px 0; max-width: 720px; width: 100%; margin: 0 auto; }
-.cook-timer { display: flex; align-items: center; gap: 6px; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 6px 6px 6px 14px; }
-.cook-timer-time { flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
-.cook-timer-clock { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.cook-timer-label { color: var(--muted); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cook-timer button { min-width: 44px; min-height: 40px; padding: 4px 8px; border-radius: 10px; font-variant-numeric: tabular-nums; }
-.cook-timer.paused .cook-timer-clock { color: var(--muted); }
-.cook-timer.done { background: var(--error); border-color: var(--error); color: #fff; animation: pulse 1s ease infinite; }
-.cook-timer.done .cook-timer-label { color: #fff; }
-.cook-timer button.stop { background: #fff; color: var(--error); font-weight: 700; padding: 4px 14px; }
-@keyframes pulse { 50% { opacity: 0.7; } }
-.cook-custom { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 16px 0; max-width: 720px; width: 100%; margin: 0 auto; }
-.cook-custom input { width: 80px; font-size: 1.1rem; }
-.cook-custom button { min-height: 40px; padding: 4px 12px; }
-.cook-all { flex: 1 1 auto; overflow-y: auto; padding: 16px 20px; max-width: 720px; width: 100%; margin: 0 auto; }
-.cook-all > button { width: 100%; min-height: 52px; }
-/* One card per step, side by side; swiping snaps to the next one */
-.cook-track { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 16px 24px; scrollbar-width: none; overscroll-behavior-x: contain; }
+.cook-top { display: flex; align-items: center; gap: 2px; padding: 8px 8px 4px 4px; }
+.cook-top .icon-button { padding: 6px 8px; min-width: 40px; }
+.cook-top .icon-button.on { color: var(--accent); }
+.cook-title { flex: 1 1 auto; min-width: 0; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+.cook-switch { display: flex; margin: 2px 16px 0; max-width: 688px; align-self: center; width: calc(100% - 32px); }
+.cook-switch button { flex: 1 1 0; min-height: 36px; font-size: 0.92rem; }
+.cook-progress { display: flex; gap: 4px; margin: 10px 16px 0; max-width: 688px; align-self: center; width: calc(100% - 32px); }
+.cook-progress i { flex: 1 1 0; height: 4px; border-radius: 2px; background: var(--sunken); transition: background-color 0.25s ease; }
+.cook-progress i.done { background: var(--accent); }
+.cook-progress i.now { background: color-mix(in srgb, var(--accent) 50%, var(--sunken)); }
+.cook-voice { margin: 6px auto 0; padding: 0 16px; max-width: 720px; width: 100%; color: var(--muted); font-size: 0.82rem; }
+
+/* Get ready: notes, portions and the ingredients to tick off */
+.cook-all { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 14px 16px; max-width: 720px; width: 100%; margin: 0 auto; display: grid; gap: 12px; align-content: start; }
+.cook-note { background: color-mix(in srgb, var(--warn) 12%, var(--card)); border-radius: 14px; padding: 10px 14px; }
+.cook-note span { display: block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--warn); }
+.cook-note p { margin: 2px 0 0; white-space: pre-wrap; }
+.cook-portions { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 4px; font-weight: 600; }
+.cook-portions .stepper .round { width: 36px; height: 36px; min-height: 36px; }
+.cook-ready { margin: 0; padding: 0 4px; color: var(--muted); font-size: 0.9rem; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+ul.cook-ingredients { list-style: none; padding: 4px 8px; margin: 12px 0 14px; background: var(--sunken); border-radius: var(--radius); display: grid; gap: 0; }
+ul.cook-ingredients.all { margin: 0; background: var(--card); border: 1px solid var(--border); padding: 4px 10px; }
+ul.cook-ingredients li { margin: 0; }
+ul.cook-ingredients.all li + li:not(.group-title) { border-top: 1px solid var(--border); }
+ul.cook-ingredients li > button { width: 100%; background: none; color: var(--text); font-weight: 400; justify-content: flex-start; text-align: left; gap: 10px; padding: 6px 4px; min-height: 44px; border-radius: 10px; font-size: calc(1.05rem * var(--cook-text, 1)); }
+ul.cook-ingredients li > button:active:not(:disabled) { transform: none; background: color-mix(in srgb, var(--accent) 8%, transparent); }
+ul.cook-ingredients li.done .cook-ing-text { text-decoration: line-through; color: var(--muted); }
+ul.cook-ingredients li.done .ing-icon, ul.cook-ingredients li.done img { opacity: 0.5; }
+ul.cook-ingredients li.group-title { font-size: 0.75rem; padding: 10px 4px 2px; }
+.cook-ing-text { min-width: 0; flex: 1 1 auto; }
+.cook-tick { width: 22px; height: 22px; flex: none; border-radius: 7px; border: 2px solid var(--border); background: var(--card); display: grid; place-items: center; color: var(--accent-text); transition: background-color 0.15s ease, border-color 0.15s ease; }
+li.done .cook-tick { background: var(--accent); border-color: var(--accent); }
+.cook-tick .icon-svg { margin: 0; }
+
+/* The steps, one card each */
+.cook-track { flex: 1 1 auto; min-height: 0; display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; padding: 12px 24px 8px; scrollbar-width: none; overscroll-behavior-x: contain; }
 .cook-track::-webkit-scrollbar { display: none; }
-.cook-card { flex: 0 0 min(100%, 680px); scroll-snap-align: center; scroll-snap-stop: always; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); opacity: 0.45; transition: opacity 0.2s ease; }
+.cook-card { flex: 0 0 min(100%, 680px); scroll-snap-align: center; scroll-snap-stop: always; overflow-y: auto; background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 14px 18px 16px; box-shadow: var(--shadow); opacity: 0.45; transition: opacity 0.2s ease; display: flex; flex-direction: column; }
 .cook-card.current { opacity: 1; }
-.cook-count { color: var(--accent); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.06em; }
-.cook-step { font-size: 1.55rem; line-height: 1.45; margin: 8px 0 16px; font-weight: 500; }
-ul.cook-ingredients { list-style: none; padding: 12px 14px; margin: 16px 0 0; background: var(--sunken); border-radius: var(--radius); display: grid; gap: 8px; }
-ul.cook-ingredients li { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 1.1rem; }
-ul.cook-ingredients.all { margin: 0 0 20px; background: var(--card); border: 1px solid var(--border); }
-ul.cook-ingredients li.group-title { font-size: 0.8rem; padding-top: 6px; }
-.cook-done { text-align: center; padding-top: 6vh; }
-.cook-nav { display: flex; gap: 10px; padding: 12px 16px; max-width: 720px; width: 100%; margin: 0 auto; }
+.cook-count { display: flex; justify-content: space-between; align-items: center; gap: 10px; color: var(--accent); font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.cook-count button.link { color: var(--muted); text-transform: none; letter-spacing: 0; font-size: 0.85rem; font-weight: 600; min-height: 32px; gap: 4px; }
+.cook-step { font-size: calc(1.55rem * var(--fit, 1) * var(--cook-text, 1)); line-height: 1.42; margin: 4px 0 12px; font-weight: 500; overflow-wrap: break-word; }
+.cook-step strong { font-weight: 750; }
+button.cook-time { display: inline-flex; align-items: center; gap: 3px; vertical-align: baseline; font: inherit; font-weight: 700; min-height: 0; padding: 0 6px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; line-height: 1.25; }
+button.cook-time .icon-svg { width: 0.75em; height: 0.75em; margin: 0; }
+button.cook-time.on { background: var(--accent); color: var(--accent-text); }
+.cook-next { margin: auto 0 0; padding-top: 10px; border-top: 1px dashed var(--border); color: var(--muted); font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cook-next strong { color: var(--text); font-weight: 600; }
+
+/* Last card: rating, history and stock */
+.cook-finish { gap: 12px; }
+.cook-done-title { text-align: center; font-size: 1.6rem; margin: 12px 0 4px; }
+.cook-finish-card { border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; display: grid; gap: 10px; background: var(--bg); }
+.cook-rate { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.cook-finish .check-row { display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.cook-finish .check-row input { width: 20px; height: 20px; }
+.stock-plan.embedded { margin: 0; }
+.stock-plan.embedded h2 { font-size: 1rem; margin: 0; }
+.stock-plan.embedded .hint { margin: 2px 0 6px; }
+
+/* Running timers, docked above Back and Next */
+.cook-dock { display: flex; gap: 8px; padding: 8px 16px 0; max-width: 720px; width: 100%; margin: 0 auto; overflow-x: auto; scrollbar-width: none; }
+.cook-dock::-webkit-scrollbar { display: none; }
+.cook-pill { flex: none; display: flex; align-items: center; gap: 4px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 2px; }
+button.cook-pill-main { background: none; color: var(--text); min-height: 38px; padding: 2px 12px; gap: 8px; border-radius: 999px; font-weight: 500; }
+.cook-pill-main strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.cook-pill-main span { color: var(--muted); font-size: 0.8rem; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cook-pill.paused strong { color: var(--muted); }
+.cook-pill.done { background: var(--error); border-color: var(--error); animation: pulse 1s ease infinite; }
+.cook-pill.done button.cook-pill-main, .cook-pill.done .cook-pill-main span { color: #fff; }
+button.cook-pill-stop { background: #fff; color: var(--error); min-height: 34px; padding: 2px 14px; border-radius: 999px; font-weight: 700; }
+
+.cook-nav { display: flex; gap: 10px; padding: 10px 16px 12px; max-width: 720px; width: 100%; margin: 0 auto; }
 .cook-nav button { flex: 1 1 0; min-height: 56px; font-size: 1.1rem; border-radius: 14px; }
+
+/* Sheets over cooking mode: above it, so Back closes the sheet first */
+.sheet-backdrop.cook-sheet { z-index: 45; }
+.cook-sheet h2 { margin: 0 0 10px; }
+.cook-custom { display: grid; gap: 12px; }
+.cook-custom-time { display: flex; align-items: center; gap: 8px; }
+.cook-custom .num-field { width: 120px; }
+.cook-custom .num-field input { width: 100%; font-size: 1.2rem; }
+.cook-custom-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.cook-custom-quick button { min-width: 52px; min-height: 40px; padding: 4px 12px; }
+.cook-timer-big { display: grid; justify-items: center; gap: 2px; padding: 8px 0 14px; }
+.cook-timer-big strong { font-size: 3rem; font-weight: 750; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.cook-timer-big span { color: var(--muted); }
+.cook-timer-big.paused strong { color: var(--muted); }
+.cook-timer-big.done strong { color: var(--error); }
+.cook-timer-actions { display: flex; gap: 8px; }
+.cook-timer-actions button { flex: 1 1 0; }
+.cook-step-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.cook-step-list li { margin: 0; }
+.cook-step-list button { width: 100%; background: none; color: var(--text); font-weight: 400; justify-content: flex-start; align-items: flex-start; text-align: left; gap: 10px; padding: 10px 8px; border-radius: 12px; }
+.cook-step-list li.now button { background: var(--accent-soft); }
+.cook-step-list li.done .cook-step-line { color: var(--muted); }
+.cook-step-no { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 0.8rem; font-weight: 700; background: var(--sunken); color: var(--muted); }
+.cook-step-list li.done .cook-step-no { background: var(--accent); color: var(--accent-text); }
+.cook-step-list li.now .cook-step-no { background: var(--accent); color: var(--accent-text); }
+.cook-step-line { min-width: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.cook-step-times { color: var(--accent); font-weight: 600; white-space: nowrap; }
 
 /* Import page */
 .log { font-size: 0.92rem; display: grid; gap: 4px; }
@@ -1085,13 +1153,6 @@ ul.ingredient-list .ing-name .from { display: block; font-size: 0.8rem; color: v
 .swap-restore { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 8px; }
 
 /* Cooking mode: voice commands and named timers */
-.cook-top .voice.on { color: var(--accent); }
-.cook-voice { margin: 8px auto 0; padding: 0 16px; max-width: 720px; width: 100%; color: var(--muted); font-size: 0.85rem; }
-button.cook-timer-time { background: transparent; color: inherit; padding: 0; min-height: 0; min-width: 0; text-align: left; justify-content: flex-start; align-items: baseline; border-radius: 0; font-weight: inherit; }
-button.cook-timer-time:disabled { opacity: 1; }
-.cook-timer-step { margin-left: 6px; opacity: 0.8; }
-.cook-timer-step::before { content: '· '; }
-.cook-custom .cook-custom-name { width: auto; flex: 1 1 100%; font-size: 1rem; }
 
 /* Collections */
 button.meta-chip { gap: 4px; font: inherit; font-size: 0.85rem; font-weight: 500; padding: 4px 12px; min-height: 30px; border-radius: 999px; }
@@ -1109,9 +1170,6 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 .collection-head { display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; }
 .collection-head h2 { margin: 0; flex: 1 1 auto; font-size: 1.1rem; display: flex; align-items: center; gap: 6px; }
 .collection-head input { flex: 1 1 auto; }
-button.cook-timer-time { overflow: hidden; }
-.cook-timer-time .cook-timer-label { min-width: 0; flex: 0 1 auto; }
-.cook-timer { min-width: 0; }
 
 /* Protein, carbs and fat under the calories */
 .macros { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -1145,8 +1203,6 @@ button.cook-timer-time { overflow: hidden; }
 .num-steps button:disabled { opacity: 0.35; }
 .servings .num-field { width: 6.5em; }
 .servings .num-field input { width: 100%; }
-.cook-custom .num-field { width: 104px; }
-.cook-custom .num-field input { width: 100%; }
 .amount-row .num-field { flex: 1 1 auto; }
 .voice-row { display: flex; align-items: flex-end; gap: 8px; }
 .voice-row > label { flex: 1 1 auto; min-width: 0; }
