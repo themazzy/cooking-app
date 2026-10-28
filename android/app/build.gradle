@@ -34,7 +34,10 @@ android {
         debug {
             if (appKeystore.exists() && appKeyPassword) signingConfig signingConfigs.app
         }
+        // The APK Jan installs: not debuggable, so the app's data (logins, site
+        // cookies) can't be read over USB and its WebView can't be inspected
         release {
+            if (appKeystore.exists() && appKeyPassword) signingConfig signingConfigs.app
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
