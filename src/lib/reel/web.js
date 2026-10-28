@@ -165,13 +165,18 @@ export function microdataServings(html) {
   return box ? servingsFrom(clean(box)) : null
 }
 
-export function parseRecipePage(html) {
+/**
+ * `site`: what a site gives outside its page ({ steps, totalMin }, see albertRecipe);
+ * its steps fill an empty method and its time replaces the page's times.
+ */
+export function parseRecipePage(html, site = null) {
   const recipe = findRecipeJsonLd(html)
   if (recipe) {
     const author = [].concat(recipe.author ?? [])[0]
     const meta = recipeJsonLdMeta(recipe)
     meta.servings ??= microdataServings(html)
-    const pageSteps = instructionLines(recipe.recipeInstructions).length ? [] : recipeFromPage(html)?.steps ?? []
+    if (site && 'totalMin' in site) Object.assign(meta, { prepMin: null, cookMin: null, totalMin: site.totalMin })
+    const pageSteps = instructionLines(recipe.recipeInstructions).length ? [] : site?.steps?.length ? site.steps : recipeFromPage(html)?.steps ?? []
     return {
       description: recipeJsonLdToText(recipe, ingredientGroups(html), pageSteps),
       author: (typeof author === 'string' ? author : author?.name) || metaContent(html, 'og:site_name') || null,
@@ -240,9 +245,50 @@ async function loadPage(url) {
   throw new FetchError(`${host} blocks apps with a bot check. Open the page in the browser and copy the recipe into "Or paste a recipe text".`, page.status)
 }
 
+// albert.cz sends the method to the browser through its GraphQL API, not in the page, and its
+// JSON-LD says 2 hours for every recipe; the real time is a range like "16-30 minut".
+const ALBERT_PAGE = /^https?:\/\/(?:www\.)?albert\.cz\/.*\/r\/([A-Za-z0-9]+)\/?(?:[?#]|$)/i
+const ALBERT_QUERY =
+  'query getRecipe($code:String!$lang:String!){getRecipe(code:$code lang:$lang){preparationTimeName recipeCookingSteps{description stepNumber}}}'
+
+/** Minutes of Albert's time label ("16-30 minut", "Do 15 minut", "Více než 120 minut"), at its upper end. */
+const albertMinutes = (label) => {
+  const s = String(label ?? '').trim()
+  return durationMinutes(s) ?? (Number(s.match(/(\d+)\s*min/i)?.[1]) || null)
+}
+
+/** Steps and time from Albert's getRecipe answer, or null. */
+export function albertRecipe(json) {
+  const r = json?.data?.getRecipe
+  if (!r) return null
+  const steps = [...(r.recipeCookingSteps ?? [])]
+    .sort((a, b) => (a.stepNumber ?? 0) - (b.stepNumber ?? 0))
+    .map((step) => clean(step.description))
+    .filter(Boolean)
+  return { steps, totalMin: albertMinutes(r.preparationTimeName) }
+}
+
+/** What albert.cz gives outside the page; without the API, at least the time the page shows. */
+async function albertExtra(url, html) {
+  const code = url.match(ALBERT_PAGE)?.[1]
+  if (!code) return null
+  const fromPage = { steps: [], totalMin: albertMinutes(html.match(/"preparationTimeName":"([^"]*)"/)?.[1]) }
+  try {
+    const query = new URLSearchParams({ operationName: 'getRecipe', query: ALBERT_QUERY, variables: JSON.stringify({ code, lang: 'cs' }) })
+    const r = await getText(`https://www.albert.cz/api/v1/?${query}`, {
+      ua: DESKTOP_UA,
+      headers: { Accept: 'application/json', 'apollo-require-preflight': 'true', 'x-apollo-operation-name': 'getRecipe' },
+    })
+    const found = albertRecipe(JSON.parse(r.text))
+    return found ? { steps: found.steps, totalMin: found.totalMin ?? fromPage.totalMin } : fromPage
+  } catch {
+    return fromPage
+  }
+}
+
 export async function fetchWebRecipe(url) {
   const page = await loadPage(url)
-  const parsed = parseRecipePage(page.text)
+  const parsed = parseRecipePage(page.text, await albertExtra(page.url || url, page.text))
   if (!parsed.description) throw new Error('Could not find a recipe on this page.')
   let image = null
   try {

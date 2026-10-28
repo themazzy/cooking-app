@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { gunzipSync } from 'node:zlib'
+import { draftFromImport } from '../recipeDraft.js'
 import { parseRecipeText } from '../ingredients.js'
-import { ingredientGroups, jsonLdImage, parseRecipePage } from './web.js'
+import { albertRecipe, ingredientGroups, jsonLdImage, parseRecipePage } from './web.js'
 
 describe('recipe websites', () => {
   const page = `<html><head><meta property="og:site_name" content="Recepty.cz">
@@ -61,5 +65,31 @@ describe('recipe websites', () => {
 
   it('ignores a single unnamed list', () => {
     expect(ingredientGroups('<div class="recipe-ingredients"><h3>Ingredients</h3><ul><li>3 eggs</li><li>1 cup flour</li></ul></div>')).toEqual([])
+  })
+})
+
+describe('albert.cz', () => {
+  // getRecipe answers recorded from albert.cz/api/v1 on 2026-10-28
+  const api = (name) => JSON.parse(readFileSync(resolve(__dirname, `../fixtures/albert/${name}.json`), 'utf8'))
+  const greekPage = gunzipSync(readFileSync(resolve(__dirname, '../fixtures/pages/albert.cz__recepty-recky-salat-r-a10989.html.gz'))).toString('utf8')
+
+  it('reads the steps and the time from the API answer', () => {
+    const r = albertRecipe(api('dusene-cervene-zeli'))
+    expect(r.totalMin).toBe(30)
+    expect(r.steps).toHaveLength(2)
+    expect(r.steps[0]).toMatch(/^Cibuli oloupejte, nakrájejte nadrobno/)
+    expect(r.steps[1]).toMatch(/svatomartinské huse\.$/)
+    expect(albertRecipe({ data: null })).toBeNull()
+  })
+
+  it('fills the empty method and replaces the 2 hours JSON-LD gives every recipe', () => {
+    const before = draftFromImport({ platform: 'web', url: 'x', ...parseRecipePage(greekPage), comments: [] })
+    expect(before.steps).toBe('')
+    expect(before.totalMin).toBe(120)
+    const after = draftFromImport({ platform: 'web', url: 'x', ...parseRecipePage(greekPage, albertRecipe(api('recky-salat'))), comments: [] })
+    expect(after.totalMin).toBe(30)
+    expect(after.prepMin ?? null).toBeNull()
+    expect(after.steps).toMatch(/^Rajčata omyjte a nakrájejte na větší kusy/)
+    expect(after.ingredients.map((i) => i.name)).toEqual(before.ingredients.map((i) => i.name))
   })
 })

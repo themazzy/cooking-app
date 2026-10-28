@@ -1,0 +1,34 @@
+{
+ "data": {
+  "getRecipe": {
+   "id": "a10989",
+   "title": "Řecký salát",
+   "servings": 1,
+   "preparationTime": "LESSTHANEQUALS30",
+   "preparationTimeName": "16-30 minut",
+   "cookingTimeDescription": null,
+   "recipeCookingSteps": [
+    {
+     "description": "Rajčata omyjte a nakrájejte na větší kusy, červenou papriku omyjte, přepulte, zbavte osemení a nakrájejte na větší kusy, okurku oloupejte, podélně přepulte, zbavte semínek a nakrájejte na velké kousky. Rajčata, papriku a okurku dejte do větší mísy, přidejte olivy, lehce promíchejte, prokapejte olivovým olejem, zasypejte cibulí, přidejte sýr feta a poprašte oreganem.",
+     "stepNumber": 1
+    }
+   ],
+   "cookingTips": [
+    {
+     "code": "a10989-1",
+     "type": null,
+     "title": "Inspirace na zdravé saláty",
+     "description": "🥗 Saláty, které si zamilujete! Rychlé, jednoduché a plné chuti – přesně takové jsou naše <a aref=\"https://www.albert.cz/recept/nejlepsi-recepty-nejen-na-obedove-salaty\">nejlepší recepty nejen na obědové saláty</a>. Vyzkoušejte nové kombinace surovin a najděte svůj nový oblíbený!"
+    },
+    {
+     "code": "a10989-2",
+     "type": null,
+     "title": "Dopřejte svému tělu restart!",
+     "description": "🌿 Naše <a href=\"https://www.albert.cz/recept/detoxikacni-fit-a-zdrave-recepty\">detoxikační recepty</a> jsou nejen zdravé, ale i skvěle chutnají. Připravte si lehká a výživná jídla, která vám dodají energii a podpoří vaši vitalitu. Objevte zdravé recepty, které vás budou bavit!"
+    }
+   ],
+   "execution": null,
+   "description": "Řecký salát je klasika, která nikdy nezklame. Tento recept je plný čerstvé zeleniny, jako jsou rajčata, okurky a paprika, doplněný o lahodný sýr feta a olivy. Jeho příprava je velmi snadná a rychlá, takže je ideální volbou pro lehký oběd nebo večeři. Připravte si tento osvěžující salát a užijte si chuť Středomoří přímo u vás doma!"
+  }
+ }
+}
