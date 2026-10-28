@@ -1,5 +1,6 @@
 import { registerPlugin } from '@capacitor/core'
 import { canFetchCrossSite } from './http.js'
+import { parseRecipeText } from './ingredients.js'
 
 // Reading text from photos on the device, free and without a cloud service.
 // Recipes use Google ML Kit in the Android app (TextReaderPlugin.java; its
@@ -313,13 +314,40 @@ export function joinPages(texts) {
 }
 
 /**
- * The text of recipe photos, in order, with overlaps between them removed.
- * ML Kit in the app (Latin script); Tesseract on the website and for
- * Bulgarian (`language` 'bulgarian'), as ML Kit can't read Cyrillic.
+ * True when a photo's text reads as a recipe: ingredients with units, or a list and a method.
+ * Bulgarian read as Latin letters ("200 r Cnaguna") does not.
  */
-export async function readRecipePhotos(files, onProgress, language = 'latin') {
-  if (language === 'bulgarian') return joinPages(await readPhotoPages(files, 'bul+eng', onProgress))
-  if (!canFetchCrossSite()) return joinPages(await readPhotoPages(files, 'eng', onProgress))
+export function readsAsRecipe(text) {
+  const { ingredients, steps } = parseRecipeText(text)
+  return ingredients.filter((i) => i.unit).length >= 2 || (ingredients.length >= 3 && steps.length >= 1)
+}
+
+/** The share of letters in Cyrillic, 0 to 1. */
+export function cyrillicShare(text) {
+  const letters = String(text ?? '').match(/\p{L}/gu) ?? []
+  return letters.length ? letters.filter((c) => /\p{Script=Cyrillic}/u.test(c)).length / letters.length : 0
+}
+
+/**
+ * The text of recipe photos, in order, with overlaps between them removed.
+ * Read first in Latin letters (ML Kit in the app, Tesseract on the website); when that does not
+ * read as a recipe, read again with Tesseract's Bulgarian and keep it if it is Cyrillic, as ML Kit
+ * can't read Cyrillic. So the language is found by itself.
+ */
+export async function readRecipePhotos(files, onProgress) {
+  const latin = joinPages(canFetchCrossSite() ? await readWithMlKit(files, onProgress) : await readPhotoPages(files, 'eng', onProgress))
+  if (readsAsRecipe(latin)) return latin
+  try {
+    const bulgarian = joinPages(await readPhotoPages(files, 'bul+eng', onProgress))
+    return cyrillicShare(bulgarian) > 0.5 || !latin.trim() ? bulgarian : latin
+  } catch (err) {
+    if (latin.trim()) return latin
+    throw err
+  }
+}
+
+/** Each photo's text, read by ML Kit on the phone (Latin letters). */
+async function readWithMlKit(files, onProgress) {
   const texts = []
   for (let n = 0; n < files.length; n++) {
     onProgress?.({ status: 'recognizing text', progress: 0, page: n + 1, pages: files.length })
@@ -327,7 +355,7 @@ export async function readRecipePhotos(files, onProgress, language = 'latin') {
     const { text } = await TextReader.read({ image: canvas.toDataURL('image/jpeg', 0.9) })
     texts.push(text.trim())
   }
-  return joinPages(texts)
+  return texts
 }
 
 /** The text of receipt photos; Tesseract, because ML Kit can't read Cyrillic. */

@@ -116,7 +116,13 @@ const STEP_WORD = '(?:step|krok|стъпка|schritt|paso|passo|étape|etape|ш�
 const NUMBERED_STEP = new RegExp(`^(?:${STEP_WORD}\\s*\\d{1,2}\\s*[.):]?\\s+|(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*(?:[.):]\\s+|[.)、．]\\s*(?=${CJK_CHAR})))(?=\\p{L})`, 'iu')
 // A step number on a line of its own ("1", "Стъпка 1", "Schritt 2"), as recipe sites lay them out
 const STEP_NUMBER_ONLY = new RegExp(`^(?:${STEP_WORD}\\s*)?\\d{1,2}\\s*[.):]?$`, 'iu')
-const DECORATION = /^[\s\-–—•*·・>]+|^[\p{Extended_Pictographic}️‍\s]+/u
+// "1 Preheat the oven…": a step number with no dot, read only when the steps count up (see parseRecipeText)
+const BARE_STEP = /^(\d{1,2})\s+(?=\p{Lu})/u
+// A line that is only "Recipe" names nothing
+const RECIPE_WORD = /^(?:recipe|recept|recepty|recepta|рецепта|рецепт|rezept|receta|ricetta|recette|przepis)$/iu
+// "▪Olive oil", "• 2 eggs": a line of a bulleted list
+const BULLET = /^\s*[-–—•*·・▪▫◦‣⁃■□●○]/u
+const DECORATION = /^[\s\-–—•*·・>▪▫◦‣⁃]+|^[\p{Extended_Pictographic}️‍\s]+/u
 
 export function parseQuantity(s) {
   if (!s) return null
@@ -225,7 +231,9 @@ const wordAmount = (s) => {
 // In English recipes a capital "T" is a tablespoon and a small "t" a teaspoon, so these go before
 // units are matched without regard to case
 const SPOON_LETTER = new RegExp(`^(${NUM}(?:\\s*(?:-|–|to)\\s*${NUM})?)\\s*([Tt])\\.?\\s+(?=\\p{L})`, 'u')
-const spoonLetter = (s) => s.replace(SPOON_LETTER, (all, qty, t) => `${qty} ${t === 'T' ? 'tbsp' : 'tsp'} `)
+// "1/2c grated Parmesan", "1 C milk" is a cup (French "1 c. à soupe" is a spoon, read by its own words)
+const CUP_LETTER = new RegExp(`^(${NUM}(?:\\s*(?:-|–|to)\\s*${NUM})?)\\s*[Cc]\\s+(?!à\\s)(?=\\p{L})`, 'u')
+const spoonLetter = (s) => s.replace(SPOON_LETTER, (all, qty, t) => `${qty} ${t === 'T' ? 'tbsp' : 'tsp'} `).replace(CUP_LETTER, '$1 cup ')
 
 // Japanese, Chinese and Korean. Words are not split by spaces, so these lines have their own reader.
 export const CJK = new RegExp(CJK_CHAR, 'u')
@@ -323,6 +331,8 @@ const COUNT_TIMES = new RegExp(`^(${NUM})\\s*[x×]\\s+(?=\\p{L})`, 'iu')
 // "500 гр.мляно свинско": the unit's dot runs into the name
 const GLUED_UNIT = new RegExp(`^(${NUM}\\s*(?:${MEASURE_UNITS})\\.)(?=\\p{L})`, 'iu')
 const HEAPED = new RegExp(`^(${NUM})\\s+(?:heaping|heaped|level|rounded|scant|generous|good|big|small)\\s+(?=(?:${UNIT_RE})\\.?(?![\\p{L}]))`, 'iu')
+// "200g (1 med) onion", "75g ( ⅓ c) tomato paste": the same amount again in other units, dropped
+const ALT_AMOUNT = new RegExp(`^(${NUM}(?:\\s*(?:-|–|to)\\s*${NUM})?\\s*(?:${MEASURE_UNITS})\\.?)\\s*\\(\\s*(?:about|approx\\.?|around|~)?\\s*${NUM}[^()]*\\)\\s*(?=\\p{L})`, 'iu')
 // "1 (14 oz) can coconut milk": the size of the can is a note
 const SIZE_FIRST = new RegExp(`^(${NUM})\\s*\\([^)]*\\)\\s*(?=\\p{L})`, 'u')
 // "2 x 400 g cans chickpeas" → 2 cans; "2 x 200 g chicken breasts" → 400 g
@@ -355,7 +365,8 @@ export function parseIngredientLine(line) {
     .replace(OR_AMOUNT, '$1 ')
     .replace(MIXED_DASH, '$1 $2')
     .replace(HEAPED, '$1 ')
-    .replace(SIZE_FIRST, '$1 '))
+    .replace(SIZE_FIRST, '$1 ')
+    .replace(ALT_AMOUNT, '$1 '))
   if (!text) return null
   if (CJK.test(text)) {
     const cjk = parseCjkLine(text)
@@ -495,6 +506,22 @@ export function sectionHeading(line) {
   return null
 }
 
+/**
+ * True when a line starts the ingredient list (or another section) rather than naming the recipe:
+ * "Ingredients", "▪Olive oil", "200 g flour", or "Meat Sauce:" with a list under it (`next`).
+ */
+export function startsList(line, next = '') {
+  const text = cleanLine(String(line ?? ''))
+  if (BULLET.test(line) || sectionHeading(text) || parseIngredientLine(text)?.unit) return true
+  return /:\s*$/.test(text) && wordCount(text) <= 5 && listLine(next)
+}
+
+// A line that reads like one of a list: bulleted, or a short ingredient line (not a sentence that has an amount in it)
+const listLine = (line) => BULLET.test(line) || (wordCount(line) <= 12 && !/[.!?]\s*$/.test(line) && !!parseIngredientLine(line))
+
+/** A line that is only the word "Recipe", in any language. */
+export const isRecipeWord = (line) => RECIPE_WORD.test(cleanLine(String(line ?? '')).replace(/[:：\s]+$/u, ''))
+
 export function parseRecipeText(text) {
   const ingredients = []
   const steps = []
@@ -503,7 +530,12 @@ export function parseRecipeText(text) {
   let group = null // sub-list inside the ingredients, e.g. "Tzatziki sauce"
   const add = (ing) => ingredients.push(group ? { ...ing, group } : ing)
 
-  for (const rawLine of decodeEntities(text ?? '').split(/\r?\n/)) {
+  let leadGroup = null // a group from a "Meat Sauce:" line above the list, see the end
+  let bareNo = 0 // the last step number written with no dot ("3 Stir in the onion")
+  const lines = decodeEntities(text ?? '').split(/\r?\n/)
+  // The next line with text, after line `at`
+  const nextLine = (at) => lines.slice(at + 1).find((l) => l.trim()) ?? ''
+  for (const [at, rawLine] of lines.entries()) {
     // "★醤油 大さじ1", "A 酒 大さじ2": Japanese recipes mark what is mixed together; the mark is the group
     const mark = MARKER.exec(plainWidth(rawLine))
     const line = cleanLine(mark ? plainWidth(rawLine).slice(mark[0].length) : rawLine)
@@ -532,9 +564,12 @@ export function parseRecipeText(text) {
       continue
     }
     // "For the sauce", "Ingredients for the sauce", "Тесто:" start a sub-list of the ingredients
-    const sub = section !== 'steps' || INGREDIENTS_FOR.test(header) ? groupHeading(line, section === 'ingredients') : null
+    // "Meat Sauce:" just above a list ("▪Olive oil", "450g beef") is the list's first group, with no "Ingredients" heading
+    const listNext = !section && /:\s*$/.test(line) && listLine(nextLine(at))
+    const sub = section !== 'steps' || INGREDIENTS_FOR.test(header) ? groupHeading(line, section === 'ingredients' || !!listNext) : null
     if (sub) {
       group = sub
+      if (listNext && !ingredients.length) leadGroup = sub
       // A loose "For the sauce" in a caption is only a list once ingredients follow
       if (section === 'ingredients' || /:\s*$/.test(line) || INGREDIENTS_FOR.test(header)) section = 'ingredients'
       continue
@@ -583,6 +618,31 @@ export function parseRecipeText(text) {
       continue
     }
 
+    if (RECIPE_WORD.test(header)) continue
+    // "1 Preheat the oven", "2 Heat the pot": numbered steps with no dot, told from "2 Eggs" by counting up
+    // (a 1 that reads like a sentence, with a 2 further on)
+    const bare = line.match(BARE_STEP)
+    if (bare && !parseIngredientLine(line)?.unit) {
+      const n = Number(bare[1])
+      const rest = line.slice(bare[0].length)
+      const twoLater = lines.slice(at + 1).some((l) => /^\s*2\s+\p{Lu}/u.test(l) && wordCount(l) >= 4)
+      // Right under the ingredients it also needs a blank line above and a sentence's length ("1 Large onion, chopped" stays)
+      const afterList = section !== 'ingredients' || (!lines[at - 1]?.trim() && (/[.!]\s*$/.test(rest) || wordCount(rest) >= 8))
+      const first = n === 1 && !bareNo && wordCount(rest) >= 5 && twoLater && afterList
+      if (first || (bareNo && n === bareNo + 1)) {
+        steps.push(rest)
+        bareNo = n
+        section = 'steps'
+        group = null
+        continue
+      }
+    }
+    // A line without a number belongs to the numbered step above it
+    if (bareNo && section === 'steps' && !NUMBERED_STEP.test(line) && !STEP_NUMBER_ONLY.test(line)) {
+      steps[steps.length - 1] += ` ${line}`
+      continue
+    }
+
     if (STEP_NUMBER_ONLY.test(line)) {
       if (section !== 'ingredients' || /\p{L}/u.test(line)) section = 'steps'
       continue
@@ -624,5 +684,7 @@ export function parseRecipeText(text) {
       add({ raw: line, quantity: null, quantityMax: null, unit: null, name: cleanName(line) })
     }
   }
+  // "Guláš z trouby:" over the only list is its title, not one group of several
+  if (leadGroup && ingredients.every((i) => i.group === leadGroup)) for (const i of ingredients) delete i.group
   return { ingredients, steps, ...(notes.length ? { notes } : {}) }
 }

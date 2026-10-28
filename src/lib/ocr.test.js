@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { joinPages } from './ocr.js'
+import { cyrillicShare, joinPages, readsAsRecipe } from './ocr.js'
 
 describe('joining recipe photos', () => {
   it('keeps the lines two photos share once', () => {
@@ -26,5 +26,16 @@ describe('joining recipe photos', () => {
 
   it('does not take a repeated short line for an overlap', () => {
     expect(joinPages(['Cake\nSalt', 'Salt\nIcing'])).toBe('Cake\nSalt\n\nSalt\nIcing')
+  })
+})
+
+describe('photo language', () => {
+  it('keeps a Latin read that reads as a recipe', () => {
+    expect(readsAsRecipe('Suroviny\n200 g mouky\n2 lžíce cukru\nPostup\nVše smícháme.')).toBe(true)
+  })
+  it('reads again when Bulgarian came out as Latin letters', () => {
+    expect(readsAsRecipe('Npogykmu\n200 r Bpawho\n2 4.4. 3axap\nHaYuH Ha npuroTBAHe')).toBe(false)
+    expect(cyrillicShare('Продукти\n200 г брашно\n2 ч.ч. захар')).toBeGreaterThan(0.9)
+    expect(cyrillicShare('200 g flour')).toBe(0)
   })
 })

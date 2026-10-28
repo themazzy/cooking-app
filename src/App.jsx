@@ -119,7 +119,6 @@ export default function App() {
     videoQuality: 'small',
     ebagLinks: true,
     units: 'original',
-    photoLanguage: 'latin',
     translateTo: 'en',
     keepOwnLanguages: true,
     ebagSearch: EBAG_SEARCH,
@@ -774,7 +773,7 @@ export default function App() {
         say(`Reading the text in ${photos.length} screenshot${photos.length > 1 ? 's' : ''}…`)
         const read = await readRecipePhotos(photos, (p) => {
           if (p.status === 'loading language traineddata' || p.status === 'loading tesseract core') say(`Downloading the text reader (once): ${Math.round((p.progress ?? 0) * 100)}%`)
-        }, settings.photoLanguage)
+        })
         const comment = commentFromScreenshot(read)
         if (!comment) throw new Error('No text found in the screenshot. Try one that shows the whole comment.')
         return { label: 'From the screenshot', raw: { comments: [{ author: 'screenshot', text: comment }] }, ...(await readMore({ description: comment }, recipe.title)) }
@@ -799,7 +798,7 @@ export default function App() {
         ...(await readMore(result, recipe.title)),
       }
     },
-    [settings.photoLanguage, settings.transcribe, runTranscription, readMore],
+    [settings.transcribe, runTranscription, readMore],
   )
 
   const importLink = useCallback(
@@ -907,7 +906,7 @@ export default function App() {
     setLog([])
     try {
       const transcript = await runTranscription(await file.arrayBuffer())
-      const r = { url: null, platform: 'file', author: null, description: pasted || null, transcript, at: Date.now() }
+      const r = { url: null, platform: 'file', author: null, description: null, transcript, at: Date.now() }
       remember(r)
       await openDraft(r, file.type.startsWith('video/') ? file : null)
     } catch (err) {
@@ -941,7 +940,7 @@ export default function App() {
       const text = await readRecipePhotos(files, (p) => {
         if (p.status === 'loading language traineddata' || p.status === 'loading tesseract core') setDownload({ file: 'text reader', pct: Math.round((p.progress ?? 0) * 100) })
         else setDownload(null)
-      }, settings.photoLanguage)
+      })
       if (!text.trim()) throw new Error('No text found in the photo. Try a sharper, closer photo in good light.')
       step(`Read ${text.split('\n').filter(Boolean).length} lines.`, 'ok')
       const r = { url: null, platform: 'photo', description: text, at: Date.now() }
@@ -1358,18 +1357,8 @@ export default function App() {
         <section className="card">
           <label>From photos</label>
           <p className="hint top">
-            A cookbook page, a recipe card or a screenshot. Add a photo for each page, in order; where they overlap, the repeated lines are kept once. Neat handwriting may work too.
+            A cookbook page, a recipe card or a screenshot. Add a photo for each page, in order; where they overlap, the repeated lines are kept once. Czech, English or Bulgarian is found by itself, and neat handwriting may work too.
           </p>
-          <div className="segmented" role="group" aria-label="Text in the photos">
-            {[
-              ['latin', 'Czech / English'],
-              ['bulgarian', 'Bulgarian'],
-            ].map(([k, label]) => (
-              <button key={k} className={settings.photoLanguage === k ? 'on' : ''} aria-pressed={settings.photoLanguage === k} onClick={() => setSettings({ ...settings, photoLanguage: k })}>
-                {label}
-              </button>
-            ))}
-          </div>
           {photoPages.length > 0 && (
             <ol className="photo-pages">
               {photoPages.map((p, n) => (
@@ -1401,17 +1390,29 @@ export default function App() {
         </section>
 
         <section className="card">
-          <label htmlFor="pasted">Or paste a recipe text</label>
-          <textarea id="pasted" rows={4} value={pasted} onChange={(e) => setPasted(e.target.value)} />
-          <div className="row">
-            <button className="secondary" disabled={busy || !pasted.trim()} onClick={onPasteParse}>
-              Read ingredients
-            </button>
-            <label className="button secondary">
-              Transcribe a video file
-              <input type="file" accept="video/*,audio/*" hidden disabled={busy} onChange={onFile} />
-            </label>
-          </div>
+          <label htmlFor="pasted">Paste a recipe</label>
+          <p className="hint top">
+            The whole recipe or a part of it, from a post, a message or a note: title, ingredients (headings like "Sauce:" become groups) and steps. You can check and fix everything before saving.
+          </p>
+          <textarea
+            id="pasted"
+            rows={8}
+            placeholder={'Lasagna\n\nSauce:\n450 g ground beef\n1 onion, grated\n\n1 Brown the beef…\n2 Add the onion…'}
+            value={pasted}
+            onChange={(e) => setPasted(e.target.value)}
+          />
+          <button className="big read-paste" disabled={busy || !pasted.trim()} onClick={onPasteParse}>
+            Read recipe
+          </button>
+        </section>
+
+        <section className="card">
+          <label>From a video file</label>
+          <p className="hint top">A cooking video or a voice recording saved on this device. What is said in it is written down and read as a recipe.</p>
+          <label className="button secondary">
+            <Icon name="file" /> Pick a video file
+            <input type="file" accept="video/*,audio/*" hidden disabled={busy} onChange={onFile} />
+          </label>
         </section>
 
         {(log.length > 0 || download) && (
