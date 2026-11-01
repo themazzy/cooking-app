@@ -25,7 +25,12 @@ export function recipeInText({ description, comments, author }) {
  * author's pinned one: "recipe in the comments"), or the transcript.
  * Returns { ingredients, steps, source, text } or null.
  */
-export function pickRecipe({ description, comments = [], author, transcript }) {
+export function pickRecipe({ description, comments = [], author, transcript, ai }) {
+  // A recipe the AI wrote from all of it wins: it already read the rest
+  if (ai) {
+    const parsed = parseRecipeText(ai)
+    if (parsed.ingredients.length || parsed.steps.length) return { ...parsed, source: 'AI', text: ai }
+  }
   const candidates = []
   if (description) candidates.push({ text: description, source: 'description', bonus: 1 })
   for (const c of comments) {
@@ -127,6 +132,7 @@ export function addRaw(raw = {}, more = {}) {
   return {
     description: raw.description ?? more.description ?? null,
     transcript: raw.transcript ?? more.transcript ?? null,
+    ...((more.ai ?? raw.ai) ? { ai: more.ai ?? raw.ai } : {}),
     comments: [...(raw.comments ?? []), ...(more.comments ?? [])],
   }
 }

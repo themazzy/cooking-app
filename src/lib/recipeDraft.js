@@ -78,7 +78,7 @@ export function draftFromImport(result) {
   const tags = tagsFromHashtags(caption)
   return {
     id: null,
-    title: titleFrom(result.description, result.author ? `Recipe from ${result.author}` : 'New recipe'),
+    title: (result.ai && titleFrom(result.ai, null)) || titleFrom(result.description, result.author ? `Recipe from ${result.author}` : 'New recipe'),
     sourceUrl: result.url ?? null,
     platform: result.platform ?? null,
     author: result.author ?? null,
@@ -91,7 +91,7 @@ export function draftFromImport(result) {
     tags: mergeTags(result.meta?.tags ?? [], styleHashtags(caption)),
     ...detectTimes(result, picked, editable.steps),
     source: picked?.source ?? null,
-    raw: { description: result.description ?? null, transcript: result.transcript ?? null, comments: result.comments ?? [] },
+    raw: { description: result.description ?? null, transcript: result.transcript ?? null, comments: result.comments ?? [], ...(result.ai ? { ai: result.ai } : {}) },
     video: null,
     // The website's own picture, shown when there is no photo or video
     image: result.image ?? null,
