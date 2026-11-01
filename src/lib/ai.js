@@ -21,8 +21,8 @@ export async function loadAi({ fresh = false } = {}) {
   cached = (async () => {
     try {
       const { data, error } = await supabase.from('household_ai').select('gemini_key, model').maybeSingle()
-      if (error || !data?.gemini_key || !/^AIza/.test(data.gemini_key)) return null
-      return { key: data.gemini_key, model: data.model || DEFAULT_MODEL }
+      if (error || !data?.gemini_key?.trim() || /PASTE/.test(data.gemini_key)) return null
+      return { key: data.gemini_key.trim(), model: data.model || DEFAULT_MODEL }
     } catch {
       return null
     }
@@ -114,11 +114,14 @@ export async function aiRecipe(ai, source, video = null) {
     contents: [{ role: 'user', parts }],
     generationConfig: { temperature: 0.2, responseMimeType: 'application/json', responseSchema: SCHEMA },
   }
-  const res = await fetch(`${API}/${encodeURIComponent(ai.model)}:generateContent`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': ai.key },
-    body: JSON.stringify(body),
-  })
+  const url = `${API}/${encodeURIComponent(ai.model)}:generateContent`
+  const send = (auth) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...auth }, body: JSON.stringify(body) })
+  // Classic keys start with AIza; Google's newer auth keys (AQ.…) may need to go as a bearer token
+  let res = await send({ 'x-goog-api-key': ai.key })
+  if ((res.status === 401 || res.status === 403) && !ai.key.startsWith('AIza')) {
+    const again = await send({ Authorization: `Bearer ${ai.key}` })
+    if (again.ok) res = again
+  }
   const json = await res.json().catch(() => null)
   if (!res.ok) {
     const msg = json?.error?.message ?? `HTTP ${res.status}`
