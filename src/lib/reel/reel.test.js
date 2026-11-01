@@ -180,6 +180,38 @@ describe('Facebook', () => {
   })
 })
 
+describe('Facebook reel pages with the next reels of the feed', () => {
+  // Shape of a 2025 reel page: other reels before and after this one, videos as progressive_urls
+  const other = (id, text) =>
+    `{"video":{"id":"${id}","videoDeliveryResponseFragment":{"videoDeliveryResponseResult":{"progressive_urls":[{"progressive_url":"https:\\/\\/video.fbcdn.net\\/${id}_sd.mp4","failure_reason":null,"metadata":{"quality":"SD"}}]}},"owner":{"__typename":"Page","name":"Page ${id}"}},"creation_story":{"message":{"ranges":[],"text":"${text}"}}}`
+  const target =
+    '{"video":{"id":"2526377751177943","videoDeliveryResponseFragment":{"videoDeliveryResponseResult":{"progressive_urls":[' +
+    '{"progressive_url":"https:\\/\\/video.fbcdn.net\\/target_sd.mp4","failure_reason":null,"metadata":{"quality":"SD"}},' +
+    '{"progressive_url":"https:\\/\\/video.fbcdn.net\\/target_hd.mp4","failure_reason":null,"metadata":{"quality":"HD"}}]}},' +
+    '"owner":{"__typename":"Page","name":"Vařím doma"}},"creation_story":{"message":{"delight_ranges":[],"ranges":[],"text":"Francouzská cibulačka\\n400 g cibule\\n1 lžíce másla"}}}'
+  const html = `<script>${other('111111111', 'Nejoblíbenější české polévky')}${'x'.repeat(50000)}${target}${'x'.repeat(50000)}${other('222222222', 'Další video')}</script>`
+
+  it("takes this reel's caption, video and author, not the first ones in the page", () => {
+    expect(parseFacebookPage(html, 'https://www.facebook.com/reel/2526377751177943/')).toMatchObject({
+      description: 'Francouzská cibulačka\n400 g cibule\n1 lžíce másla',
+      videoUrl: 'https://video.fbcdn.net/target_hd.mp4',
+      author: 'Vařím doma',
+      videoId: '2526377751177943',
+    })
+  })
+
+  it('reads progressive_urls when there is no reel number', () => {
+    expect(parseFacebookPage(other('333333333', 'Hi')).videoUrl).toBe('https://video.fbcdn.net/333333333_sd.mp4')
+  })
+
+  it('finds the reel number in its addresses', async () => {
+    const { facebookVideoId } = await import('./facebook.js')
+    expect(facebookVideoId('https://www.facebook.com/reel/2526377751177943/')).toBe('2526377751177943')
+    expect(facebookVideoId('https://www.facebook.com/watch/?v=123456789')).toBe('123456789')
+    expect(facebookVideoId('https://www.facebook.com/share/r/1CB2n8NAwm/')).toBe(null)
+  })
+})
+
 describe('html helpers', () => {
   it('finds meta tags with content before property', () => {
     expect(metaContent('<meta content="Hi" property="og:title">', 'og:title')).toBe('Hi')

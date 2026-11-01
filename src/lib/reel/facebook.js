@@ -1,6 +1,6 @@
 import { DESKTOP_UA, getCookie, getText } from '../http.js'
 import { runInPage } from '../pageReader.js'
-import { findJsonString, findJsonStringAfter, metaContent, unescapeOnce } from './html.js'
+import { findJsonStringAfter, metaContent, unescapeOnce } from './html.js'
 
 // Facebook is tried three ways, best first, and the results are merged:
 //  1. the reel page loaded in the hidden WebView (a real browser, so the
@@ -11,7 +11,6 @@ import { findJsonString, findJsonStringAfter, metaContent, unescapeOnce } from '
 //     the og: tags (description, sometimes the video)
 
 const FB = 'https://www.facebook.com'
-const VIDEO_KEYS = ['browser_native_hd_url', 'browser_native_sd_url', 'playable_url_quality_hd', 'playable_url']
 const BROWSER_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
   'Accept-Language': 'en-US,en;q=0.9,cs;q=0.8',
@@ -67,25 +66,118 @@ export function captionFromFacebookOg(og) {
   return (m ? m[1] : og).trim() || null
 }
 
-export function parseFacebookPage(html) {
+/** The reel's number from a reel / video address, or null. */
+export function facebookVideoId(url) {
+  const m = String(url ?? '').match(/\/(?:reel|videos?|watch\/?\?v=)\/?(\d{6,})|[?&]v=(\d{6,})/)
+  return m ? m[1] || m[2] : null
+}
+
+const decode = (raw) => {
+  try {
+    return JSON.parse(`"${raw}"`)
+  } catch {
+    return null
+  }
+}
+
+// Video addresses, best first. Since 2025 Facebook mostly sends
+// videoDeliveryResponseResult.progressive_urls[{progressive_url, metadata:{quality}}]
+// instead of the older browser_native_* / playable_url keys.
+const VIDEO_RANK = { browser_native_hd_url: 0, playable_url_quality_hd: 0, 'progressive_url:hd': 1, browser_native_sd_url: 2, 'progressive_url:sd': 3, playable_url: 3 }
+
+/** Every video address in the page, with where it sits and how good it is. */
+function videoCandidates(src) {
+  const out = []
+  const re = /"(browser_native_hd_url|browser_native_sd_url|playable_url_quality_hd|playable_url|progressive_url)"\s*:\s*"((?:[^"\\]|\\.)*)"/g
+  for (const m of src.matchAll(re)) {
+    const url = decode(m[2])
+    if (!url || !/^https?:/.test(url)) continue
+    let key = m[1]
+    if (key === 'progressive_url') {
+      // Its quality follows it, before the next address
+      const after = src.slice(m.index + m[0].length, m.index + m[0].length + 400).split('"progressive_url"')[0]
+      key += /"quality"\s*:\s*"HD"/i.test(after) ? ':hd' : ':sd'
+    }
+    out.push({ index: m.index, url, rank: VIDEO_RANK[key] ?? 4 })
+  }
+  return out
+}
+
+/** Every post text ("message":{…"text":"…"}) in the page. */
+function messageCandidates(src) {
+  const out = []
+  for (const m of src.matchAll(/"message"\s*:\s*\{/g)) {
+    // The text comes after the ranges lists, so look a little further
+    const rest = src.slice(m.index, m.index + 20000)
+    const t = rest.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+    const text = t && decode(t[1])
+    if (text && text.trim()) out.push({ index: m.index, text })
+  }
+  return out
+}
+
+/**
+ * Picks the candidate that belongs to this reel. A reel page also carries the
+ * next reels of the feed, each with its own caption and video, so the first
+ * one in the page is often someone else's: the one nearest to the reel's
+ * number wins.
+ */
+function nearest(list, src, id) {
+  if (!list.length) return null
+  if (!id) return list[0]
+  const spots = []
+  for (let i = src.indexOf(id); i >= 0 && spots.length < 400; i = src.indexOf(id, i + id.length)) spots.push(i)
+  if (!spots.length) return list[0]
+  const dist = (c) => Math.min(...spots.map((s) => Math.abs(s - c.index)))
+  return list.reduce((best, c) => (dist(c) < dist(best) ? c : best))
+}
+
+/** The video address of this reel: the best quality close to it. */
+function pickVideo(src, id) {
+  const all = videoCandidates(src)
+  const near = nearest(all, src, id)
+  if (!near) return null
+  // The other qualities of the same video sit within a few KB of each other
+  const same = all.filter((c) => Math.abs(c.index - near.index) < 30000)
+  return same.reduce((best, c) => (c.rank < best.rank ? c : best)).url
+}
+
+/** The name of the page or person who posted this reel. */
+function ownerName(html, id) {
+  for (const src of [html, unescapeOnce(html)]) {
+    const list = []
+    for (const m of src.matchAll(/"owner"\s*:\s*\{[^{}]*?"name"\s*:\s*"((?:[^"\\]|\\.)*)"/g)) {
+      const name = decode(m[1])
+      if (name) list.push({ index: m.index, name })
+    }
+    const near = nearest(list, src, id)
+    if (near) return near.name
+  }
+  return findJsonStringAfter(html, '"owner":{', 'name')
+}
+
+export function parseFacebookPage(html, url = null) {
+  const id = facebookVideoId(url) || facebookVideoId(metaContent(html, 'og:url')) || null
   let videoUrl = null
-  for (const key of VIDEO_KEYS) {
-    videoUrl = findJsonString(html, key)
-    if (videoUrl) break
+  let message = null
+  for (const src of [html, unescapeOnce(html)]) {
+    videoUrl ||= pickVideo(src, id)
+    message ||= nearest(messageCandidates(src), src, id)?.text ?? null
   }
   videoUrl ||= metaContent(html, 'og:video:secure_url') || metaContent(html, 'og:video:url') || metaContent(html, 'og:video')
 
   const description =
-    findJsonStringAfter(html, '"message":{', 'text') ||
+    message ||
     captionFromFacebookOg(metaContent(html, 'og:description')) ||
     metaContent(html, 'description') ||
     null
 
   return {
     description,
-    author: findJsonStringAfter(html, '"owner":{', 'name'),
+    author: ownerName(html, id),
     comments: parseFacebookComments(html, description),
     videoUrl,
+    videoId: id,
     loginWall: !description && !videoUrl && /id="login_form"|\/login\/\?next=/.test(html),
   }
 }
@@ -113,7 +205,7 @@ export async function facebookInPage(a) {
     }
   }
   try {
-    const keys = ['browser_native_hd_url', 'browser_native_sd_url', 'playable_url', '"message":{']
+    const keys = ['browser_native_hd_url', 'browser_native_sd_url', 'playable_url', 'progressive_url', '"message":{']
     const ready = () => {
       const html = document.documentElement.innerHTML
       return keys.some((k) => html.indexOf(k) >= 0)
@@ -150,7 +242,7 @@ export async function facebookInPage(a) {
     let size = 0
     for (const s of document.querySelectorAll('script')) {
       const t = s.textContent || ''
-      if (!/browser_native|playable_url|"message":\{|"body":\{"text"|"owner":\{/.test(t)) continue
+      if (!/browser_native|playable_url|progressive_url|"message":\{|"body":\{"text"|"owner":\{/.test(t)) continue
       if (size + t.length > 4000000) break
       parts.push(t)
       size += t.length
@@ -181,7 +273,7 @@ export async function facebookInPage(a) {
 /** What facebookInPage found, in the same shape as parseFacebookPage. */
 export function parseInPageResult(r) {
   if (!r) return null
-  const parsed = parseFacebookPage(`${r.meta ?? ''}\n${r.scripts ?? ''}`)
+  const parsed = parseFacebookPage(`${r.meta ?? ''}\n${r.scripts ?? ''}`, r.href)
   const comments = [...parsed.comments]
   for (const c of r.dom ?? []) {
     if (c.text !== parsed.description && !comments.some((x) => x.text === c.text)) comments.push({ author: c.author, text: c.text, pinned: false })
@@ -200,12 +292,12 @@ async function viaBrowser(url) {
 
 async function viaPage(url) {
   const page = await getText(url, { ua: DESKTOP_UA, headers: BROWSER_HEADERS, allowError: true })
-  return { ...parseFacebookPage(page.text), url: page.status < 400 ? page.url : null, status: page.status }
+  return { ...parseFacebookPage(page.text, page.url), url: page.status < 400 ? page.url : null, status: page.status }
 }
 
 async function viaCrawler(url) {
   const page = await getText(url, { ua: CRAWLER_UA, headers: { Accept: 'text/html' }, allowError: true })
-  return { ...parseFacebookPage(page.text), url: page.status < 400 ? page.url : null, status: page.status }
+  return { ...parseFacebookPage(page.text, page.url), url: page.status < 400 ? page.url : null, status: page.status }
 }
 
 export async function fetchFacebook(url) {
@@ -216,7 +308,8 @@ export async function fetchFacebook(url) {
   let loginWall = false
   for (const attempt of [viaBrowser, viaPage, viaCrawler]) {
     try {
-      const r = await attempt(url)
+      // The crawler loops on share links (21 redirects), so it gets the reel address
+      const r = await attempt(attempt === viaCrawler && finalUrl ? finalUrl : url)
       if (r) {
         if (r.status >= 400) errors.push(`${attempt.name}: Facebook answered ${r.status}`)
         // A share link (/share/r/…) resolves to the real reel address
@@ -242,5 +335,5 @@ export async function fetchFacebook(url) {
   // The author's comments first: they are the ones that hold recipes
   const rank = (c) => (result.author && c.author === result.author ? 1 : 0)
   result.comments.sort((x, y) => rank(y) - rank(x))
-  return { platform: 'facebook', url: finalUrl || url, ...result, signedIn, errors, downloadHeaders: { Referer: `${FB}/` } }
+  return { platform: 'facebook', url: finalUrl || url, videoId: facebookVideoId(finalUrl), ...result, signedIn, errors, downloadHeaders: { Referer: `${FB}/` } }
 }
