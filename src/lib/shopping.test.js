@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addToList, makeList } from './shopping.js'
+import { addToList, editItem, extraItem, makeList, removeItems } from './shopping.js'
 
 const recipes = [
   { id: 'a', title: 'Soup', servings: 2, ingredients: [{ qty: '1', unit: 'pcs', name: 'onion' }, { qty: '200', unit: 'g', name: 'carrot' }] },
@@ -34,5 +34,44 @@ describe('shopping list', () => {
       { recipe: 'Cake', group: 'Dough', qty: '200', unit: 'g', name: 'flour' },
       { recipe: 'Cake', group: 'Streusel', qty: '100', unit: 'g', name: 'flour' },
     ])
+  })
+})
+
+describe('editing the list', () => {
+  it('keeps removed recipe items away when another recipe is added', () => {
+    const list = removeItems(addToList(null, { id: 'a', portions: 2 }, recipes), ['onion'], recipes)
+    expect(list.items.map((i) => i.key)).toEqual(['carrot'])
+    expect(list.recipes[0].skip).toEqual([0])
+    const next = addToList(list, { id: 'b', portions: 4 }, recipes)
+    // Only the new recipe's onions
+    expect(next.items.find((i) => i.key === 'onion').qty).toBe('2')
+  })
+  it('snoozes removed staples', () => {
+    const list = { recipes: [], items: [{ key: 'stock-salt', name: 'Salt', qty: '500', unit: 'g', extra: [], from: [] }] }
+    const next = removeItems(list, ['stock-salt'], recipes)
+    expect(next.items).toEqual([])
+    expect(next.snoozed).toEqual(['stock-salt'])
+  })
+  it('keeps an amount changed by hand until the recipes change it', () => {
+    let list = addToList(null, { id: 'a', portions: 2 }, recipes)
+    list = editItem(list, 'carrot', { qty: '500', unit: 'g' })
+    expect(list.items.find((i) => i.key === 'carrot')).toMatchObject({ qty: '500', unit: 'g', own: { was: { qty: '200', unit: 'g' } } })
+    // Another recipe without carrots: the change stays
+    list = addToList(list, { id: 'b', portions: 4 }, recipes)
+    expect(list.items.find((i) => i.key === 'carrot').qty).toBe('500')
+    // More portions of the soup: the recipes win again
+    list = addToList(list, { id: 'a', portions: 4 }, recipes)
+    expect(list.items.find((i) => i.key === 'carrot').qty).toBe('400')
+  })
+  it('renames and sets amounts on extras', () => {
+    const list = { recipes: [], items: [extraItem('bread', null, 1)] }
+    const next = editItem(list, 'extra-1', { name: 'Rye bread', qty: '1', unit: '' })
+    expect(next.items[0]).toMatchObject({ name: 'Rye bread', qty: '1', unit: '' })
+  })
+  it('reads amounts typed with an extra', () => {
+    expect(extraItem('500 g mince', null, 1)).toMatchObject({ name: 'Mince', qty: '500', unit: 'g' })
+    expect(extraItem('2 lemons', null, 1)).toMatchObject({ name: 'Lemons', qty: '2', unit: '' })
+    expect(extraItem('2 lemons', (n) => (/lemon/.test(n) ? { name: 'Lemon', aisle: 'Fruit' } : null), 1)).toMatchObject({ name: 'Lemon', aisle: 'Fruit' })
+    expect(extraItem('bread', null, 1)).toMatchObject({ name: 'Bread', qty: '', unit: '' })
   })
 })

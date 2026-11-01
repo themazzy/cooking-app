@@ -127,6 +127,12 @@ const nameKey = (name) =>
     .toLowerCase()
     .replace(/\s+/g, ' ')
 
+/** The shopping list key of an ingredient name: its catalog name, or the name without notes. */
+export function shopKey(name, match = () => null) {
+  const entry = match(String(name ?? '').trim())
+  return entry ? entry.name.toLowerCase() : nameKey(name)
+}
+
 export function display(total, base) {
   if (base === 'g' && total >= 1000) return { qty: formatAmount(total / 1000, 'kg'), unit: 'kg' }
   if (base === 'ml' && total >= 1000) return { qty: formatAmount(total / 1000, 'l'), unit: 'l' }
@@ -172,7 +178,7 @@ export function buildShoppingList(selection, match = () => null) {
     for (const ing of (recipe.ingredients ?? []).map(sumRow).filter(Boolean)) {
       const name = String(ing.name ?? '').trim()
       const entry = match(name)
-      const key = entry ? entry.name.toLowerCase() : nameKey(name)
+      const key = shopKey(name, match)
       const item = items.get(key) ?? {
         key,
         name: entry?.name ?? (name.split(/[,(]/)[0].trim() || name),

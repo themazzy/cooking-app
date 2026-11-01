@@ -24,6 +24,7 @@ import IngredientsPage from './IngredientsPage.jsx'
 import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
 import { addTo, isOut, shortfall, usesUp } from './lib/stock.js'
+import { joinAmount } from './lib/defaultUnit.js'
 import { loadPhoto, loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import { mergeRecipe } from './lib/recipeMerge.js'
 import { raterId } from './lib/ratings.js'
@@ -53,7 +54,8 @@ import Icon from './Icon.jsx'
 
 const SETTINGS_KEY = 'cooking-app:settings'
 // Shared household data kept inside the shopping list row, not on the list itself
-const SHARED_WITH_LIST = ['plan', 'aisles']
+// Pack sizes and staples taken off the list by hand travel with it too
+const SHARED_WITH_LIST = ['plan', 'aisles', 'packs', 'snoozed']
 const HISTORY_KEY = 'cooking-app:history'
 const SHOPPING_KEY = 'cooking-app:shopping'
 
@@ -665,10 +667,13 @@ export default function App() {
       const [, qty = need, unit = ''] = need.match(/^(\S+)\s*(.*)$/) ?? []
       return { qty, unit }
     }
-    let changed = false
+    // A staple removed by hand stays off the list until it is restocked
+    const snoozed = (shopping?.snoozed ?? []).filter((k) => wanted.has(k))
+    let changed = snoozed.length !== (shopping?.snoozed ?? []).length
+    for (const k of snoozed) wanted.delete(k)
     const next = []
     for (const i of items) {
-      if (!String(i.key).startsWith('stock-') || i.checked) next.push(i)
+      if (!String(i.key).startsWith('stock-') || i.checked || (i.own && wanted.has(i.key))) next.push(i)
       else if (!wanted.has(i.key)) changed = true
       else {
         const { qty, unit } = split(wanted.get(i.key).need)
@@ -681,7 +686,7 @@ export default function App() {
       changed = true
       next.push({ key, name: p.name, aisle: catalog.match(p.name)?.aisle ?? 'Other', ...split(need), extra: [], from: ['Staple'], checked: false })
     }
-    if (changed) updateShopping({ ...(shopping ?? { createdAt: Date.now(), recipes: [] }), items: next })
+    if (changed) updateShopping({ ...(shopping ?? { createdAt: Date.now(), recipes: [] }), items: next, snoozed })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pantry, shopping, user])
 
@@ -1054,15 +1059,17 @@ export default function App() {
           pantry={pantry}
           ebag={settings.ebagLinks ? settings.ebagSearch || EBAG_SEARCH : null}
           units={settings.units}
-          onToPantry={async (items) => {
-            // Bought amounts add to what is at home when the units compare
-            for (const i of items) {
-              const have = pantry.find((p) => catalog.canonical(p.name) === catalog.canonical(i.name))
-              if (have) await updatePantryItem(have.id, { amount: addTo(have.amount, i.qty, i.unit) })
-              else await addToPantry(i.name, [i.qty, i.unit].filter(Boolean).join(' '))
+          recipes={recipes}
+          onToPantry={async (rows) => {
+            // What was bought (whole packs, checked in the sheet) adds to what is at home when the units compare
+            for (const { item, qty, unit } of rows) {
+              const have = pantry.find((p) => catalog.canonical(p.name) === catalog.canonical(item.name))
+              const amount = joinAmount(qty, unit || 'pcs')
+              if (have) await updatePantryItem(have.id, { amount: isOut(have) ? amount : addTo(have.amount, qty, unit) })
+              else await addToPantry(item.name, amount)
             }
             setPantry(await loadPantry())
-            toast(`${items.length} item${items.length === 1 ? '' : 's'} put at home`)
+            toast(`${rows.length} item${rows.length === 1 ? '' : 's'} put at home`)
           }}
           onChange={updateShopping}
           onNew={() => {

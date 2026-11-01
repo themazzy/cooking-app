@@ -7,10 +7,12 @@ let nextId = 1
 /**
  * Shows a message. kind is 'ok', 'error', 'info' or 'loading'.
  * Passing the id of an earlier toast replaces it (e.g. "Saving…" → "Saved").
+ * `action` ({ label, run }) adds a button, e.g. Undo.
  * Returns the toast's id.
  */
-export function toast(text, { kind = 'ok', id = null, ms } = {}) {
-  const t = { id: id ?? nextId++, text, kind, ms: ms ?? (kind === 'loading' ? 0 : kind === 'error' ? 5000 : 2200) }
+export function toast(text, { kind = 'ok', id = null, ms, action = null } = {}) {
+  // A toast with a button ("Undo") stays a little longer to reach it
+  const t = { id: id ?? nextId++, text, kind, action, ms: ms ?? (kind === 'loading' ? 0 : kind === 'error' || action ? 5000 : 2200) }
   listener?.({ type: 'show', toast: t })
   return t.id
 }

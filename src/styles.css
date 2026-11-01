@@ -998,6 +998,7 @@ body:has(.bottom-bar, .save-bar, .cook-nav) .toasts { bottom: calc(84px + env(sa
   box-shadow: 0 6px 24px rgb(0 0 0 / 22%);
   animation: toast-in 0.25s var(--ease-out);
 }
+.toast-action { min-height: 32px; padding: 4px 12px; margin: -4px -8px -4px 4px; background: color-mix(in srgb, currentColor 16%, transparent); color: inherit; font-weight: 700; border-radius: 10px; }
 .toast.leaving { opacity: 0; transform: translateY(8px); transition: opacity 0.2s ease, transform 0.2s ease; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(14px) scale(0.96); } }
 .toast-icon {
@@ -1231,3 +1232,23 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 .voice-row { display: flex; align-items: flex-end; gap: 8px; }
 .voice-row > label { flex: 1 1 auto; min-width: 0; }
 .voice-row > button { flex: 0 0 auto; min-height: 44px; }
+
+/* Shopping item: swipe left to remove, pencil to change */
+ul.shopping li.swipe-row { touch-action: pan-y; position: relative; transition: transform 0.18s ease, opacity 0.18s ease; }
+ul.shopping li.swipe-row[style] { transition: none; }
+ul.shopping li.swipe-row.going { opacity: 0.45; }
+ul.shopping button.item-edit { flex: none; width: 40px; min-height: 40px; color: var(--muted); background: none; }
+ul.shopping li.checked button.item-edit { opacity: 0.6; }
+.uses-list { list-style: none; margin: 12px 0 4px; padding: 6px 12px; background: var(--sunken); border-radius: 10px; }
+.uses-list li { display: flex; flex-direction: column; padding: 4px 0; font-size: 0.9rem; }
+.uses-list .uses-for { color: var(--muted); font-size: 0.8rem; }
+
+/* Put at home: what was bought, in whole packs */
+ul.shopping.to-home li { flex-wrap: wrap; padding: 4px 0; }
+ul.shopping.to-home .to-home-text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+ul.shopping.to-home li.checked .to-home-text span { text-decoration: line-through; }
+ul.shopping.to-home .to-home-amount { flex: 1 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 0 0 8px 0; }
+ul.shopping.to-home .to-home-amount .num-field { width: 7.5em; }
+ul.shopping.to-home .pack-step { display: inline-flex; align-items: center; gap: 2px; }
+ul.shopping.to-home .pack-step button.icon { width: 36px; min-height: 36px; }
+ul.shopping.to-home .to-home-amount .num-field input { width: 100%; height: auto; flex: 1 1 auto; }

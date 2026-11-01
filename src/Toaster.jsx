@@ -41,6 +41,18 @@ export default function Toaster() {
           <div key={t.id} className={`toast ${t.kind}${t.leaving ? ' leaving' : ''}`} role={t.kind === 'error' ? 'alert' : 'status'} onClick={() => dismissToast(t.id)}>
             {t.kind === 'loading' ? <span className="toast-spin" aria-hidden="true" /> : <span className="toast-icon" aria-hidden="true"><Icon name={ICON[t.kind]} size={14} strokeWidth={3} /></span>}
             <span>{t.text}</span>
+            {t.action && (
+              <button
+                className="toast-action"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  dismissToast(t.id)
+                  t.action.run()
+                }}
+              >
+                {t.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>
