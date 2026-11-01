@@ -306,10 +306,13 @@ export async function fetchFacebook(url) {
   const errors = []
   let finalUrl = null
   let loginWall = false
+  let pageOk = false
   for (const attempt of [viaBrowser, viaPage, viaCrawler]) {
     try {
-      // The crawler loops on share links (21 redirects), so it gets the reel address
+      // The crawler only helps when the browser-like GET was refused; it loops on Facebook's redirects otherwise
+      if (attempt === viaCrawler && pageOk) continue
       const r = await attempt(attempt === viaCrawler && finalUrl ? finalUrl : url)
+      if (attempt === viaPage && r && r.status < 400) pageOk = true
       if (r) {
         if (r.status >= 400) errors.push(`${attempt.name}: Facebook answered ${r.status}`)
         // A share link (/share/r/…) resolves to the real reel address
