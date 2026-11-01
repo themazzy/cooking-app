@@ -87,7 +87,8 @@ const list = (value) =>
 export function categoriesFrom(value) {
   const out = []
   for (const s of list(value)) {
-    const name = categoryName(s) ?? (s.length <= 24 && !/recept|recipe/i.test(s) ? capital(s) : null)
+    // Some sites put their own category numbers there ("16"), which mean nothing here
+    const name = categoryName(s) ?? (s.length <= 24 && /\p{L}/u.test(s) && !/recept|recipe/i.test(s) ? capital(s) : null)
     if (name && !out.some((c) => c.toLowerCase() === name.toLowerCase())) out.push(name)
   }
   return out.slice(0, 3)

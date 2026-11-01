@@ -873,6 +873,9 @@ export default function App() {
             shared: rawLink.trim() !== url ? rawLink.slice(0, 500) : undefined,
             platform: reel?.platform,
             found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
+            // What was read, so a wrong caption (another reel's) shows in the report
+            description: reel?.description ? reel.description.slice(0, 600) : undefined,
+            author: reel?.author ?? undefined,
             comments: (reel?.comments ?? []).map((c) => ({ ...c, text: c.text.slice(0, 300) })),
             errors: [...(reel?.errors ?? []), ...(failure ? [failure] : [])],
           }),
