@@ -51,6 +51,15 @@ describe('usableRecipe / recipeInText', () => {
     expect(usableRecipe(parseRecipeText(`${list}\nSteps:\n1. Chop the onion.\n2. Fry it in the oil.`))).toBe(true)
   })
 
+  it('still hears the video when the caption has only the ingredients', () => {
+    const list = 'Francouzská cibulačka\n400 g cibule\n1 lžíce másla\n1 lžíce olivového oleje\n50 ml bílého vína'
+    expect(r(list)).toBeNull()
+    const p = pickRecipe({ description: list, transcript: 'Cibuli nakrájejte na tenké plátky. Na másle ji restujte 20 minut. Zalijte vodou a vařte.' })
+    expect(p.source).toBe('description')
+    expect(p.ingredients.length).toBe(4)
+    expect(p.steps.length).toBeGreaterThan(1)
+  })
+
   it('prefers the transcript over a thin caption', () => {
     const p = pickRecipe({ description: 'Just 2 eggs and love', transcript: 'Take 200 g flour. Add 2 eggs. Pour in 300 ml milk. Whisk and fry.' })
     expect(p.source).toBe('transcript')

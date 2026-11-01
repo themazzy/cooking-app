@@ -1,4 +1,4 @@
-import { parseRecipeText } from './ingredients.js'
+import { parseIngredientLine, parseRecipeText } from './ingredients.js'
 
 /**
  * Whether a parsed text is a recipe one can cook from without hearing the
@@ -16,7 +16,8 @@ export function usableRecipe(parsed) {
 /** The recipe found in the description or comments when it is usable on its own, else null. */
 export function recipeInText({ description, comments, author }) {
   const picked = pickRecipe({ description, comments, author })
-  return picked && picked.source !== 'transcript' && usableRecipe(picked) ? picked : null
+  // Ingredients alone are not the whole recipe: the video is still heard for the steps
+  return picked && picked.source !== 'transcript' && usableRecipe(picked) && picked.steps.length ? picked : null
 }
 
 /**
@@ -48,10 +49,25 @@ export function pickRecipe({ description, comments = [], author, transcript }) {
   // A thin caption ("2 eggs and love") loses to a transcript that holds more
   if (best && !(heard && !usableRecipe(best) && heard.ingredients.length > best.ingredients.length)) {
     const { score: _score, ...rest } = best
+    // A caption with only the ingredients takes its steps from what the video says
+    const spoken = !rest.steps.length && transcript ? spokenSteps(heard, transcript) : []
+    if (spoken.length) return { ...rest, steps: spoken, stepsFrom: 'transcript' }
     return rest
   }
   if (heard) return heard
   return description ? { ...parseRecipeText(description), source: 'description', text: description } : null
+}
+
+/**
+ * The steps a video says out loud. Speech has no "Method" heading, so when
+ * the parser finds none, every sentence that is not just an amount is a step.
+ */
+function spokenSteps(heard, transcript) {
+  if (heard?.steps.length) return heard.steps
+  return transcript
+    .split(/(?<=[.!?。！？])\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.split(/\s+/).length >= 3 && !parseIngredientLine(t)?.unit)
 }
 
 /** Spoken recipes come as one paragraph; one sentence per line reads better. */
