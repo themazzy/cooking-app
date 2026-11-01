@@ -38,6 +38,7 @@ import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import VoicePicker from './VoicePicker.jsx'
 import NanoCheck from './NanoCheck.jsx'
+import { MAX_VIDEO_BYTES, aiRecipe, loadAi } from './lib/ai.js'
 import { canSpeak } from './lib/voice.js'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
@@ -128,6 +129,7 @@ export default function App() {
     alarmVibrate: true,
     theme: 'system',
     accent: 'herb',
+    useAi: true,
     ...readStore(SETTINGS_KEY, {}),
   }))
   const [route, setRoute] = useState(parseRoute)
@@ -147,6 +149,17 @@ export default function App() {
   // Nothing cached yet: the pantry shows placeholders until the first load
   const [pantryReady, setPantryReady] = useState(() => cachedPantry().length > 0)
   const [user, setUser] = useState(undefined) // undefined while the saved session loads
+  // The household's Gemini key: only accounts whose household has one get AI at all
+  const [ai, setAi] = useState(null)
+  useEffect(() => {
+    let live = true
+    if (user) loadAi({ fresh: true }).then((a) => live && setAi(a))
+    else setAi(null)
+    return () => {
+      live = false
+    }
+  }, [user])
+  const aiOn = !!ai && settings.useAi
   const [syncState, setSyncState] = useState(null) // { at } or { error }
   const savedIds = useRef({})
   const shoppingRef = useRef(null) // draft key → saved id, for a shrink that finishes after saving
@@ -769,6 +782,34 @@ export default function App() {
   )
 
   /**
+   * Gemini writes the recipe again from everything saved with it (caption,
+   * comments, transcript) and the video: the one on screen, else downloaded again.
+   */
+  const improveWithAi = useCallback(
+    async (recipe, videoBlob, say) => {
+      if (!ai) throw new Error('AI is not set up for this household.')
+      const raw = recipe.raw ?? {}
+      let bytes = videoBlob && videoBlob.size <= MAX_VIDEO_BYTES ? await videoBlob.arrayBuffer() : null
+      if (!bytes && recipe.sourceUrl && recipe.platform && recipe.platform !== 'web') {
+        try {
+          say('Loading the video again…')
+          const reel = await loadReel(recipe.sourceUrl)
+          if (reel.videoUrl) bytes = await getBytes(reel.videoUrl, { headers: reel.downloadHeaders })
+        } catch {
+          // The text alone still helps
+        }
+      }
+      const withVideo = bytes && bytes.byteLength <= MAX_VIDEO_BYTES
+      if (!withVideo && !raw.description && !raw.transcript && !raw.comments?.length) throw new Error('There is nothing saved for the AI to read.')
+      say(withVideo ? 'Gemini is watching the video and reading the text…' : 'Gemini is reading the text…')
+      const text = await aiRecipe(ai, { title: recipe.original?.title ?? recipe.title, description: raw.description, comments: raw.comments ?? [], transcript: raw.transcript }, withVideo ? bytes : null)
+      if (!text) throw new Error('Gemini found no recipe in it.')
+      return { label: 'From the AI', raw: { ai: text }, ...(await readMore({ ai: text, author: recipe.author }, recipe.title)) }
+    },
+    [ai, readMore],
+  )
+
+  /**
    * More source for a recipe on screen: screenshots of a comment (read on the
    * phone, without the app's buttons around it), pasted text, or a reel or
    * page link. Returns what it found, for the recipe page to add or use.
@@ -842,11 +883,39 @@ export default function App() {
           r = { ...r, transcript: reel.transcript }
           step('Used the video\'s captions as the transcript.', 'ok')
         }
+        // Gemini reads the caption, comments and the video itself and writes the recipe
+        let aiDone = false
+        if (aiOn && reel.platform !== 'web') {
+          let bytes = null
+          if (reel.videoUrl) {
+            try {
+              step('Downloading the video…')
+              bytes = await getBytes(reel.videoUrl, { headers: reel.downloadHeaders })
+              step(`Downloaded ${(bytes.byteLength / 1e6).toFixed(1)} MB.`)
+              videoBlob = new Blob([bytes], { type: 'video/mp4' })
+            } catch (err) {
+              step(`Could not download the video: ${err?.message ?? err}`, 'warn')
+            }
+          }
+          try {
+            // Too big to send: what is said goes instead
+            if (bytes && bytes.byteLength > MAX_VIDEO_BYTES && settings.transcribe && !r.transcript) r = { ...r, transcript: await runTranscription(bytes) }
+            step(bytes && bytes.byteLength <= MAX_VIDEO_BYTES ? 'Gemini is watching the video and reading the text…' : 'Gemini is reading the text…')
+            const text = await aiRecipe(ai, { description: r.description, comments: r.comments, transcript: r.transcript }, bytes)
+            if (text) {
+              r = { ...r, ai: text }
+              aiDone = true
+              step('Gemini wrote the recipe.', 'ok')
+            } else step('Gemini found no recipe in it.', 'warn')
+          } catch (err) {
+            step(`${err?.message ?? err} Reading it without AI.`, 'warn')
+          }
+        }
         // A recipe written out in the caption or a comment needs no transcript; the recipe page can still make one
-        const inText = !reel.transcript && reel.platform !== 'web' ? recipeInText(r) : null
+        const inText = !reel.transcript && reel.platform !== 'web' && !aiDone ? recipeInText(r) : null
         if (inText && settings.transcribe) step(`Found the recipe in the ${inText.source}, so the video was not transcribed. The recipe page can still do it.`, 'ok')
-        const wantTranscript = settings.transcribe && !reel.transcript && !inText
-        if (reel.platform !== 'web' && (wantTranscript || settings.saveVideos)) {
+        const wantTranscript = settings.transcribe && !r.transcript && !inText && !aiDone
+        if (reel.platform !== 'web' && !videoBlob && (wantTranscript || settings.saveVideos)) {
           if (!reel.videoUrl) {
             step(wantTranscript ? 'Could not find the video file, so no transcript.' : 'Could not find the video file.', 'warn')
           } else {
@@ -872,7 +941,7 @@ export default function App() {
             // What was shared or pasted, when the link was picked out of more text
             shared: rawLink.trim() !== url ? rawLink.slice(0, 500) : undefined,
             platform: reel?.platform,
-            found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0 },
+            found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0, ai: !!r.ai },
             // What was read, so a wrong caption (another reel's) shows in the report
             description: reel?.description ? reel.description.slice(0, 600) : undefined,
             author: reel?.author ?? undefined,
@@ -884,7 +953,7 @@ export default function App() {
         setBusy(false)
       }
     },
-    [settings.transcribe, settings.saveVideos, runTranscription, remember, openDraft],
+    [settings.transcribe, settings.saveVideos, runTranscription, remember, openDraft, ai, aiOn],
   )
   runRef.current = importLink
 
@@ -1004,6 +1073,7 @@ export default function App() {
           onDiscard={discardEditing}
           onReread={rereadRecipe}
           onTranscribe={(recipe, say) => transcribeVideo(recipe, editing.videoBlob, say)}
+          onAi={aiOn ? (recipe, say) => improveWithAi(recipe, editing.videoBlob, say) : null}
           onAddSource={addSource}
           onBack={back}
           onAddToList={(entry) => {
@@ -1198,6 +1268,15 @@ export default function App() {
               recipe page can switch back to the original.
             </p>
             {settings.translateTo !== 'off' && <NanoCheck />}
+            {ai && (
+              <>
+                <label>
+                  <input type="checkbox" checked={settings.useAi} onChange={(e) => setSettings({ ...settings, useAi: e.target.checked })} /> Let Gemini AI write the
+                  recipe from the video, caption and comments
+                </label>
+                <p className="hint">Your household's own free Gemini key. If it fails or the free limit is used up, the app reads the recipe itself.</p>
+              </>
+            )}
             <label>
               <input type="checkbox" checked={settings.saveVideos} onChange={(e) => setSettings({ ...settings, saveVideos: e.target.checked })} />{' '}
               Save a copy of the video with each recipe (on this phone only)

@@ -69,7 +69,7 @@ function cookNotes(recipe) {
   return out
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAi, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -328,7 +328,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
     applyPatch({ ...p, ...sourcePatch(found) })
     setMore(null)
   }
-  const moreCard = (canTranscribe || more || (onAddSource && edit)) && (
+  const canAi = !!onAi && (!!recipe.raw || !!recipe.sourceUrl || !!videoBlob)
+  const moreCard = (canTranscribe || canAi || more || (onAddSource && edit)) && (
     <section className="card add-source">
       {found ? (
         <>
@@ -361,6 +362,14 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
       ) : (
         <>
           {more?.error && <p className="note">{more.error}</p>}
+          {canAi && (
+            <div className="row">
+              <button className="secondary small" onClick={() => readMore((say) => onAi(recipe, say))}>
+                <Icon name="wand" /> Improve with AI
+              </button>
+              <span className="note">Gemini reads the video, caption and comments and writes the recipe again. You choose what to keep.</span>
+            </div>
+          )}
           {canTranscribe && (
             <div className="row">
               <button className="secondary small" onClick={() => readMore((say) => onTranscribe(recipe, say))}>
