@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addToList, editItem, extraItem, makeList, removeItems } from './shopping.js'
+import { addExtra, addToList, countBought, editItem, extraItem, makeList, quickAdds, removeItems } from './shopping.js'
 
 const recipes = [
   { id: 'a', title: 'Soup', servings: 2, ingredients: [{ qty: '1', unit: 'pcs', name: 'onion' }, { qty: '200', unit: 'g', name: 'carrot' }] },
@@ -73,5 +73,33 @@ describe('editing the list', () => {
     expect(extraItem('2 lemons', null, 1)).toMatchObject({ name: 'Lemons', qty: '2', unit: '' })
     expect(extraItem('2 lemons', (n) => (/lemon/.test(n) ? { name: 'Lemon', aisle: 'Fruit' } : null), 1)).toMatchObject({ name: 'Lemon', aisle: 'Fruit' })
     expect(extraItem('bread', null, 1)).toMatchObject({ name: 'Bread', qty: '', unit: '' })
+  })
+})
+
+describe('typed extras join the list', () => {
+  const list = () => addToList(null, { id: 'a', portions: 2 }, recipes)
+  it('adds to a line of the same ingredient', () => {
+    const { list: next, joined } = addExtra(list(), '300 g carrot', null, 1)
+    expect(joined).toBe('carrot')
+    expect(next.items.find((i) => i.key === 'carrot')).toMatchObject({ qty: '500', unit: 'g' })
+    expect(next.items).toHaveLength(2)
+  })
+  it('keeps a line when it is there already without an amount', () => {
+    const { list: next, joined } = addExtra(list(), 'carrot', null, 1)
+    expect(joined).toBe('carrot')
+    expect(next.items).toHaveLength(2)
+  })
+  it('adds its own line when the units do not add up', () => {
+    const { list: next, joined } = addExtra(list(), '2 carrots', null, 1)
+    expect(joined).toBeNull()
+    expect(next.items).toHaveLength(3)
+  })
+})
+
+describe('quick add', () => {
+  it('offers staples and things bought twice, not what is on the list', () => {
+    let list = addToList(null, { id: 'a', portions: 2 }, recipes)
+    list = countBought(countBought(list, [{ name: 'Bread' }, { name: 'Onion' }]), [{ name: 'Bread' }, { name: 'onion' }, { name: 'Milk' }])
+    expect(quickAdds(list, ['Salt'])).toEqual(['Salt', 'Bread'])
   })
 })

@@ -1252,3 +1252,5 @@ ul.shopping.to-home .to-home-amount .num-field { width: 7.5em; }
 ul.shopping.to-home .pack-step { display: inline-flex; align-items: center; gap: 2px; }
 ul.shopping.to-home .pack-step button.icon { width: 36px; min-height: 36px; }
 ul.shopping.to-home .to-home-amount .num-field input { width: 100%; height: auto; flex: 1 1 auto; }
+.aisle-chips.quick-add { margin: 0 0 4px; padding: 4px 0 6px; }
+.aisle-chips.quick-add .chip-btn { flex: none; gap: 4px; }

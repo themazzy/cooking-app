@@ -55,7 +55,7 @@ import Icon from './Icon.jsx'
 const SETTINGS_KEY = 'cooking-app:settings'
 // Shared household data kept inside the shopping list row, not on the list itself
 // Pack sizes and staples taken off the list by hand travel with it too
-const SHARED_WITH_LIST = ['plan', 'aisles', 'packs', 'snoozed']
+const SHARED_WITH_LIST = ['plan', 'aisles', 'packs', 'snoozed', 'often']
 const HISTORY_KEY = 'cooking-app:history'
 const SHOPPING_KEY = 'cooking-app:shopping'
 
@@ -1060,15 +1060,21 @@ export default function App() {
           ebag={settings.ebagLinks ? settings.ebagSearch || EBAG_SEARCH : null}
           units={settings.units}
           recipes={recipes}
-          onToPantry={async (rows) => {
-            // What was bought (whole packs, checked in the sheet) adds to what is at home when the units compare
-            for (const { item, qty, unit } of rows) {
-              const have = pantry.find((p) => catalog.canonical(p.name) === catalog.canonical(item.name))
-              const amount = joinAmount(qty, unit || 'pcs')
-              if (have) await updatePantryItem(have.id, { amount: isOut(have) ? amount : addTo(have.amount, qty, unit) })
-              else await addToPantry(item.name, amount)
+          onToPantry={async (rows, saved) => {
+            // What was bought (whole packs, checked in the sheet) adds to what is at home when the units compare.
+            // Each row is reported as saved, so a failure halfway leaves only the rest to try again.
+            try {
+              for (const row of rows) {
+                const { item, qty, unit } = row
+                const have = pantry.find((p) => catalog.canonical(p.name) === catalog.canonical(item.name))
+                const amount = joinAmount(qty, unit || 'pcs')
+                if (have) await updatePantryItem(have.id, { amount: isOut(have) ? amount : addTo(have.amount, qty, unit) })
+                else await addToPantry(item.name, amount)
+                saved(row)
+              }
+            } finally {
+              setPantry(await loadPantry().catch(() => pantry))
             }
-            setPantry(await loadPantry())
             toast(`${rows.length} item${rows.length === 1 ? '' : 's'} put at home`)
           }}
           onChange={updateShopping}

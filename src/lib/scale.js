@@ -128,8 +128,8 @@ const nameKey = (name) =>
     .replace(/\s+/g, ' ')
 
 /** The shopping list key of an ingredient name: its catalog name, or the name without notes. */
-export function shopKey(name, match = () => null) {
-  const entry = match(String(name ?? '').trim())
+export function shopKey(name, match) {
+  const entry = match?.(String(name ?? '').trim())
   return entry ? entry.name.toLowerCase() : nameKey(name)
 }
 

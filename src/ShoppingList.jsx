@@ -6,7 +6,7 @@ import { openExternal } from './lib/pageReader.js'
 import { isOut } from './lib/stock.js'
 import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
-import { editItem, extraItem, removeItems } from './lib/shopping.js'
+import { addExtra, countBought, editItem, quickAdds, removeItems } from './lib/shopping.js'
 import { toast } from './lib/toast.js'
 import ShopItemSheet from './ShopItemSheet.jsx'
 import ToHomeSheet from './ToHomeSheet.jsx'
@@ -58,6 +58,44 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
   const [swipe, setSwipe] = useState(null) // { key, dx }
   const drag = useRef(null)
   const { match, canonical } = useCatalog()
+  const current = list ?? { createdAt: Date.now(), recipes: [], items: [] }
+  const addText = (text) => {
+    if (!String(text ?? '').trim()) return
+    const { list: next, joined } = addExtra({ ...current, items: current.items ?? [] }, text, match)
+    if (next !== current) onChange(next)
+    if (joined) toast(next === current ? `${joined} is on the list already` : `Added to ${joined} on the list`, { kind: 'info' })
+  }
+  const add = () => {
+    addText(extra)
+    setExtra('')
+  }
+  // Staples kept at home, then what you buy most often
+  const quick = quickAdds(current, pantry.filter((p) => String(p.min_amount ?? '').trim()).map((p) => p.name), match)
+  const adder = (
+    <>
+      <div className="row">
+        <input
+          className="search grow"
+          placeholder="Add something, e.g. 2 lemons"
+          value={extra}
+          onChange={(e) => setExtra(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+        />
+        <button className="secondary" onClick={add} disabled={!extra.trim()}>
+          Add
+        </button>
+      </div>
+      {quick.length > 0 && (
+        <div className="aisle-chips quick-add" aria-label="Add again">
+          {quick.map((name) => (
+            <button key={name} className="chip-btn soft" onClick={() => addText(name)}>
+              <Icon name="plus" size={14} /> {name}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
+  )
   // A list object can exist only to carry the meal plan
   if (!list || (!list.items?.length && !list.recipes?.length)) {
     return (
@@ -73,6 +111,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
           <p className="hint">Open a recipe and tap Add to list, or pick several recipes at once.</p>
           <button onClick={onNew}>Pick recipes</button>
         </div>
+        <section className="card">{adder}</section>
       </>
     )
   }
@@ -85,16 +124,11 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
   const rank = (i) => (i.checked ? 2000 : isAtHome(i) ? 1000 : 0) + Math.max(0, order.indexOf(aisleOf(i)))
   const items = [...list.items].sort((a, b) => rank(a) - rank(b))
   const toggle = (key) => onChange({ ...list, items: list.items.map((i) => (i.key === key ? { ...i, checked: !i.checked } : i)) })
-  const add = () => {
-    const text = extra.trim()
-    if (!text) return
-    onChange({ ...list, items: [...list.items, extraItem(text, match)] })
-    setExtra('')
-  }
-  /** Removes items, with Undo in the toast. */
-  const remove = (keys, what) => {
+  /** Removes items, with Undo in the toast; `bought` ones count for the quick-add row. */
+  const remove = (keys, what, bought = false) => {
     const before = list
-    onChange(removeItems(list, keys, recipes, match))
+    const counted = bought ? countBought(list, list.items.filter((i) => keys.includes(i.key))) : list
+    onChange(removeItems(counted, keys, recipes, match))
     toast(what, { action: { label: 'Undo', run: () => onChange(before) } })
   }
   const nameOf = (key) => list.items.find((i) => i.key === key)?.name ?? 'Item'
@@ -212,18 +246,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
             )
           })}
         </ul>
-        <div className="row">
-          <input
-            className="search grow"
-            placeholder="Add something, e.g. 2 lemons"
-            value={extra}
-            onChange={(e) => setExtra(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && add()}
-          />
-          <button className="secondary" onClick={add} disabled={!extra.trim()}>
-            Add
-          </button>
-        </div>
+        {adder}
         <div className="row">
           <button onClick={copy}>{copied ? 'Copied' : 'Copy list'}</button>
           <button
@@ -234,6 +257,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
               remove(
                 ticked.map((i) => i.key),
                 `${ticked.length} ticked item${ticked.length === 1 ? '' : 's'} removed`,
+                true,
               )
             }}
           >
@@ -276,15 +300,17 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
           onDone={async (rows, packs) => {
             setToPantry('saving')
             const withPacks = Object.keys(packs).length ? { ...list, packs: { ...(list.packs ?? {}), ...packs } } : list
+            const done = []
             try {
-              await onToPantry(rows)
-              onChange(removeItems(withPacks, rows.map((r) => r.item.key), recipes, match))
+              // Each saved item leaves the list, so trying again after an error does not add it twice
+              await onToPantry(rows, (row) => done.push(row))
               setToPantry(null)
             } catch (err) {
-              // The ticked items stay on the list to try again; pack sizes are kept
-              if (withPacks !== list) onChange(withPacks)
+              // What was not saved stays ticked on the list to try again; pack sizes are kept
               setToPantry(pantryError(err))
             }
+            const saved = rows.filter((r) => done.includes(r))
+            onChange(saved.length ? removeItems(countBought(withPacks, saved.map((r) => r.item)), saved.map((r) => r.item.key), recipes, match) : withPacks)
           }}
         />
       )}
