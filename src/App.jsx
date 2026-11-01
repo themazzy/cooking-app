@@ -372,7 +372,12 @@ export default function App() {
     }
   }
 
-  const step = (text, kind = 'info') => setLog((l) => [...l, { text, kind, at: Date.now() }])
+  // Also kept outside React state, so the import report can show how long each step took
+  const stepTimes = useRef([])
+  const step = (text, kind = 'info') => {
+    stepTimes.current.push({ text, at: Date.now() })
+    setLog((l) => [...l, { text, kind, at: Date.now() }])
+  }
 
   const remember = useCallback((r) => {
     setHistory((h) => {
@@ -854,6 +859,7 @@ export default function App() {
       if (!url) return
       setBusy(true)
       setLog([])
+      stepTimes.current = []
       setReport(null)
       setCopied(false)
       let r = { url, at: Date.now() }
@@ -904,13 +910,15 @@ export default function App() {
           }
           try {
             // Too big to send: what is said goes instead
-            if (bytes && bytes.byteLength > MAX_VIDEO_BYTES && settings.transcribe && !r.transcript) r = { ...r, transcript: await runTranscription(bytes) }
-            step(bytes && bytes.byteLength <= MAX_VIDEO_BYTES ? 'Gemini is watching the video and reading the text…' : 'Gemini is reading the text…')
-            const text = await aiRecipe(aiKey, { description: r.description, comments: r.comments, transcript: r.transcript }, bytes)
+            if (bytes && bytes.byteLength > MAX_VIDEO_BYTES && settings.transcribe && !r.transcript && !recipeInText(r)) r = { ...r, transcript: await runTranscription(bytes) }
+            // A caption with the whole recipe needs no video, and text alone is much faster
+            const send = recipeInText(r) ? null : bytes
+            step(send && send.byteLength <= MAX_VIDEO_BYTES ? 'Gemini is watching the video and reading the text…' : 'Gemini is reading the text…')
+            const text = await aiRecipe(aiKey, { description: r.description, comments: r.comments, transcript: r.transcript }, send)
             if (text) {
               r = { ...r, ai: text }
               aiDone = true
-              aiNote = bytes && bytes.byteLength <= MAX_VIDEO_BYTES ? 'used, with the video' : 'used, text only'
+              aiNote = send && send.byteLength <= MAX_VIDEO_BYTES ? 'used, with the video' : 'used, text only'
               step('Gemini wrote the recipe.', 'ok')
             } else {
               aiNote = 'found no recipe'
@@ -953,6 +961,8 @@ export default function App() {
             platform: reel?.platform,
             found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0, ai: !!r.ai },
             ai: aiNote ?? undefined,
+            // Seconds since the start for each step, to see where the time goes
+            steps: stepTimes.current.map((x) => `${((x.at - r.at) / 1000).toFixed(1)} s  ${x.text}`),
             // What was read, so a wrong caption (another reel's) shows in the report
             description: reel?.description ? reel.description.slice(0, 600) : undefined,
             author: reel?.author ?? undefined,

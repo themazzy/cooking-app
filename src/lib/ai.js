@@ -106,6 +106,44 @@ function toBase64(bytes) {
   return btoa(out)
 }
 
+const errorText = async (res) => {
+  try {
+    const j = await res.clone().json()
+    return `${j?.error?.status ?? ''} ${j?.error?.message ?? ''}`
+  } catch {
+    return ''
+  }
+}
+
+// How the key goes with the request. Classic keys (AIza…) use the header;
+// Google's newer auth keys (AQ.…) may need ?key= or a bearer token. The way
+// that worked is remembered, so a video is not uploaded twice next time.
+const AUTH_WAYS = {
+  header: (url, key) => [url, { 'x-goog-api-key': key }],
+  query: (url, key) => [`${url}?key=${encodeURIComponent(key)}`, {}],
+  bearer: (url, key) => [url, { Authorization: `Bearer ${key}` }],
+}
+let authWay = null
+let fastOk = true
+
+async function post(ai, body) {
+  const url = `${API}/${encodeURIComponent(ai.model)}:generateContent`
+  const json = JSON.stringify(body)
+  const order = ai.key.startsWith('AIza') ? ['header'] : [...new Set([authWay ?? 'header', 'header', 'query', 'bearer'])]
+  let res
+  for (const way of order) {
+    const [to, headers] = AUTH_WAYS[way](url, ai.key)
+    res = await fetch(to, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: json })
+    if (res.ok) {
+      authWay = way
+      return res
+    }
+    // Only a refused key is worth another way; other errors are the same every way
+    if (![400, 401, 403].includes(res.status) || !/API.?key|UNAUTHENTICATED|PERMISSION_DENIED|credential|auth/i.test(await errorText(res))) return res
+  }
+  return res
+}
+
 /**
  * Asks Gemini for the recipe in a reel: its caption, comments, what is said,
  * and the video itself when it is small enough. Returns recipe text (see
@@ -115,25 +153,13 @@ export async function aiRecipe(ai, source, video = null) {
   const sendVideo = video && video.byteLength > 0 && video.byteLength <= MAX_VIDEO_BYTES
   const parts = [{ text: aiPrompt({ ...source, hasVideo: !!sendVideo }) }]
   if (sendVideo) parts.push({ inlineData: { mimeType: 'video/mp4', data: toBase64(video) } })
-  const body = {
-    contents: [{ role: 'user', parts }],
-    generationConfig: { temperature: 0.2, responseMimeType: 'application/json', responseSchema: SCHEMA },
-  }
-  const url = `${API}/${encodeURIComponent(ai.model)}:generateContent`
-  const send = (auth) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...auth }, body: JSON.stringify(body) })
-  // Classic keys start with AIza; Google's newer auth keys (AQ.…) may need to go as a bearer token
-  let res = await send({ 'x-goog-api-key': ai.key })
-  if (!res.ok && [400, 401, 403].includes(res.status) && !ai.key.startsWith('AIza')) {
-    for (const opts of [
-      { url: `${url}?key=${encodeURIComponent(ai.key)}`, headers: {} },
-      { url, headers: { Authorization: `Bearer ${ai.key}` } },
-    ]) {
-      const again = await fetch(opts.url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...opts.headers }, body: JSON.stringify(body) })
-      if (again.ok) {
-        res = again
-        break
-      }
-    }
+  const config = { temperature: 0.2, responseMimeType: 'application/json', responseSchema: SCHEMA }
+  // Faster: little "thinking" (copying a recipe needs none) and fewer tokens per video frame
+  const fast = { ...config, thinkingConfig: { thinkingBudget: 0 }, ...(sendVideo ? { mediaResolution: 'MEDIA_RESOLUTION_LOW' } : {}) }
+  let res = await post(ai, { contents: [{ role: 'user', parts }], generationConfig: fastOk ? fast : config })
+  if (fastOk && res.status === 400 && /thinking|media_?resolution/i.test(await errorText(res))) {
+    fastOk = false // this model wants its own settings; not tried again
+    res = await post(ai, { contents: [{ role: 'user', parts }], generationConfig: config })
   }
   const json = await res.json().catch(() => null)
   if (!res.ok) {
