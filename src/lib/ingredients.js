@@ -357,8 +357,15 @@ function plus(text) {
   return `${Math.round(total * 1000) / 1000} ${m[2]} ${text.slice(m[0].length)}`
 }
 
+const PROMO_LINE = /(?:^|\s)@[\w.]{3,}|^(?:ulož(?:te)? si|sleduj(?:te)?|follow (?:me|us|for)|save (?:this|the recipe|it)|запази|последвай|tag (?:a|someone)|označ(?:te)?\s|share (?:this|with))(?![\p{L}])/iu
+
+// "cibule (400 g)", "máslo (1 lžíce)": the name first, the whole amount in brackets after it
+const NAME_THEN_AMOUNT = new RegExp(`^(\\p{L}[^()\\d]{0,40}?)\\s*\\((${NUM}(?:\\s*[–-]\\s*${NUM})?\\s*(?:(?:${UNIT_RE})\\.?)?)\\)\\s*[.,]?$`, 'iu')
+
 /** Reads one ingredient line. Returns null when the line has no quantity. */
 export function parseIngredientLine(line) {
+  const nameFirst = cleanLine(line).match(NAME_THEN_AMOUNT)
+  if (nameFirst) return parseIngredientLine(`${nameFirst[2]} ${nameFirst[1].trim()}`)
   const text = plus(multiplied(spoonLetter(wordAmount(cleanLine(line).replace(APPROX_FIRST, '').replace(THOUSANDS, '$1$2'))))
     .replace(COUNT_TIMES, '$1 ')
     .replace(GLUED_UNIT, '$1 ')
@@ -532,7 +539,15 @@ export function parseRecipeText(text) {
 
   let leadGroup = null // a group from a "Meat Sauce:" line above the list, see the end
   let bareNo = 0 // the last step number written with no dot ("3 Stir in the onion")
-  const lines = decodeEntities(text ?? '').split(/\r?\n/)
+  // "Ingredience (4 porce): cibule (400 g), máslo (1 lžíce), …, sůl, pepř.": a heading with the whole list on its line
+  const lines = decodeEntities(text ?? '')
+    .split(/\r?\n/)
+    .flatMap((l) => {
+      const m = cleanLine(l).match(/^([^:：]{2,60})[:：]\s*(.+)$/u)
+      if (!m || !INGREDIENT_HEADER.test(m[1].replace(/\s*\([^)]*\)\s*$/, '').trim())) return [l]
+      const items = outsideBrackets(m[2].replace(/[.。]\s*$/, ''), (part) => part.replace(/\s*[,;]\s+/g, '\u0000')).split('\u0000').map((x) => x.trim()).filter(Boolean)
+      return items.length >= 3 ? [`${m[1]}:`, ...items] : [l]
+    })
   // The next line with text, after line `at`
   const nextLine = (at) => lines.slice(at + 1).find((l) => l.trim()) ?? ''
   for (const [at, rawLine] of lines.entries()) {
@@ -551,6 +566,8 @@ export function parseRecipeText(text) {
 
     // "15.10.2026 by Slepice": the blog post's date, not 15 of something
     if (DATE_LINE.test(line)) continue
+    // "Ulož si recept…", "Sleduj @kanal", "Follow for more": the reel's calls to action
+    if (PROMO_LINE.test(line)) continue
     // "Facebook Twitter Pinterest": the page's share buttons
     if (SHARE_LINE.test(line)) continue
     // "45 minut", "Calories: 258 kcal": a page's labels, not ingredients

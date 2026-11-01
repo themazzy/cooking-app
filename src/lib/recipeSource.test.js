@@ -60,6 +60,24 @@ describe('usableRecipe / recipeInText', () => {
     expect(p.steps.length).toBeGreaterThan(1)
   })
 
+  it('reads a reel caption with the whole list on one line, name first', async () => {
+    const { draftFromImport } = await import('./recipeDraft.js')
+    const caption =
+      'Nejoblíbenější České polévky — Sezóna 1 · Díl 4\nFrancouzská cibulačka\n🧅 Na 4 osoby (na 8 zdvojnásob).\n\n' +
+      'Ingredience (4 porce): cibule (400 g), máslo (1 lžíce), olivový olej (1 lžíce), bílé víno (50 ml), tymián (½ lžičky), bageta (½ ks), sýr strouhaný (50 g), voda (500–700 ml), sůl, pepř.\n' +
+      '☝ Ulož si recept, ať ho máš vždy po ruce.\n\n💡 Tip: cibuli fakt nepřeskakuj — 15–20 minut pomalého restování dělá celé kouzlo.\n' +
+      '👉 Sleduj @gulas_aplikace — zítra Sezóna 1 · Díl 5: Kuřecí polévka s nudlemi.'
+    const d = draftFromImport({ platform: 'facebook', description: caption })
+    expect(d.servings).toBe(4)
+    expect(d.ingredients.map((i) => [i.qty, i.unit, i.name])).toEqual([
+      ['400', 'g', 'Cibule'], ['1', 'tbsp', 'Máslo'], ['1', 'tbsp', 'Olivový olej'], ['50', 'ml', 'Bílé víno'], ['0,5', 'tsp', 'Tymián'],
+      ['0,5', 'pcs', 'Bageta'], ['50', 'g', 'Sýr strouhaný'], ['500–700', 'ml', 'Voda'], ['', '', 'Sůl'], ['', '', 'Pepř'],
+    ])
+    // Calls to action are not steps, so the video is still heard for them
+    expect(d.steps).toBe('')
+    expect(recipeInText({ description: caption })).toBeNull()
+  })
+
   it('prefers the transcript over a thin caption', () => {
     const p = pickRecipe({ description: 'Just 2 eggs and love', transcript: 'Take 200 g flour. Add 2 eggs. Pour in 300 ml milk. Whisk and fry.' })
     expect(p.source).toBe('transcript')

@@ -38,7 +38,7 @@ import { videoThumb } from './lib/thumb.js'
 import TabBar from './TabBar.jsx'
 import VoicePicker from './VoicePicker.jsx'
 import NanoCheck from './NanoCheck.jsx'
-import { MAX_VIDEO_BYTES, aiRecipe, loadAi } from './lib/ai.js'
+import { MAX_VIDEO_BYTES, aiLoadError, aiRecipe, loadAi } from './lib/ai.js'
 import { canSpeak } from './lib/voice.js'
 import { photoThumb, readRecipePhotos } from './lib/ocr.js'
 import { EBAG_SEARCH } from './lib/ebag.js'
@@ -860,6 +860,7 @@ export default function App() {
       let reel = null
       let failure = null
       let videoBlob = null
+      let aiNote = null
       try {
         step(detectPlatform(url) === 'web' ? 'Loading the page…' : 'Loading the reel page…')
         reel = await loadReel(url)
@@ -885,7 +886,11 @@ export default function App() {
         }
         // Gemini reads the caption, comments and the video itself and writes the recipe
         let aiDone = false
-        if (aiOn && reel.platform !== 'web') {
+        // Asked again when the first try (at sign-in) found nothing, e.g. offline
+        const aiKey = ai ?? (reel.platform !== 'web' && settings.useAi ? await loadAi({ fresh: true }) : null)
+        if (aiKey && !ai) setAi(aiKey)
+        aiNote = reel.platform === 'web' ? 'not used for websites' : !settings.useAi ? 'switched off in Settings' : !aiKey ? `no key: ${aiLoadError() ?? 'unknown'}` : null
+        if (aiKey && settings.useAi && reel.platform !== 'web') {
           let bytes = null
           if (reel.videoUrl) {
             try {
@@ -901,13 +906,18 @@ export default function App() {
             // Too big to send: what is said goes instead
             if (bytes && bytes.byteLength > MAX_VIDEO_BYTES && settings.transcribe && !r.transcript) r = { ...r, transcript: await runTranscription(bytes) }
             step(bytes && bytes.byteLength <= MAX_VIDEO_BYTES ? 'Gemini is watching the video and reading the text…' : 'Gemini is reading the text…')
-            const text = await aiRecipe(ai, { description: r.description, comments: r.comments, transcript: r.transcript }, bytes)
+            const text = await aiRecipe(aiKey, { description: r.description, comments: r.comments, transcript: r.transcript }, bytes)
             if (text) {
               r = { ...r, ai: text }
               aiDone = true
+              aiNote = bytes && bytes.byteLength <= MAX_VIDEO_BYTES ? 'used, with the video' : 'used, text only'
               step('Gemini wrote the recipe.', 'ok')
-            } else step('Gemini found no recipe in it.', 'warn')
+            } else {
+              aiNote = 'found no recipe'
+              step('Gemini found no recipe in it.', 'warn')
+            }
           } catch (err) {
+            aiNote = `error: ${err?.message ?? err}`
             step(`${err?.message ?? err} Reading it without AI.`, 'warn')
           }
         }
@@ -942,6 +952,7 @@ export default function App() {
             shared: rawLink.trim() !== url ? rawLink.slice(0, 500) : undefined,
             platform: reel?.platform,
             found: { description: !!reel?.description, video: !!reel?.videoUrl, comments: reel?.comments?.length ?? 0, ai: !!r.ai },
+            ai: aiNote ?? undefined,
             // What was read, so a wrong caption (another reel's) shows in the report
             description: reel?.description ? reel.description.slice(0, 600) : undefined,
             author: reel?.author ?? undefined,

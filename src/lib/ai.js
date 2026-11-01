@@ -14,6 +14,9 @@ export const MAX_VIDEO_BYTES = 14e6
 const OWN_LANGUAGES = 'English, Czech, Slovak, Bulgarian, German, Spanish, Italian, French, Polish, Russian, Japanese, Chinese or Korean'
 
 let cached = null
+let loadError = null
+/** Why the last loadAi found no key, for the import report. */
+export const aiLoadError = () => loadError
 
 /** The household's Gemini key and model, or null when this account has none. */
 export async function loadAi({ fresh = false } = {}) {
@@ -21,9 +24,11 @@ export async function loadAi({ fresh = false } = {}) {
   cached = (async () => {
     try {
       const { data, error } = await supabase.from('household_ai').select('gemini_key, model').maybeSingle()
+      loadError = error ? error.message : data ? null : 'no key saved for this household'
       if (error || !data?.gemini_key?.trim() || /PASTE/.test(data.gemini_key)) return null
       return { key: data.gemini_key.trim(), model: data.model || DEFAULT_MODEL }
-    } catch {
+    } catch (err) {
+      loadError = String(err?.message ?? err)
       return null
     }
   })()
@@ -118,9 +123,17 @@ export async function aiRecipe(ai, source, video = null) {
   const send = (auth) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...auth }, body: JSON.stringify(body) })
   // Classic keys start with AIza; Google's newer auth keys (AQ.…) may need to go as a bearer token
   let res = await send({ 'x-goog-api-key': ai.key })
-  if ((res.status === 401 || res.status === 403) && !ai.key.startsWith('AIza')) {
-    const again = await send({ Authorization: `Bearer ${ai.key}` })
-    if (again.ok) res = again
+  if (!res.ok && [400, 401, 403].includes(res.status) && !ai.key.startsWith('AIza')) {
+    for (const opts of [
+      { url: `${url}?key=${encodeURIComponent(ai.key)}`, headers: {} },
+      { url, headers: { Authorization: `Bearer ${ai.key}` } },
+    ]) {
+      const again = await fetch(opts.url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...opts.headers }, body: JSON.stringify(body) })
+      if (again.ok) {
+        res = again
+        break
+      }
+    }
   }
   const json = await res.json().catch(() => null)
   if (!res.ok) {
