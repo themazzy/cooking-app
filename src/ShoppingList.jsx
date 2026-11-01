@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import { aisleOrder, isDefaultOrder, moveAisle } from './lib/aisles.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
@@ -6,6 +6,10 @@ import { openExternal } from './lib/pageReader.js'
 import { isOut } from './lib/stock.js'
 import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
+import { editItem, extraItem, removeItems } from './lib/shopping.js'
+import { toast } from './lib/toast.js'
+import ShopItemSheet from './ShopItemSheet.jsx'
+import ToHomeSheet from './ToHomeSheet.jsx'
 import Icon from './Icon.jsx'
 
 const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
@@ -44,12 +48,15 @@ function AisleSheet({ order, inUse, onChange, onClose }) {
 
 /** The current shopping list by aisle: tick items off while shopping, add extras, copy it as text. */
 /** `ebag` is the eBag.bg search link template, or null when the links are off. */
-export default function ShoppingList({ list, pantry = [], ebag = null, units = 'original', onChange, onNew, onToPantry }) {
+export default function ShoppingList({ list, recipes = [], pantry = [], ebag = null, units = 'original', onChange, onNew, onToPantry }) {
   const [extra, setExtra] = useState('')
   const [copied, setCopied] = useState(false)
-  const [open, setOpen] = useState(null) // key of the item showing what it is for
-  const [toPantry, setToPantry] = useState(null) // null, 'saving' or an error
+  const [editing, setEditing] = useState(null) // key of the item open in its sheet
+  const [toPantry, setToPantry] = useState(null) // null, 'review', 'saving' or an error
   const [ordering, setOrdering] = useState(false)
+  // Swiping a row to the left removes it
+  const [swipe, setSwipe] = useState(null) // { key, dx }
+  const drag = useRef(null)
   const { match, canonical } = useCatalog()
   // A list object can exist only to carry the meal plan
   if (!list || (!list.items?.length && !list.recipes?.length)) {
@@ -81,16 +88,47 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
   const add = () => {
     const text = extra.trim()
     if (!text) return
-    const entry = match(text)
-    onChange({
-      ...list,
-      items: [
-        ...list.items,
-        { key: `extra-${Date.now()}`, name: text, aisle: entry?.aisle ?? 'Other', qty: '', unit: '', extra: [], from: [], checked: false },
-      ],
-    })
+    onChange({ ...list, items: [...list.items, extraItem(text, match)] })
     setExtra('')
   }
+  /** Removes items, with Undo in the toast. */
+  const remove = (keys, what) => {
+    const before = list
+    onChange(removeItems(list, keys, recipes, match))
+    toast(what, { action: { label: 'Undo', run: () => onChange(before) } })
+  }
+  const nameOf = (key) => list.items.find((i) => i.key === key)?.name ?? 'Item'
+  const swipeHandlers = (key) => ({
+    onPointerDown: (e) => {
+      if (e.pointerType === 'mouse' || e.target.closest('input, .ebag, .item-edit')) return
+      drag.current = { key, x: e.clientX, y: e.clientY, on: false }
+    },
+    onPointerMove: (e) => {
+      const d = drag.current
+      if (!d || d.key !== key) return
+      const dx = e.clientX - d.x
+      const dy = e.clientY - d.y
+      if (!d.on && Math.abs(dy) > 12) return (drag.current = null)
+      if (!d.on && dx < -12 && Math.abs(dx) > Math.abs(dy)) d.on = true
+      if (d.on) setSwipe({ key, dx: Math.min(0, dx) })
+    },
+    onPointerUp: () => {
+      const d = drag.current
+      drag.current = null
+      if (!d?.on) return
+      const gone = (swipe?.key === key ? swipe.dx : 0) < -90
+      setSwipe(null)
+      if (gone) remove([key], `${nameOf(key)} removed`)
+    },
+    onPointerCancel: () => {
+      drag.current = null
+      setSwipe(null)
+    },
+    // A swipe is not a tap
+    onClickCapture: (e) => {
+      if (swipe?.key === key && swipe.dx < -12) e.stopPropagation()
+    },
+  })
   const copy = async () => {
     const lines = items
       .filter((i) => !i.checked)
@@ -143,42 +181,32 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
             return (
               <Fragment key={i.key}>
                 {heading && <li className="aisle">{heading}</li>}
-                <li className={`${i.checked ? 'checked' : ''}${open === i.key ? ' open' : ''}`}>
+                <li
+                  className={`swipe-row${i.checked ? ' checked' : ''}${swipe?.key === i.key && swipe.dx < -90 ? ' going' : ''}`}
+                  style={swipe?.key === i.key ? { transform: `translateX(${swipe.dx}px)` } : undefined}
+                  {...swipeHandlers(i.key)}
+                >
                   <label className="shop-tick">
                     <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
                     <IngredientIcon entry={match(i.name)} />
                   </label>
-                  {/* Tapping the name shows which recipe needs how much; the box ticks it off */}
-                  <button
-                    className="item-text"
-                    aria-expanded={open === i.key}
-                    onClick={() => (i.uses?.length ? setOpen(open === i.key ? null : i.key) : toggle(i.key))}
-                  >
-                      {amountText(convertIngredient(i, units, match)) && <strong>{amountText(convertIngredient(i, units, match))} </strong>}
-                      {i.name}
-                      {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
+                  {/* Tapping the name ticks it off too; the pencil opens it to change or remove */}
+                  <button className="item-text" onClick={() => toggle(i.key)}>
+                    {amountText(convertIngredient(i, units, match)) && <strong>{amountText(convertIngredient(i, units, match))} </strong>}
+                    {i.name}
+                    {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
-                      {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
-                      {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
-                    {i.uses?.length > 0 && <Icon name={open === i.key ? 'up' : 'down'} size={16} className="caret" />}
+                    {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
+                    {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
                   </button>
-                  {open === i.key && (
-                    <ul className="uses">
-                      {i.uses.map((u, k) => (
-                        <li key={k}>
-                          <span className="uses-for">{[list.recipes.length > 1 || !u.group ? u.recipe : null, u.group].filter(Boolean).join(' · ')}</span>
-                          <span>
-                            <strong>{amountText(convertIngredient(u, units, match)) || 'some'}</strong> {u.name}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
                   {ebag && !i.checked && ebagQuery(i.name, match(i.name)) && (
                     <button className="ebag" aria-label={`Search ${i.name} on eBag`} onClick={() => openExternal(ebagUrl(ebagQuery(i.name, match(i.name)), ebag))}>
                       eBag <Icon name="external" size={13} />
                     </button>
                   )}
+                  <button className="icon item-edit" aria-label={`Change or remove ${i.name}`} title="Change or remove" onClick={() => setEditing(i.key)}>
+                    <Icon name="pencil" size={18} />
+                  </button>
                 </li>
               </Fragment>
             )
@@ -187,7 +215,7 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
         <div className="row">
           <input
             className="search grow"
-            placeholder="Add something else"
+            placeholder="Add something, e.g. 2 lemons"
             value={extra}
             onChange={(e) => setExtra(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
@@ -198,25 +226,21 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
         </div>
         <div className="row">
           <button onClick={copy}>{copied ? 'Copied' : 'Copy list'}</button>
-          <button className="secondary" onClick={() => onChange({ ...list, items: list.items.filter((i) => !i.checked) })}>
+          <button
+            className="secondary"
+            disabled={!list.items.some((i) => i.checked)}
+            onClick={() => {
+              const ticked = list.items.filter((i) => i.checked)
+              remove(
+                ticked.map((i) => i.key),
+                `${ticked.length} ticked item${ticked.length === 1 ? '' : 's'} removed`,
+              )
+            }}
+          >
             Remove ticked
           </button>
           {onToPantry && list.items.some((i) => i.checked) && (
-            <button
-              className="secondary"
-              disabled={toPantry === 'saving'}
-              onClick={async () => {
-                setToPantry('saving')
-                try {
-                  await onToPantry(list.items.filter((i) => i.checked))
-                  onChange({ ...list, items: list.items.filter((i) => !i.checked) })
-                  setToPantry(null)
-                } catch (err) {
-                  // The ticked items stay on the list to try again
-                  setToPantry(pantryError(err))
-                }
-              }}
-            >
+            <button className="secondary" disabled={toPantry === 'saving'} onClick={() => setToPantry('review')}>
               {toPantry === 'saving' ? 'Saving…' : 'Put ticked at home'}
             </button>
           )}
@@ -224,8 +248,46 @@ export default function ShoppingList({ list, pantry = [], ebag = null, units = '
             New list
           </button>
         </div>
-        {toPantry && toPantry !== 'saving' && <p className="hint error">{toPantry}</p>}
+        {toPantry && toPantry !== 'saving' && toPantry !== 'review' && <p className="hint error">{toPantry}</p>}
       </section>
+      {editing && list.items.some((i) => i.key === editing) && (
+        <ShopItemSheet
+          item={list.items.find((i) => i.key === editing)}
+          many={list.recipes.length > 1}
+          units={units}
+          packs={list.packs}
+          onClose={() => setEditing(null)}
+          onSave={(patch) => {
+            onChange(editItem(list, editing, patch, match))
+            setEditing(null)
+          }}
+          onDelete={() => {
+            remove([editing], `${nameOf(editing)} removed`)
+            setEditing(null)
+          }}
+        />
+      )}
+      {toPantry === 'review' && (
+        <ToHomeSheet
+          items={list.items.filter((i) => i.checked)}
+          pantry={pantry}
+          packs={list.packs}
+          onClose={() => setToPantry(null)}
+          onDone={async (rows, packs) => {
+            setToPantry('saving')
+            const withPacks = Object.keys(packs).length ? { ...list, packs: { ...(list.packs ?? {}), ...packs } } : list
+            try {
+              await onToPantry(rows)
+              onChange(removeItems(withPacks, rows.map((r) => r.item.key), recipes, match))
+              setToPantry(null)
+            } catch (err) {
+              // The ticked items stay on the list to try again; pack sizes are kept
+              if (withPacks !== list) onChange(withPacks)
+              setToPantry(pantryError(err))
+            }
+          }}
+        />
+      )}
     </>
   )
 }

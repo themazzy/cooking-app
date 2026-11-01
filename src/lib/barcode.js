@@ -159,6 +159,22 @@ export async function knownBarcode(code) {
   return data
 }
 
+/** Pack sizes of scanned products by ingredient (lowercase), the latest scan first; empty when offline or not set up. */
+export async function scannedPacks() {
+  try {
+    const { data, error } = await supabase.from('product_barcodes').select('ingredient, pack, updated_at').neq('pack', '').order('updated_at', { ascending: false }).limit(500)
+    if (error) return new Map()
+    const packs = new Map()
+    for (const row of data ?? []) {
+      const name = String(row.ingredient ?? '').trim().toLowerCase()
+      if (name && row.pack && !packs.has(name)) packs.set(name, row.pack)
+    }
+    return packs
+  } catch {
+    return new Map()
+  }
+}
+
 /** Remembers what a product is for both phones. False when the table is not set up yet. */
 export async function rememberBarcode(code, { ingredient, product = '', pack = '' }) {
   const household_id = (await getHousehold()).id
