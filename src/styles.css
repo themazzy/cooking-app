@@ -1216,8 +1216,12 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 .nutrition.health-good { --health: var(--health-good); }
 .nutrition.health-ok { --health: var(--health-ok); }
 .nutrition.health-poor { --health: var(--health-poor); }
-.nutrition-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.nutrition-head { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 0; padding: 0; background: none; color: var(--text); text-align: left; font: inherit; }
+.nutrition-head > svg { color: var(--muted); flex: none; }
+.nutrition-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .nutrition-head h2 { margin: 0; }
+.nutrition-sum { font-size: 0.82rem; color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.nutrition-head .health-badge { flex: none; }
 .health-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px 4px 8px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; color: var(--health); background: color-mix(in srgb, var(--health) 14%, var(--card)); border: 1px solid color-mix(in srgb, var(--health) 35%, var(--card)); }
 .nutrition-main { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
 .donut { position: relative; flex: none; }

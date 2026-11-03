@@ -56,6 +56,7 @@ function Donut({ parts, active, onPick, size = 132, label, children }) {
 }
 
 export default function Nutrition({ kcal, perPortion, approx, macros, macroShare, rows, missing, day = DEFAULT_DAY, onGoals }) {
+  const [open, setOpen] = useState(false)
   const [activeMacro, setActiveMacro] = useState(null)
   const [activeRow, setActiveRow] = useState(null)
   const grams = {
@@ -104,159 +105,171 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
 
   return (
     <section className={`card nutrition${health ? ` health-${health.level}` : ''}`}>
-      <div className="nutrition-head">
-        <h2>Nutrition</h2>
+      <button type="button" className="nutrition-head" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <span className="nutrition-title">
+          <h2>Nutrition</h2>
+          <span className="nutrition-sum">
+            {tilde}
+            {formatKcal(kcal)} kcal · {tilde}
+            {formatGrams(grams.protein)} g protein{perPortion ? ` · ${Math.round((kcal / day.kcal) * 100)} % of ${your} day` : ''}
+          </span>
+        </span>
         {health && (
           <span className={`health-badge ${health.level}`}>
             <Icon name={LEVEL_ICON[health.level]} size={14} /> {health.label}
           </span>
         )}
-      </div>
+        <Icon name={open ? 'up' : 'down'} size={18} />
+      </button>
+      {open && (
+        <>
 
-      <div className="nutrition-main">
-        <Donut parts={macroParts} active={activeMacro} onPick={setActiveMacro} label="Energy from protein, carbs and fat">
-          {activeMacro ? (
-            <>
-              <strong>{Math.round((split?.[activeMacro] ?? 0) * 100)} %</strong>
-              <span>{MACRO_LABEL[activeMacro].toLowerCase()}</span>
-            </>
-          ) : (
-            <>
-              <strong>
-                {tilde}
-                {formatKcal(kcal)}
-              </strong>
-              <span>kcal</span>
-            </>
-          )}
-        </Donut>
-        <ul className="macro-legend">
-          {macroParts.map((p) => (
-            <li key={p.key} className={activeMacro && activeMacro !== p.key ? 'off' : ''}>
-              <button type="button" onClick={() => setActiveMacro(activeMacro === p.key ? null : p.key)}>
-                <i className="swatch" style={{ background: p.color }} />
-                <span className="name">{MACRO_LABEL[p.key]}</span>
-                <strong>
-                  {tilde}
-                  {formatGrams(grams[p.key])} g
-                </strong>
-                <span className="share">{split ? `${Math.round(split[p.key] * 100)} %` : ''}</span>
-              </button>
-            </li>
-          ))}
-          <li className="per">
-            {per}
-            {perPortion ? ` · ${Math.round((kcal / day.kcal) * 100)} % of ${your} day` : ''}
-          </li>
-        </ul>
-      </div>
-
-      {health && (
-        <div className={`extras${meters.length === 4 ? ' four' : ''}`}>
-          {meters.map((k) => {
-            const c = check[k]
-            const share = grams[k] / day[k]
-            return (
-              <div key={k} className={`extra ${c?.level ?? ''}`} title={c ? `${c.title}: ${c.text}` : undefined}>
-                <div className="extra-top">
-                  <span>{METER_LABEL[k]}</span>
-                  {c && (
-                    <span className="dot">
-                      <Icon name={LEVEL_ICON[c.level]} size={10} />
-                    </span>
-                  )}
-                </div>
-                <strong>
-                  {tilde}
-                  {formatGrams(grams[k])} g{k === 'salt' && saltToTaste ? '+' : ''}
-                </strong>
-                <div className="meter" role="img" aria-label={`${Math.round(share * 100)} % of ${your} day`}>
-                  <i style={{ width: `${Math.min(share, 1) * 100}%` }} />
-                </div>
-                <span className="extra-sub">
-                  {Math.round(share * 100)} % of {k === 'protein' ? `${day.protein} g` : `${your} day`}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {health && (
-        <ul className="health-checks">
-          {[...energyChecks, ...['sugar', 'fibre', 'salt'].map((k) => check[k]).filter(Boolean)].map((c) => (
-            <li key={c.key} className={c.level}>
-              <span className="dot">
-                <Icon name={LEVEL_ICON[c.level]} size={12} />
-              </span>
-              <span>
-                <strong>{c.title}</strong> {c.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {sorted.length > 0 && (
-        <details className="kcal-sum">
-          <summary>
-            <Icon name="flame" size={15} /> Where the calories come from
-          </summary>
-          <div className="kcal-sources">
-            <Donut parts={rowParts} active={activeRow} onPick={setActiveRow} size={112} label="Calories by ingredient">
-              {activePart ? (
+          <div className="nutrition-main">
+            <Donut parts={macroParts} active={activeMacro} onPick={setActiveMacro} label="Energy from protein, carbs and fat">
+              {activeMacro ? (
                 <>
-                  <strong>{Math.round((activePart.value / sumKcal) * 100)} %</strong>
-                  <span>of kcal</span>
+                  <strong>{Math.round((split?.[activeMacro] ?? 0) * 100)} %</strong>
+                  <span>{MACRO_LABEL[activeMacro].toLowerCase()}</span>
                 </>
               ) : (
                 <>
-                  <strong>{top.length > 0 ? `${Math.round((top[0].kcal / sumKcal) * 100)} %` : ''}</strong>
-                  <span>top one</span>
+                  <strong>
+                    {tilde}
+                    {formatKcal(kcal)}
+                  </strong>
+                  <span>kcal</span>
                 </>
               )}
             </Donut>
-            <ul>
-              {rowParts.map((p) => (
-                <li key={p.key} className={activeRow && activeRow !== p.key ? 'off' : ''} onClick={() => setActiveRow(activeRow === p.key ? null : p.key)}>
-                  <i className="swatch" style={{ background: p.color }} />
-                  <span className="name">{p.name}</span>
-                  <span>{formatKcal(p.value)} kcal</span>
+            <ul className="macro-legend">
+              {macroParts.map((p) => (
+                <li key={p.key} className={activeMacro && activeMacro !== p.key ? 'off' : ''}>
+                  <button type="button" onClick={() => setActiveMacro(activeMacro === p.key ? null : p.key)}>
+                    <i className="swatch" style={{ background: p.color }} />
+                    <span className="name">{MACRO_LABEL[p.key]}</span>
+                    <strong>
+                      {tilde}
+                      {formatGrams(grams[p.key])} g
+                    </strong>
+                    <span className="share">{split ? `${Math.round(split[p.key] * 100)} %` : ''}</span>
+                  </button>
                 </li>
               ))}
+              <li className="per">
+                {per}
+                {perPortion ? ` · ${Math.round((kcal / day.kcal) * 100)} % of ${your} day` : ''}
+              </li>
             </ul>
           </div>
-          {sorted.length > TOP && (
-            <ul className="kcal-all">
-              {sorted.slice(TOP).map((r, n) => (
-                <li key={n}>
-                  <span>{r.name}</span>
-                  <span>{formatKcal(r.kcal)} kcal</span>
+
+          {health && (
+            <div className={`extras${meters.length === 4 ? ' four' : ''}`}>
+              {meters.map((k) => {
+                const c = check[k]
+                const share = grams[k] / day[k]
+                return (
+                  <div key={k} className={`extra ${c?.level ?? ''}`} title={c ? `${c.title}: ${c.text}` : undefined}>
+                    <div className="extra-top">
+                      <span>{METER_LABEL[k]}</span>
+                      {c && (
+                        <span className="dot">
+                          <Icon name={LEVEL_ICON[c.level]} size={10} />
+                        </span>
+                      )}
+                    </div>
+                    <strong>
+                      {tilde}
+                      {formatGrams(grams[k])} g{k === 'salt' && saltToTaste ? '+' : ''}
+                    </strong>
+                    <div className="meter" role="img" aria-label={`${Math.round(share * 100)} % of ${your} day`}>
+                      <i style={{ width: `${Math.min(share, 1) * 100}%` }} />
+                    </div>
+                    <span className="extra-sub">
+                      {Math.round(share * 100)} % of {k === 'protein' ? `${day.protein} g` : `${your} day`}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {health && (
+            <ul className="health-checks">
+              {[...energyChecks, ...['sugar', 'fibre', 'salt'].map((k) => check[k]).filter(Boolean)].map((c) => (
+                <li key={c.key} className={c.level}>
+                  <span className="dot">
+                    <Icon name={LEVEL_ICON[c.level]} size={12} />
+                  </span>
+                  <span>
+                    <strong>{c.title}</strong> {c.text}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
-          {missing.length > 0 && (
-            <p className="note">Not counted (no amount or calories known): {missing.join(', ')}. Calories of your own ingredients can be set on the Ingredients tab.</p>
+
+          {sorted.length > 0 && (
+            <details className="kcal-sum">
+              <summary>
+                <Icon name="flame" size={15} /> Where the calories come from
+              </summary>
+              <div className="kcal-sources">
+                <Donut parts={rowParts} active={activeRow} onPick={setActiveRow} size={112} label="Calories by ingredient">
+                  {activePart ? (
+                    <>
+                      <strong>{Math.round((activePart.value / sumKcal) * 100)} %</strong>
+                      <span>of kcal</span>
+                    </>
+                  ) : (
+                    <>
+                      <strong>{top.length > 0 ? `${Math.round((top[0].kcal / sumKcal) * 100)} %` : ''}</strong>
+                      <span>top one</span>
+                    </>
+                  )}
+                </Donut>
+                <ul>
+                  {rowParts.map((p) => (
+                    <li key={p.key} className={activeRow && activeRow !== p.key ? 'off' : ''} onClick={() => setActiveRow(activeRow === p.key ? null : p.key)}>
+                      <i className="swatch" style={{ background: p.color }} />
+                      <span className="name">{p.name}</span>
+                      <span>{formatKcal(p.value)} kcal</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {sorted.length > TOP && (
+                <ul className="kcal-all">
+                  {sorted.slice(TOP).map((r, n) => (
+                    <li key={n}>
+                      <span>{r.name}</span>
+                      <span>{formatKcal(r.kcal)} kcal</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {missing.length > 0 && (
+                <p className="note">Not counted (no amount or calories known): {missing.join(', ')}. Calories of your own ingredients can be set on the Ingredients tab.</p>
+              )}
+            </details>
           )}
-        </details>
+          <p className="note nutrition-foot">
+            An estimate from typical values for raw ingredients.{' '}
+            {day.personal
+              ? `Your day: ${day.kcal.toLocaleString('cs-CZ')} kcal, ${day.protein} g protein, under ${day.sugar} g sugars, ${day.fibre} g fibre, under ${day.salt} g salt, over ${day.meals} meals.`
+              : 'Days are the EU reference intakes (2000 kcal, 90 g sugars, 30 g fibre, 6 g salt).'}
+            {onGoals ? (
+              <>
+                {' '}
+                <button type="button" className="link" onClick={onGoals}>
+                  {day.personal ? 'Change your goals' : 'Set your own goals'}
+                </button>
+              </>
+            ) : null}
+            {guessed.length > 0 ? ` ${listNames(guessed)} ${guessed.length === 1 ? 'has' : 'have'} no amount, so ${guessed.length === 1 ? 'it counts' : 'they count'} as a usual pinch or spoon per portion (1 g salt, 0.2 g pepper, 2 g sugar, 5 g oil).` : ''}
+            {saltToTaste ? ' Salt added to taste is not counted.' : ''}
+          </p>
+        </>
       )}
-      <p className="note nutrition-foot">
-        An estimate from typical values for raw ingredients.{' '}
-        {day.personal
-          ? `Your day: ${day.kcal.toLocaleString('cs-CZ')} kcal, ${day.protein} g protein, under ${day.sugar} g sugars, ${day.fibre} g fibre, under ${day.salt} g salt, over ${day.meals} meals.`
-          : 'Days are the EU reference intakes (2000 kcal, 90 g sugars, 30 g fibre, 6 g salt).'}
-        {onGoals ? (
-          <>
-            {' '}
-            <button type="button" className="link" onClick={onGoals}>
-              {day.personal ? 'Change your goals' : 'Set your own goals'}
-            </button>
-          </>
-        ) : null}
-        {guessed.length > 0 ? ` ${listNames(guessed)} ${guessed.length === 1 ? 'has' : 'have'} no amount, so ${guessed.length === 1 ? 'it counts' : 'they count'} as a usual pinch or spoon per portion (1 g salt, 0.2 g pepper, 2 g sugar, 5 g oil).` : ''}
-        {saltToTaste ? ' Salt added to taste is not counted.' : ''}
-      </p>
     </section>
   )
 }

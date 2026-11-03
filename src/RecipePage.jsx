@@ -754,20 +754,6 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         )}
       </section>
 
-      {hasCalories && (
-        <Nutrition
-          kcal={perPortion ?? calories.total * factor}
-          perPortion={perPortion != null}
-          approx={calories.missing.length > 0 || macros.missing.length > 0}
-          macros={macros}
-          macroShare={macroShare}
-          rows={calories.rows.map((r) => ({ name: r.name, kcal: perPortion != null ? r.kcal / recipe.servings : r.kcal * factor }))}
-          missing={calories.missing}
-          day={day}
-          onGoals={onGoals}
-        />
-      )}
-
       <section className="card">
         <h2>Steps</h2>
         {steps.length === 0 ? (
@@ -790,6 +776,20 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           </button>
         </div>
       </section>
+
+      {hasCalories && (
+        <Nutrition
+          kcal={perPortion ?? calories.total * factor}
+          perPortion={perPortion != null}
+          approx={calories.missing.length > 0 || macros.missing.length > 0}
+          macros={macros}
+          macroShare={macroShare}
+          rows={calories.rows.map((r) => ({ name: r.name, kcal: perPortion != null ? r.kcal / recipe.servings : r.kcal * factor }))}
+          missing={calories.missing}
+          day={day}
+          onGoals={onGoals}
+        />
+      )}
 
       {sharing && (
         <ShareSheet
