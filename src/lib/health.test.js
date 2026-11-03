@@ -32,3 +32,20 @@ describe('mealHealth', () => {
   })
   it('is null without numbers', () => expect(mealHealth({ kcal: null, protein: 0, carbs: 0, fat: 0 })).toBe(null))
 })
+
+describe('sugar, fibre and salt checks', () => {
+  it('flags a sweet, salty meal with little fibre', () => {
+    const h = mealHealth({ kcal: 600, protein: 25, carbs: 80, fat: 18, sugar: 40, fibre: 2, salt: 4 })
+    const lv = Object.fromEntries(h.checks.map((c) => [c.key, c.level]))
+    expect(lv).toMatchObject({ sugar: 'high', fibre: 'low', salt: 'high' })
+  })
+  it('praises a lentil stew', () => {
+    const h = mealHealth({ kcal: 450, protein: 24, carbs: 55, fat: 12, sugar: 8, fibre: 14, salt: 1 })
+    expect(h.checks.filter((c) => c.level !== 'good')).toEqual([])
+    expect(h.level).toBe('good')
+  })
+  it('says salt to taste when it has no amount', () => {
+    const h = mealHealth({ kcal: 450, protein: 24, carbs: 55, fat: 12, sugar: 8, fibre: 14, salt: 0, saltToTaste: true })
+    expect(h.checks.find((c) => c.key === 'salt')).toMatchObject({ level: 'ok', text: expect.stringContaining('to taste') })
+  })
+})

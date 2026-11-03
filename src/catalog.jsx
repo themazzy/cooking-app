@@ -29,6 +29,9 @@ const withNutrition = (e, fallback) => {
     protein: n?.protein ?? null,
     carbs: n?.carbs ?? null,
     fat: n?.fat ?? null,
+    sugar: n?.sugar ?? null,
+    fibre: n?.fibre ?? null,
+    salt: n?.salt ?? null,
     // What the household typed itself, for editing
     own_kcal: e.kcal ?? null,
     own_piece_g: e.piece_g ?? null,

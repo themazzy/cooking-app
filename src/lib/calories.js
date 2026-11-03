@@ -7,17 +7,22 @@ import { canonicalUnit, parseAmount, stickGrams, sumRows } from './scale.js'
 
 const num = (s) => (String(s ?? '').trim() === '' ? null : Number(s))
 
-/** Catalog name (lowercase) → { kcal, piece_g, density, protein, carbs, fat } from data/nutrition.js. */
+/** Catalog name (lowercase) → { kcal, piece_g, density, protein, carbs, fat, sugar, fibre, salt } from data/nutrition.js. */
 export const NUTRITION = new Map(
   NUTRITION_LINES.trim()
     .split('\n')
     .map((line) => {
-      const [name, kcal, piece, density, protein, carbs, fat] = line.split('|').map((s) => s.trim())
-      return [name.toLowerCase(), { kcal: num(kcal), piece_g: num(piece), density: num(density), protein: num(protein), carbs: num(carbs), fat: num(fat) }]
+      const [name, kcal, piece, density, protein, carbs, fat, sugar, fibre, salt] = line.split('|').map((s) => s.trim())
+      return [
+        name.toLowerCase(),
+        { kcal: num(kcal), piece_g: num(piece), density: num(density), protein: num(protein), carbs: num(carbs), fat: num(fat), sugar: num(sugar), fibre: num(fibre), salt: num(salt) },
+      ]
     }),
 )
 
 export const MACROS = ['protein', 'carbs', 'fat']
+/** Sugars (part of the carbs), fibre and salt, grams per 100 g too. */
+export const EXTRAS = ['sugar', 'fibre', 'salt']
 
 const MASS = { g: 1, kg: 1000, oz: 28.35, lb: 453.6 }
 const VOLUME = { ml: 1, dl: 100, l: 1000, tsp: 4.93, tbsp: 14.79, cup: 240, floz: 29.57, pint: 473.2, quart: 946.4 }
@@ -79,21 +84,31 @@ export function portionKcal(recipe, match) {
 }
 
 /**
- * Protein, carbs and fat (grams) of a list of ingredients, counted like
- * calories: { protein, carbs, fat, missing: [name] }. Ingredients without
- * calories count as nothing here too (salt, water).
+ * Protein, carbs, fat, sugar, fibre and salt (grams) of a list of
+ * ingredients, counted like calories: { protein, carbs, fat, sugar, fibre,
+ * salt, missing: [name], unweighed: [name] }. Ingredients without calories
+ * count as nothing for the macros (water); salt with an amount counts as
+ * salt, and salty things without one ("salt to taste") are in `unweighed`.
  */
 export function recipeMacros(ingredients, match) {
-  const out = { protein: 0, carbs: 0, fat: 0, missing: [] }
+  const out = { protein: 0, carbs: 0, fat: 0, sugar: 0, fibre: 0, salt: 0, missing: [], unweighed: [] }
   for (const i of (ingredients ?? []).flatMap(sumRows)) {
     const entry = match(i.name)
-    if (entry?.kcal === 0) continue
+    if (entry?.kcal === 0) {
+      if (!(entry.salt > 0)) continue
+      const g = gramsOf(i, entry)
+      if (g == null) {
+        if (entry.salt >= 5) out.unweighed.push(i.name.trim())
+      }
+      else out.salt += (g * entry.salt) / 100
+      continue
+    }
     const g = entry && MACROS.every((m) => entry[m] != null) ? gramsOf(i, entry) : null
     if (g == null) {
       out.missing.push(i.name.trim())
       continue
     }
-    for (const m of MACROS) out[m] += (g * entry[m]) / 100
+    for (const m of [...MACROS, ...EXTRAS]) out[m] += (g * (entry[m] ?? 0)) / 100
   }
   return out
 }

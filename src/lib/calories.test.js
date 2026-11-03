@@ -98,3 +98,24 @@ describe('portionKcal', () => {
     expect(portionKcal({ servings: 2, ingredients: [{ name: 'flour' }] }, match)).toBeNull()
   })
 })
+
+describe('sugar, fibre and salt', () => {
+  const match = (name) => NUTRITION.get(name.toLowerCase())
+  it('has them for every catalog ingredient, sugar never above the carbs', () => {
+    const bad = [...NUTRITION].filter(([, n]) => !(n.sugar >= 0 && n.fibre >= 0 && n.salt >= 0) || n.sugar > n.carbs).map(([name]) => name)
+    expect(bad).toEqual([])
+  })
+  it('counts salt with an amount and lists salt to taste', () => {
+    const m = recipeMacros(
+      [
+        { name: 'Flour', qty: '100', unit: 'g' },
+        { name: 'Salt', qty: '1', unit: 'tsp' },
+        { name: 'Sea salt', qty: '', unit: '' },
+      ],
+      match,
+    )
+    expect(m.salt).toBeCloseTo(4.93 * 1.2 * 0.99, 1)
+    expect(m.fibre).toBeCloseTo(3)
+    expect(m.unweighed).toEqual(['Sea salt'])
+  })
+})

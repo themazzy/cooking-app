@@ -1238,6 +1238,18 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 .macro-legend .share { color: var(--muted); font-size: 0.85rem; text-align: right; }
 .macro-legend .per { font-size: 0.8rem; color: var(--muted); padding: 2px 6px 0; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 4px; flex: none; }
+.extras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.extra { --lvl: var(--muted); background: var(--sunken); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+.extra.good { --lvl: var(--health-good); }
+.extra.ok { --lvl: var(--health-ok); }
+.extra.high, .extra.low { --lvl: var(--health-poor); }
+.extra-top { display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem; color: var(--muted); }
+.extra .dot { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%; color: #fff; background: var(--lvl); }
+:root[data-theme='dark'] .extra .dot { color: #141412; }
+.extra strong { display: block; font-size: 1.05rem; font-variant-numeric: tabular-nums; margin: 1px 0 5px; white-space: nowrap; }
+.meter { height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 18%, transparent); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: 3px; background: var(--lvl); min-width: 3px; }
+.extra-sub { display: block; font-size: 0.72rem; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .health-checks { list-style: none; padding: 10px 12px; margin: 14px 0 0; background: var(--sunken); border-radius: 12px; display: grid; gap: 6px; }
 .health-checks li { display: flex; align-items: flex-start; gap: 9px; margin: 0; font-size: 0.9rem; color: var(--muted); }
 .health-checks li strong { color: var(--text); font-weight: 600; margin-right: 2px; }

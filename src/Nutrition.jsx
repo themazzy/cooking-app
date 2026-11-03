@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Icon from './Icon.jsx'
 import { formatGrams, formatKcal } from './lib/calories.js'
-import { DAY_KCAL, KCAL_PER_G, mealHealth } from './lib/health.js'
+import { DAY, DAY_KCAL, KCAL_PER_G, mealHealth } from './lib/health.js'
 
 // Recipe page nutrition card: a donut of where the energy comes from
 // (protein, carbs, fat), a balance rating with its checks, and a second
@@ -10,6 +10,7 @@ import { DAY_KCAL, KCAL_PER_G, mealHealth } from './lib/health.js'
 const MACRO_LABEL = { protein: 'Protein', carbs: 'Carbs', fat: 'Fat' }
 const LEVEL_ICON = { good: 'check', ok: 'minus', poor: 'alert', high: 'alert', low: 'alert' }
 const TOP = 5
+const EXTRA_LABEL = { sugar: 'Sugar', fibre: 'Fibre', salt: 'Salt' }
 
 /** Donut of `parts` ([{ key, value, color }]); `active` key is drawn thicker. */
 function Donut({ parts, active, onPick, size = 132, label, children }) {
@@ -57,8 +58,14 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
     protein: macros.protein * macroShare,
     carbs: macros.carbs * macroShare,
     fat: macros.fat * macroShare,
+    sugar: (macros.sugar ?? 0) * macroShare,
+    fibre: (macros.fibre ?? 0) * macroShare,
+    salt: (macros.salt ?? 0) * macroShare,
   }
-  const health = mealHealth({ kcal: perPortion ? kcal : null, ...grams })
+  const saltToTaste = (macros.unweighed ?? []).length > 0
+  const health = mealHealth({ kcal: perPortion ? kcal : null, ...grams, saltToTaste })
+  const check = Object.fromEntries((health?.checks ?? []).map((c) => [c.key, c]))
+  const energyChecks = (health?.checks ?? []).filter((c) => !EXTRA_LABEL[c.key])
   const split = health?.split
   const per = perPortion ? 'per portion' : 'in total'
   const tilde = approx ? '~' : ''
@@ -137,8 +144,39 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
       </div>
 
       {health && (
+        <div className="extras">
+          {Object.keys(EXTRA_LABEL).map((k) => {
+            const c = check[k]
+            const share = grams[k] / DAY[k]
+            return (
+              <div key={k} className={`extra ${c?.level ?? ''}`} title={c ? `${c.title}: ${c.text}` : undefined}>
+                <div className="extra-top">
+                  <span>{EXTRA_LABEL[k]}</span>
+                  {c && (
+                    <span className="dot">
+                      <Icon name={LEVEL_ICON[c.level]} size={10} />
+                    </span>
+                  )}
+                </div>
+                <strong>
+                  {tilde}
+                  {formatGrams(grams[k])} g{k === 'salt' && saltToTaste ? '+' : ''}
+                </strong>
+                <div className="meter" role="img" aria-label={`${Math.round(share * 100)} % of a day`}>
+                  <i style={{ width: `${Math.min(share, 1) * 100}%` }} />
+                </div>
+                <span className="extra-sub">
+                  {Math.round(share * 100)} % of a day
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {health && (
         <ul className="health-checks">
-          {health.checks.map((c) => (
+          {[...energyChecks, ...['sugar', 'fibre', 'salt'].map((k) => check[k]).filter(Boolean)].map((c) => (
             <li key={c.key} className={c.level}>
               <span className="dot">
                 <Icon name={LEVEL_ICON[c.level]} size={12} />
@@ -196,7 +234,8 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
         </details>
       )}
       <p className="note nutrition-foot">
-        An estimate from typical values for raw ingredients. The rating looks at calories {perPortion ? 'per portion ' : ''}and the protein, carbs and fat split only, not at fibre, sugar or salt.
+        An estimate from typical values for raw ingredients. Days are the EU reference intakes (2000 kcal, 90 g sugars, 30 g fibre, 6 g salt).
+        {saltToTaste ? ' Salt added to taste is not counted.' : ''}
       </p>
     </section>
   )
