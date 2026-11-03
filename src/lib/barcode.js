@@ -101,6 +101,21 @@ export function productKcal(product) {
   return n.energy_100g != null && n.energy_100g !== '' && Number.isFinite(kj) && kj >= 0 ? Math.round((kj / 4.184) * 10) / 10 : null
 }
 
+// Open Food Facts nutriment keys for the app's own names (carbohydrates
+// there are without fibre, as on EU labels, like the catalog's)
+const OFF_NUTRIENTS = { protein: 'proteins_100g', carbs: 'carbohydrates_100g', fat: 'fat_100g', sugar: 'sugars_100g', fibre: 'fiber_100g', salt: 'salt_100g' }
+
+/** Protein, carbs, fat, sugar, fibre and salt per 100 g printed on the pack ({ protein, … }), or null when none is. */
+export function productNutrients(product) {
+  const n = product?.nutriments ?? {}
+  const out = {}
+  for (const [key, off] of Object.entries(OFF_NUTRIENTS)) {
+    const v = Number(n[off])
+    if (n[off] != null && n[off] !== '' && Number.isFinite(v) && v >= 0 && v <= 100) out[key] = Math.round(v * 100) / 100
+  }
+  return Object.keys(out).length ? out : null
+}
+
 /** The aisle of an Open Food Facts product from its categories, or 'Other'. */
 export function productAisle(product) {
   const tags = new Set((product?.categories_tags ?? []).filter((t) => t.startsWith('en:')).map((t) => t.slice(3)))
@@ -212,6 +227,7 @@ export async function lookupBarcode(code, match) {
     name: productName(product),
     aisle: entry?.aisle ?? productAisle(product),
     kcal: productKcal(product),
+    nutrients: productNutrients(product),
     picture: product.image_front_small_url || product.image_small_url || product.image_front_url || '',
     pack: packAmount(product),
     entry,
@@ -233,5 +249,24 @@ export async function fetchPicture(url) {
     return res.ok ? await res.blob() : null
   } catch {
     return null
+  }
+}
+
+/**
+ * Barcodes the household scanned, by ingredient name (lowercase) → barcodes,
+ * the latest first; empty when offline or not set up.
+ */
+export async function scannedBarcodes() {
+  try {
+    const { data, error } = await supabase.from('product_barcodes').select('barcode, ingredient, updated_at').order('updated_at', { ascending: false }).limit(500)
+    if (error) return new Map()
+    const out = new Map()
+    for (const row of data ?? []) {
+      const name = String(row.ingredient ?? '').trim().toLowerCase()
+      if (name) out.set(name, [...(out.get(name) ?? []), row.barcode])
+    }
+    return out
+  } catch {
+    return new Map()
   }
 }

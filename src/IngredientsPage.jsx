@@ -3,12 +3,17 @@ import { AISLES } from './data/ingredients.js'
 import { IngredientIcon, photoToIcon, useCatalog } from './catalog.jsx'
 import { toast } from './lib/toast.js'
 import { renamePantryItems } from './lib/pantry.js'
-import { NUTRITION } from './lib/calories.js'
+import { EXTRAS, MACROS, NUTRITION } from './lib/calories.js'
 import Select from './Select.jsx'
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
 
-const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null, kcal: '', piece_g: '' }
+const NUTRIENT_KEYS = [...MACROS, ...EXTRAS]
+const NUTRIENT_LABEL = { protein: 'Protein', carbs: 'Carbs', fat: 'Fat', sugar: 'of which sugar', fibre: 'Fibre', salt: 'Salt' }
+const EMPTY = { name: '', base: '', aisle: 'Other', aliases: '', image: '', image_data: null, kcal: '', piece_g: '', nutrients: {} }
+
+/** Own nutrient values as text for the form. */
+const nutrientText = (n) => Object.fromEntries(NUTRIENT_KEYS.filter((k) => n?.[k] != null).map((k) => [k, String(n[k])]))
 
 const toNumber = (text) => {
   const n = Number(String(text ?? '').trim().replace(',', '.'))
@@ -16,8 +21,10 @@ const toNumber = (text) => {
 }
 
 /** kcal per 100 g and the weight of one piece; empty fields show what is used instead. */
-function KcalFields({ kcal, piece, fallback, onChange }) {
+function KcalFields({ kcal, piece, nutrients = {}, fallback, onChange }) {
+  const filled = NUTRIENT_KEYS.filter((k) => nutrients[k]).length
   return (
+    <>
     <div className="kcal-fields">
       <label className="field">
         kcal per 100 g
@@ -28,7 +35,37 @@ function KcalFields({ kcal, piece, fallback, onChange }) {
         <NumberField step={5} min={0} label="grams" placeholder={fallback?.piece_g != null ? String(fallback.piece_g) : 'optional'} value={piece} onChange={(v) => onChange({ piece_g: v })} />
       </label>
     </div>
+    <details className="nutrient-fields" open={filled > 0 || undefined}>
+      <summary>Protein, carbs, fat, sugar, fibre, salt{filled ? ` (${filled} set)` : ''}</summary>
+      <p className="note">Grams per 100 g, from the pack. Empty ones use {fallback?.name ? fallback.name : 'the usual values'}.</p>
+      <div className="kcal-fields">
+        {NUTRIENT_KEYS.map((k) => (
+          <label key={k} className="field">
+            {NUTRIENT_LABEL[k]}
+            <NumberField
+              step={k === 'salt' ? 0.1 : 1}
+              min={0}
+              label={NUTRIENT_LABEL[k]}
+              placeholder={fallback?.[k] != null ? String(fallback[k]) : 'g'}
+              value={nutrients[k] ?? ''}
+              onChange={(v) => onChange({ nutrients: { ...nutrients, [k]: v } })}
+            />
+          </label>
+        ))}
+      </div>
+    </details>
+    </>
   )
+}
+
+/** The form's nutrient texts as saved values, or null when none is filled. */
+const nutrientValues = (texts) => {
+  const out = {}
+  for (const k of NUTRIENT_KEYS) {
+    const n = toNumber(texts?.[k])
+    if (n != null) out[k] = n
+  }
+  return Object.keys(out).length ? out : null
 }
 
 /** The ingredient catalog: the shared list plus your own (local brands etc.), with search. */
@@ -51,7 +88,13 @@ export default function IngredientsPage() {
   const [picture, setPicture] = useState(null)
   const [savingPicture, setSavingPicture] = useState(false)
   const openShared = (entry, override) =>
-    setPicture({ entry, override, kcal: override?.own_kcal != null ? String(override.own_kcal) : '', piece_g: override?.own_piece_g != null ? String(override.own_piece_g) : '' })
+    setPicture({
+      entry,
+      override,
+      kcal: override?.own_kcal != null ? String(override.own_kcal) : '',
+      piece_g: override?.own_piece_g != null ? String(override.own_piece_g) : '',
+      nutrients: nutrientText(override?.own_nutrients),
+    })
 
   /** Saves the household's own version of an everyday ingredient; null patch goes back to the usual one. */
   const saveOverride = async (patch, done) => {
@@ -94,6 +137,7 @@ export default function IngredientsPage() {
       image_data: e.image_data ?? null,
       kcal: e.own_kcal != null ? String(e.own_kcal) : '',
       piece_g: e.own_piece_g != null ? String(e.own_piece_g) : '',
+      nutrients: nutrientText(e.own_nutrients),
     })
     setMessage(null)
     setFormOpen(true)
@@ -117,6 +161,8 @@ export default function IngredientsPage() {
     const kcal = toNumber(form.kcal)
     const piece_g = toNumber(form.piece_g) || null
     if (kcal != null || piece_g != null || editing?.own_kcal != null || editing?.own_piece_g != null) Object.assign(entry, { kcal, piece_g })
+    const nutrients = nutrientValues(form.nutrients)
+    if (nutrients || editing?.own_nutrients) entry.nutrients = nutrients
     try {
       if (editingId) {
         await update(editingId, entry)
@@ -224,14 +270,24 @@ export default function IngredientsPage() {
             <KcalFields
               kcal={picture.kcal}
               piece={picture.piece_g}
-              fallback={NUTRITION.get(picture.entry.name.toLowerCase())}
+              nutrients={picture.nutrients}
+              fallback={{ name: picture.entry.name, ...NUTRITION.get(picture.entry.name.toLowerCase()) }}
               onChange={(patch) => setPicture((p) => ({ ...p, ...patch }))}
             />
             <div className="row">
               <button
                 className="secondary"
                 disabled={savingPicture}
-                onClick={() => saveOverride({ kcal: toNumber(picture.kcal), piece_g: toNumber(picture.piece_g) || null }, `Calories saved for ${picture.entry.name}`)}
+                onClick={() =>
+                  saveOverride(
+                    {
+                      kcal: toNumber(picture.kcal),
+                      piece_g: toNumber(picture.piece_g) || null,
+                      ...(nutrientValues(picture.nutrients) || picture.override?.own_nutrients ? { nutrients: nutrientValues(picture.nutrients) } : {}),
+                    },
+                    `Calories saved for ${picture.entry.name}`,
+                  )
+                }
               >
                 Save calories
               </button>
@@ -271,6 +327,7 @@ export default function IngredientsPage() {
               <KcalFields
                 kcal={form.kcal}
                 piece={form.piece_g}
+                nutrients={form.nutrients}
                 fallback={sharedNames.find((e) => e.name.toLowerCase() === form.base.trim().toLowerCase())}
                 onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
               />

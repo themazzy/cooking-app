@@ -1317,3 +1317,7 @@ ul.shopping.to-home .pack-step button.icon { width: 36px; min-height: 36px; }
 ul.shopping.to-home .to-home-amount .num-field input { width: 100%; height: auto; flex: 1 1 auto; }
 .aisle-chips.quick-add { margin: 0 0 4px; padding: 4px 0 6px; }
 .aisle-chips.quick-add .chip-btn { flex: none; gap: 4px; }
+
+.nutrient-fields { margin-top: 4px; }
+.nutrient-fields summary { font-size: 0.9rem; }
+.nutrient-fields .note { margin: 2px 0 6px; font-size: 0.82rem; }

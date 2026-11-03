@@ -3,12 +3,16 @@ import { SEED_INGREDIENTS } from './data/ingredients.js'
 import { buildCatalogIndex, imageUrl, matchIngredient, normalizeName } from './lib/catalog.js'
 import { supabase } from './lib/supabase.js'
 import { getHousehold } from './lib/sync.js'
-import { NUTRITION } from './lib/calories.js'
+import { EXTRAS, MACROS, NUTRITION } from './lib/calories.js'
+import { openFoodFacts, productKcal, productNutrients, scannedBarcodes } from './lib/barcode.js'
 
 const CACHE_KEY = 'cooking-app:catalog'
 const COLUMNS = 'id, household_id, name, aisle, image, image_data, base, aliases'
 // Calories of the household's own ingredients (supabase-ingredient-kcal.sql adds the columns)
 const KCAL_COLUMNS = 'kcal, piece_g'
+// Own protein, carbs, fat, sugar, fibre and salt (supabase-ingredient-nutrients.sql adds the column)
+const NUTRIENT_COLUMNS = 'nutrients'
+const NUTRIENT_KEYS = [...MACROS, ...EXTRAS]
 
 const readCache = () => {
   try {
@@ -21,17 +25,15 @@ const readCache = () => {
 /** The built-in calories of an entry, unless the household gave it its own. */
 const withNutrition = (e, fallback) => {
   const n = NUTRITION.get(e.name.toLowerCase()) ?? fallback
+  const own = e.nutrients && typeof e.nutrients === 'object' ? e.nutrients : null
   return {
     ...e,
     kcal: e.kcal ?? n?.kcal ?? null,
     piece_g: e.piece_g ?? n?.piece_g ?? null,
     density: n?.density ?? null,
-    protein: n?.protein ?? null,
-    carbs: n?.carbs ?? null,
-    fat: n?.fat ?? null,
-    sugar: n?.sugar ?? null,
-    fibre: n?.fibre ?? null,
-    salt: n?.salt ?? null,
+    // The pack's own values first (a scanned product), then the everyday ingredient's
+    ...Object.fromEntries(NUTRIENT_KEYS.map((k) => [k, own?.[k] ?? n?.[k] ?? null])),
+    own_nutrients: own,
     // What the household typed itself, for editing
     own_kcal: e.kcal ?? null,
     own_piece_g: e.piece_g ?? null,
@@ -52,7 +54,28 @@ function withBase(entries) {
 
 // Before the calorie columns exist, saving them fails; say what to do
 const kcalHint = (error) =>
-  /kcal|piece_g/.test(error?.message ?? '') ? Object.assign(new Error('Calories need the new database columns: run supabase-ingredient-kcal.sql in Supabase first.'), { cause: error }) : error
+  /nutrients/.test(error?.message ?? '')
+    ? Object.assign(new Error('Protein, sugar, fibre and salt need the new database column: run supabase-ingredient-nutrients.sql in Supabase first.'), { cause: error })
+    : /kcal|piece_g/.test(error?.message ?? '')
+      ? Object.assign(new Error('Calories need the new database columns: run supabase-ingredient-kcal.sql in Supabase first.'), { cause: error })
+      : error
+
+// Barcodes already looked up for nutrients, so a product Open Food Facts lacks is not asked again
+const TRIED_KEY = 'cooking-app:nutrient-barcodes'
+const readTried = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(TRIED_KEY)) ?? [])
+  } catch {
+    return new Set()
+  }
+}
+const saveTried = (set) => {
+  try {
+    localStorage.setItem(TRIED_KEY, JSON.stringify([...set].slice(-500)))
+  } catch {
+    // only saves asking again
+  }
+}
 
 const SEED_ORDER = new Map(SEED_INGREDIENTS.map((e, i) => [e.name.toLowerCase(), i]))
 const seedOrder = (e) => SEED_ORDER.get(e.name.toLowerCase()) ?? SEED_ORDER.size
@@ -70,7 +93,9 @@ export function CatalogProvider({ children }) {
   const [loaded, setLoaded] = useState(() => readCache() != null)
 
   const refresh = useCallback(async () => {
-    let { data, error } = await supabase.from('ingredients').select(`${COLUMNS}, ${KCAL_COLUMNS}`).order('name')
+    // Newer columns first; without them (SQL not run yet) the older selects still work
+    let { data, error } = await supabase.from('ingredients').select(`${COLUMNS}, ${KCAL_COLUMNS}, ${NUTRIENT_COLUMNS}`).order('name')
+    if (error?.code === '42703') ({ data, error } = await supabase.from('ingredients').select(`${COLUMNS}, ${KCAL_COLUMNS}`).order('name'))
     if (error?.code === '42703') ({ data, error } = await supabase.from('ingredients').select(COLUMNS).order('name'))
     if (error || !data?.length) return
     setEntries(data)
@@ -85,6 +110,42 @@ export function CatalogProvider({ children }) {
   useEffect(() => {
     refresh()
   }, [refresh])
+
+  // Own ingredients scanned before nutrients were saved get them from Open
+  // Food Facts by their barcode, a few per start (each barcode tried once)
+  useEffect(() => {
+    if (!loaded) return
+    const todo = entries.filter((e) => e.household_id && 'nutrients' in e && !e.nutrients)
+    if (!todo.length) return
+    let stopped = false
+    ;(async () => {
+      const tried = readTried()
+      const codes = await scannedBarcodes()
+      let asked = 0
+      let changed = false
+      for (const e of todo) {
+        if (stopped || asked >= 8) break
+        const code = (codes.get(e.name.trim().toLowerCase()) ?? []).find((c) => !tried.has(c))
+        if (!code) continue
+        asked++
+        tried.add(code)
+        saveTried(tried)
+        const product = await openFoodFacts(code).catch(() => null)
+        const nutrients = productNutrients(product)
+        if (!nutrients) continue
+        const kcal = e.kcal == null ? productKcal(product) : null
+        const { error } = await supabase
+          .from('ingredients')
+          .update({ nutrients, ...(kcal != null ? { kcal } : {}), updated_at: new Date().toISOString() })
+          .eq('id', e.id)
+        if (!error) changed = true
+      }
+      if (changed && !stopped) refresh()
+    })()
+    return () => {
+      stopped = true
+    }
+  }, [loaded, entries, refresh])
 
   const add = useCallback(
     async (entry) => {
@@ -136,23 +197,33 @@ export function CatalogProvider({ children }) {
      * counting as the everyday one it most likely is ("Coca Cola Zero" → Cola).
      * A picture is filled in when the ingredient has none yet.
      */
-    const ensure = async (name, { base, aisle, image_data, kcal } = {}) => {
-      // The product's own calories (kcalHint: the columns may not exist yet, then it is saved without)
-      const own = kcal != null ? { kcal } : {}
+    const ensure = async (name, { base, aisle, image_data, kcal, nutrients } = {}) => {
+      // The product's own calories and nutrients (the columns may not exist yet, then it is saved without)
+      const have = named(name)
+      const own = {
+        ...(kcal != null && have?.own_kcal == null ? { kcal } : {}),
+        ...(nutrients && !have?.own_nutrients ? { nutrients } : {}),
+      }
       const save = async (fn, patch) => {
         try {
           await fn({ ...patch, ...own })
         } catch (e) {
-          if (!own.kcal && own.kcal !== 0) throw e
-          if (!/kcal/.test(e?.message ?? '')) throw e
+          if (!Object.keys(own).length || !/kcal|nutrients/.test(e?.message ?? '')) throw e
+          // Without the nutrients column, try with the calories alone, then with neither
+          if (own.nutrients && own.kcal != null) {
+            try {
+              return await fn({ ...patch, kcal: own.kcal })
+            } catch (e2) {
+              if (!/kcal/.test(e2?.message ?? '')) throw e2
+            }
+          }
           await fn(patch)
         }
       }
-      const have = named(name)
       if (have) {
         if (!have.household_id) return
         const patch = image_data && !have.image_data ? { image_data } : {}
-        if (have.own_kcal == null && kcal != null) await save((p) => update(have.id, p), patch)
+        if (Object.keys(own).length) await save((p) => update(have.id, p), patch)
         else if (patch.image_data) await update(have.id, patch)
         return
       }

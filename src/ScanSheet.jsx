@@ -131,6 +131,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
       aisle: found.entry?.aisle ?? found.aisle,
       picture,
       kcal: own ? (found.kcal ?? null) : null,
+      nutrients: own ? (found.nutrients ?? null) : null,
       product: found.product,
       pack,
       amount: total,
@@ -236,7 +237,7 @@ export default function ScanSheet({ onAdd, onClose, renderPicker }) {
             </div>
             <p className="hint">
               {ownName.trim()
-                ? `Shown in Ingredients as your own, with ${picture ? 'the pack photo' : 'its own picture'}${found.kcal != null ? ` and its own calories (${found.kcal} kcal per 100 g)` : ''}${baseName ? `. Counts as ${baseName} on the shopping list.` : '.'}`
+                ? `Shown in Ingredients as your own, with ${picture ? 'the pack photo' : 'its own picture'}${found.kcal != null ? ` and its own calories (${found.kcal} kcal per 100 g${found.nutrients ? ', with protein, sugar, fibre and salt from the pack' : ''})` : ''}${baseName ? `. Counts as ${baseName} on the shopping list.` : '.'}`
                 : baseName
                   ? `Kept at home as ${baseName}.`
                   : 'Type the product’s name, or pick the ingredient it is.'}

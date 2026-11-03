@@ -76,3 +76,12 @@ describe('own ingredient from a product', () => {
     expect(productKcal({ nutriments: {} })).toBe(null)
   })
 })
+
+describe('productNutrients', () => {
+  it('reads the pack values per 100 g', async () => {
+    const { productNutrients } = await import('./barcode.js')
+    const n = productNutrients({ nutriments: { proteins_100g: 3.4, carbohydrates_100g: '4.7', sugars_100g: 4.7, fat_100g: 3.6, fiber_100g: '', salt_100g: 0.13 } })
+    expect(n).toEqual({ protein: 3.4, carbs: 4.7, fat: 3.6, sugar: 4.7, salt: 0.13 })
+    expect(productNutrients({ nutriments: {} })).toBe(null)
+  })
+})
