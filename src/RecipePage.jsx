@@ -26,6 +26,7 @@ import { isOut, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { formatGrams, formatKcal, recipeCalories, recipeMacros } from './lib/calories.js'
+import Nutrition from './Nutrition.jsx'
 import { languageName, swapOriginal, translateAgain, translateRecipe } from './lib/translate.js'
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
@@ -750,47 +751,19 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             )}
           </ul>
         )}
-        {hasCalories && (
-          <details className="kcal-sum">
-            <summary>
-              <Icon name="flame" size={15} /> About {formatKcal(perPortion ?? calories.total * factor)} kcal {perPortion != null ? 'per portion' : 'in total'}
-            </summary>
-            <ul>
-              {calories.rows
-                .filter((r) => r.kcal > 0)
-                .sort((a, b) => b.kcal - a.kcal)
-                .map((r, n) => (
-                  <li key={n}>
-                    <span>{r.name}</span>
-                    <span>{formatKcal(perPortion != null ? r.kcal / recipe.servings : r.kcal * factor)} kcal</span>
-                  </li>
-                ))}
-            </ul>
-            {calories.missing.length > 0 && (
-              <p className="note">Not counted (no amount or calories known): {calories.missing.join(', ')}. Calories of your own ingredients can be set on the Ingredients tab.</p>
-            )}
-            <p className="note">An estimate from typical values for raw ingredients.</p>
-          </details>
-        )}
-        {hasCalories && (
-          <div className="macros" aria-label={recipe.servings ? 'Per portion' : 'In total'}>
-            {[
-              ['protein', 'Protein'],
-              ['carbs', 'Carbs'],
-              ['fat', 'Fat'],
-            ].map(([k, label]) => (
-              <div key={k} className={`macro ${k}`}>
-                <strong>
-                  {macros.missing.length ? '~' : ''}
-                  {formatGrams(macros[k] * macroShare)} g
-                </strong>
-                <span>{label}</span>
-              </div>
-            ))}
-            <span className="note">{recipe.servings ? 'per portion' : 'in total'}</span>
-          </div>
-        )}
       </section>
+
+      {hasCalories && (
+        <Nutrition
+          kcal={perPortion ?? calories.total * factor}
+          perPortion={perPortion != null}
+          approx={calories.missing.length > 0 || macros.missing.length > 0}
+          macros={macros}
+          macroShare={macroShare}
+          rows={calories.rows.map((r) => ({ name: r.name, kcal: perPortion != null ? r.kcal / recipe.servings : r.kcal * factor }))}
+          missing={calories.missing}
+        />
+      )}
 
       <section className="card">
         <h2>Steps</h2>
