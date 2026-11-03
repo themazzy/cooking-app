@@ -10,6 +10,8 @@ import { DAY, DAY_KCAL, KCAL_PER_G, mealHealth } from './lib/health.js'
 const MACRO_LABEL = { protein: 'Protein', carbs: 'Carbs', fat: 'Fat' }
 const LEVEL_ICON = { good: 'check', ok: 'minus', poor: 'alert', high: 'alert', low: 'alert' }
 const TOP = 5
+/** "Salt, pepper and sugar" */
+const listNames = (names) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : names[0])
 const EXTRA_LABEL = { sugar: 'Sugar', fibre: 'Fibre', salt: 'Salt' }
 
 /** Donut of `parts` ([{ key, value, color }]); `active` key is drawn thicker. */
@@ -63,6 +65,8 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
     salt: (macros.salt ?? 0) * macroShare,
   }
   const saltToTaste = (macros.unweighed ?? []).length > 0
+  // Rows "to taste" counted as a usual amount, once each
+  const guessed = [...new Set(macros.guessed ?? [])]
   const health = mealHealth({ kcal: perPortion ? kcal : null, ...grams, saltToTaste })
   const check = Object.fromEntries((health?.checks ?? []).map((c) => [c.key, c]))
   const energyChecks = (health?.checks ?? []).filter((c) => !EXTRA_LABEL[c.key])
@@ -235,6 +239,7 @@ export default function Nutrition({ kcal, perPortion, approx, macros, macroShare
       )}
       <p className="note nutrition-foot">
         An estimate from typical values for raw ingredients. Days are the EU reference intakes (2000 kcal, 90 g sugars, 30 g fibre, 6 g salt).
+        {guessed.length > 0 ? ` ${listNames(guessed)} ${guessed.length === 1 ? 'has' : 'have'} no amount, so ${guessed.length === 1 ? 'it counts' : 'they count'} as a usual pinch or spoon per portion (1 g salt, 0.2 g pepper, 2 g sugar, 5 g oil).` : ''}
         {saltToTaste ? ' Salt added to taste is not counted.' : ''}
       </p>
     </section>

@@ -119,3 +119,32 @@ describe('sugar, fibre and salt', () => {
     expect(m.unweighed).toEqual(['Sea salt'])
   })
 })
+
+describe('to taste', () => {
+  const match = (name) => {
+    const n = NUTRITION.get(name.toLowerCase())
+    return n ? { name, ...n } : null
+  }
+  const rows = [
+    { name: 'Flour', qty: '400', unit: 'g' },
+    { name: 'Salt', qty: '', unit: '' },
+    { name: 'Black pepper', qty: '', unit: '' },
+    { name: 'Olive oil', qty: '', unit: '' },
+  ]
+  it('counts salt, pepper and oil without an amount as a usual amount per portion', () => {
+    const m = recipeMacros(rows, match, { portions: 4 })
+    expect(m.salt).toBeCloseTo(4 * 0.99, 1)
+    expect(m.guessed).toEqual(['Salt', 'Black pepper', 'Olive oil'])
+    expect(m.unweighed).toEqual([])
+    const c = recipeCalories(rows, match, { portions: 4 })
+    expect(c.missing).toEqual([])
+    expect(c.guessed).toEqual(['Black pepper', 'Olive oil'])
+    expect(c.total).toBeCloseTo(4 * 364 + 20 * 8.84, -1)
+  })
+  it('leaves them out without portions, as before', () => {
+    expect(recipeMacros(rows, match).unweighed).toEqual(['Salt'])
+  })
+  it('reads a pinch without a number as one pinch', () => {
+    expect(gramsOf({ qty: '', unit: 'pinch' }, NUTRITION.get('salt'))).toBeCloseTo(0.4)
+  })
+})

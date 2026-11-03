@@ -141,11 +141,12 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
   const ingredientCount = recipe.ingredients.filter((i) => i.name?.trim()).length
   // Estimated calories of one portion (of the whole recipe when it has no portion count)
-  const calories = recipeCalories(recipe.ingredients, match)
+  // Salt, pepper, sugar and oil "to taste" count as a typical amount per portion (4 without a count)
+  const calories = recipeCalories(recipe.ingredients, match, { portions: recipe.servings || 4 })
   const hasCalories = calories.rows.some((r) => r.kcal > 0)
   const perPortion = hasCalories && recipe.servings ? calories.total / recipe.servings : null
   // Protein, carbs and fat of one portion (or of what is being cooked, without a recipe size)
-  const macros = recipeMacros(recipe.servings ? recipe.ingredients : scaled, match)
+  const macros = recipeMacros(recipe.servings ? recipe.ingredients : scaled, match, { portions: recipe.servings || 4 * factor })
   const macroShare = recipe.servings ? 1 / recipe.servings : 1
   const sourceLabel = [PLATFORM[recipe.platform] && recipe.platform !== 'web' ? PLATFORM[recipe.platform] : hostOf(recipe.sourceUrl), recipe.author]
     .filter(Boolean)

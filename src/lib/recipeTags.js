@@ -162,8 +162,8 @@ export function suggestTags(recipe, match = () => null) {
 
   // Calories and macros per portion, when most ingredients are counted
   if (recipe.servings > 0 && rows.length) {
-    const kcal = recipeCalories(named, match)
-    const macros = recipeMacros(named, match)
+    const kcal = recipeCalories(named, match, { portions: recipe.servings })
+    const macros = recipeMacros(named, match, { portions: recipe.servings })
     const counted = named.length - kcal.missing.length >= named.length * 0.7
     if (counted && kcal.total > 0) {
       const per = kcal.total / recipe.servings
