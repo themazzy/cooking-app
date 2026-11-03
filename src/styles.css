@@ -1264,6 +1264,9 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
 .kcal-sources .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kcal-sum .kcal-all { border-top: 1px solid var(--border); padding-top: 4px; }
 .nutrition-foot { margin: 10px 0 0; font-size: 0.8rem; }
+.nutrition-foot button.link { display: inline; padding: 0; font-size: inherit; }
+.extras.four { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 420px) { .extras.four { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 360px) { .nutrition-main, .kcal-sources { flex-direction: column; align-items: stretch; } .nutrition-main .donut, .kcal-sources .donut { margin: 0 auto; } }
 
 /* Computer screens: sheets open as dialogs in the middle instead of from the bottom edge */
@@ -1321,3 +1324,21 @@ ul.shopping.to-home .to-home-amount .num-field input { width: 100%; height: auto
 .nutrient-fields { margin-top: 4px; }
 .nutrient-fields summary { font-size: 0.9rem; }
 .nutrient-fields .note { margin: 2px 0 6px; font-size: 0.82rem; }
+
+/* Settings: your daily goals */
+.goals-body { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 8px; }
+.goals-body label { min-width: 0; font-size: 0.85rem; }
+.goals .segmented { display: flex; flex-wrap: wrap; }
+.goals .segmented button { flex: 1; }
+.goals-result { display: flex; gap: 14px; align-items: center; background: var(--sunken); border-radius: 12px; padding: 12px 14px; margin: 12px 0 8px; }
+.goal-kcal { display: flex; flex-direction: column; align-items: center; min-width: 76px; }
+.goal-kcal strong { font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.goal-kcal span { font-size: 0.75rem; color: var(--muted); }
+.goals-result dl { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px; margin: 0; }
+.goals-result dt { font-size: 0.72rem; color: var(--muted); }
+.goals-result dd { margin: 0; white-space: nowrap; font-weight: 600; font-variant-numeric: tabular-nums; font-size: 0.9rem; }
+.goals-meals { max-width: 160px; }
+.goals-how { margin: 6px 0; font-size: 0.85rem; }
+.goals-how summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.goals-how ul { padding-left: 18px; margin: 6px 0; color: var(--muted); }
+.goals-how li { margin-bottom: 4px; }

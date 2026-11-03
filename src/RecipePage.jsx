@@ -70,7 +70,7 @@ function cookNotes(recipe) {
   return out
 }
 
-export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAi, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [] }) {
+export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty, report, pantry = [], onChange, onSave, onSavePatch, onDelete, onDiscard, onBack, onAddToList, onUseStock, onReread, onTranscribe, onAi, onAddSource, units = 'original', alarm, onUnits, translateTo = null, categories = [], cuisines = [], collections = [], tags = [], day, onGoals }) {
   const { match, canonical } = useCatalog()
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
@@ -763,6 +763,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           macroShare={macroShare}
           rows={calories.rows.map((r) => ({ name: r.name, kcal: perPortion != null ? r.kcal / recipe.servings : r.kcal * factor }))}
           missing={calories.missing}
+          day={day}
+          onGoals={onGoals}
         />
       )}
 

@@ -1,3 +1,5 @@
+import GoalsSettings from './GoalsSettings.jsx'
+import { dailyTargets } from './lib/goals.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { App as CapApp } from '@capacitor/app'
 import { handleBackButton } from './lib/backButton.js'
@@ -1110,6 +1112,8 @@ export default function App() {
           collections={allCollections(recipes).map((c) => c.name)}
           cuisines={allCuisines(recipes)}
           tags={allTags(recipes)}
+          day={dailyTargets(settings.body)}
+          onGoals={() => go('#/settings/goals')}
         />
       </main>
     )
@@ -1209,6 +1213,7 @@ export default function App() {
             </label>
           )}
         </section>
+        <GoalsSettings body={settings.body ?? {}} onChange={(body) => setSettings((s) => ({ ...s, body }))} focus={route.id === 'goals'} />
         <section className="card">
           <h3>Look</h3>
           <span className="settings-label">Theme</span>
