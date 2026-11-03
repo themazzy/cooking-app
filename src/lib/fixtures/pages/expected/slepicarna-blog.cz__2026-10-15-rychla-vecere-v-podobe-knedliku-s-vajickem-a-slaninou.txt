@@ -1,7 +1,8 @@
 PAGE | Rychlá večeře v podobě knedlíků s vajíčkem a slaninou | servings 4 | prep 20 cook null total null
   12 | slice | Knedlíků (houskových – najdete je např. tady)
   10 |  | Vajec
-   |  | Sůl a pepř
+   |  | Sůl
+   |  | Pepř
   100 | ml | Smetany ke šlehání (33 %)
   200 | g | Anglické slaniny
   5 |  | Jarních cibulek

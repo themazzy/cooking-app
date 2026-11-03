@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupHeading, parseIngredientLine, parseQuantity, parseRecipeText, tidyIngredient } from './ingredients.js'
+import { groupHeading, parseIngredientLine, parseQuantity, parseRecipeText, seasoningParts, tidyIngredient } from './ingredients.js'
 
 describe('parseQuantity', () => {
   it.each([
@@ -62,7 +62,7 @@ Postup:
 
 #recept #těstoviny #rychlevareni`
     const { ingredients, steps } = parseRecipeText(caption)
-    expect(ingredients.map((i) => i.name)).toEqual(['špaget', 'česneku', 'olivového oleje', 'sůl a pepř', 'parmazán'])
+    expect(ingredients.map((i) => i.name)).toEqual(['špaget', 'česneku', 'olivového oleje', 'sůl', 'pepř', 'parmazán'])
     expect(ingredients[0]).toMatchObject({ quantity: 250, unit: 'g' })
     expect(steps).toEqual([
       'Uvař těstoviny v osolené vodě.',
@@ -116,7 +116,7 @@ Place the ground beef on a sheet of parchment paper, cover with another sheet, a
   const byName = Object.fromEntries(ingredients.map((i) => [i.name, i]))
 
   it('reads every ingredient line', () => {
-    expect(ingredients).toHaveLength(15)
+    expect(ingredients).toHaveLength(16)
     expect(byName['Ground beef']).toMatchObject({ quantity: 400, unit: 'g' })
     expect(byName['Flatbreads (lavash, pita, or tortillas)']).toMatchObject({ quantity: 2, unit: 'pcs' })
     expect(byName['Red onion (to taste)']).toMatchObject({ quantity: null })
@@ -131,7 +131,8 @@ Place the ground beef on a sheet of parchment paper, cover with another sheet, a
   it('groups the sauce ingredients', () => {
     expect(byName['Greek yogurt']).toMatchObject({ quantity: 200, unit: 'g', group: 'Tzatziki sauce' })
     expect(byName['Ground beef'].group).toBeUndefined()
-    expect(byName['Salt and pepper']).toMatchObject({ quantity: null, note: 'to taste', group: 'Tzatziki sauce' })
+    expect(byName.Salt).toMatchObject({ quantity: null, note: 'to taste', group: 'Tzatziki sauce' })
+    expect(byName.pepper).toMatchObject({ quantity: null, note: 'to taste', group: 'Tzatziki sauce' })
   })
 
   it('reads the instructions', () => {
@@ -170,11 +171,38 @@ describe('several ingredients on one line', () => {
     expect(names('Ingredients:\n1 onion, finely chopped, divided\n2 cloves garlic, minced\nsalt and pepper')).toEqual([
       [1, null, 'onion, finely chopped, divided'],
       [2, 'clove', 'garlic, minced'],
-      [null, null, 'salt and pepper'],
+      [null, null, 'salt'],
+      [null, null, 'pepper'],
     ])
   })
   it('keeps decimal commas', () => {
     expect(names('Ingredients:\n1,5 kg potatoes')).toEqual([[1.5, 'kg', 'potatoes']])
+  })
+})
+
+describe('salt and pepper on one line', () => {
+  const rows = (line) => parseRecipeText(`Ingredients:\n200 g flour\n${line}`).ingredients.slice(1).map((i) => [i.quantity, i.unit, i.name, i.note ?? null])
+  it('makes two ingredients in every language', () => {
+    expect(rows('salt and pepper')).toEqual([[null, null, 'salt', null], [null, null, 'pepper', null]])
+    expect(rows('sůl a pepř')).toEqual([[null, null, 'sůl', null], [null, null, 'pepř', null]])
+    expect(rows('Sůl, pepř')).toEqual([[null, null, 'Sůl', null], [null, null, 'pepř', null]])
+    expect(rows('soľ a čierne korenie')).toEqual([[null, null, 'soľ', null], [null, null, 'čierne korenie', null]])
+    expect(rows('сол и черен пипер')).toEqual([[null, null, 'сол', null], [null, null, 'черен пипер', null]])
+    for (const line of ['Salz und Pfeffer', 'sel et poivre', 'sale e pepe', 'sal y pimienta', 'sól i pieprz', 'соль и перец', 'salt & pepper', 'Seasoning: salt and pepper']) expect(rows(line)).toHaveLength(2)
+  })
+  it('gives both the note and the amount', () => {
+    expect(rows('Salt and pepper to taste')).toEqual([[null, null, 'Salt', 'to taste'], [null, null, 'pepper', 'to taste']])
+    expect(rows('Sůl a pepř dle chuti')).toEqual([[null, null, 'Sůl', 'dle chuti'], [null, null, 'pepř', 'dle chuti']])
+    expect(rows('сол и пипер на вкус')).toEqual([[null, null, 'сол', 'на вкус'], [null, null, 'черен пипер', 'на вкус']])
+    expect(rows('Salt and pepper (to taste)').map((r) => r[3])).toEqual(['to taste', 'to taste'])
+    expect(rows('Salt & freshly ground black pepper, to taste')).toEqual([[null, null, 'Salt', 'to taste'], [null, null, 'freshly ground black pepper', 'to taste']])
+    expect(rows('1 tsp salt and pepper')).toEqual([[1, 'tsp', 'salt', null], [1, 'tsp', 'pepper', null]])
+    expect(rows('1/2 tsp each salt and pepper')).toEqual([[0.5, 'tsp', 'salt', null], [0.5, 'tsp', 'pepper', null]])
+    expect(rows('sůl a pepř mletý').map((r) => r[2])).toEqual(['sůl', 'pepř mletý'])
+  })
+  it('leaves names that only have "and" in them', () => {
+    for (const line of ['mac and cheese', 'sweet and sour sauce', 'salt and pepper squid', 'salt and pepper chips']) expect(rows(line)).toHaveLength(1)
+    expect(seasoningParts('salt and pepper and chicken')).toBeNull()
   })
 })
 

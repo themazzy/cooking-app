@@ -12,7 +12,8 @@ PAGE | Recept na vyprošťovací česnekovou polévku s uzeným a sýrem | servi
   1 | handful | Sušené majoránky
   2 |  | Vejce
   1 | handful | Nasekané petrželky
-   |  | Sůl a pepř, dle potřeby
+   |  | Sůl, dle potřeby
+   |  | Pepř, dle potřeby
   100 | g | Sýru (ementálového typu)
    |  | Chlebové krutony
 steps:

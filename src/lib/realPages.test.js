@@ -58,7 +58,7 @@ describe('pages without recipe data', () => {
   it('reads blog ingredients written one per paragraph, with their parts', () => {
     const d = page('koprova-omacka-s-masem').draft
     expect([...new Set(d.ingredients.map((i) => i.group))]).toEqual(['Hovězí vývar', 'Knedlíky', 'Koprovou omáčku'])
-    expect(d.ingredients).toHaveLength(30)
+    expect(d.ingredients).toHaveLength(31)
     expect(d.steps.split('\n')).toHaveLength(5)
   })
 

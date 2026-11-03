@@ -8,7 +8,8 @@ PAGE | Recept nejen pro chlapy Guláš s bramboráčky | servings 4 | prep null 
   1 | tsp | Nového koření  [Na guláš]
   2 | tsp | Jalovce  [Na guláš]
   4 | pcs | Bobkového listu  [Na guláš]
-   |  | Sůl a pepř  [Na guláš]
+   |  | Sůl  [Na guláš]
+   |  | Pepř  [Na guláš]
   2 | l | Vývaru/vody  [Na guláš]
   5 | clove | Česneku  [Na guláš]
   2 | tbsp | Majoránky  [Na guláš]
@@ -19,7 +20,8 @@ PAGE | Recept nejen pro chlapy Guláš s bramboráčky | servings 4 | prep null 
   2 | tsp | Kmínu  [Na bramboráčky]
   1,5 | tbsp | Majoránky  [Na bramboráčky]
    |  | Hladká mouka, dle potřeby  [Na bramboráčky]
-   |  | Sůl a pepř  [Na bramboráčky]
+   |  | Sůl  [Na bramboráčky]
+   |  | Pepř  [Na bramboráčky]
 steps:
   Do hrnce přidáme sádlo a rozpálíme.
   Vložíme nakrájenou cibuli a zprudka opékáme.

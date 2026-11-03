@@ -1,4 +1,4 @@
-import { buildShoppingList, shopKey, sumRow } from './scale.js'
+import { buildShoppingList, shopKey, sumRows } from './scale.js'
 import { parseIngredientLine } from './ingredients.js'
 import { formatAmount } from './scale.js'
 import { addTo, parseStock } from './stock.js'
@@ -71,8 +71,8 @@ export function removeItems(list, keys, recipes, match) {
       const lines = byId.get(r.id)?.ingredients ?? []
       const skip = new Set(r.skip ?? [])
       lines.forEach((ing, n) => {
-        const row = sumRow(ing)
-        if (row && fromRecipes.has(shopKey(row.name, match))) skip.add(n)
+        // (an old "Salt and pepper" line is skipped when either of them is removed)
+        if (sumRows(ing).some((row) => fromRecipes.has(shopKey(row.name, match)))) skip.add(n)
       })
       return skip.size === (r.skip ?? []).length ? r : { ...r, skip: [...skip].sort((a, b) => a - b) }
     }),

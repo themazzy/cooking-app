@@ -1,4 +1,4 @@
-import { UNIT_LOOKUP, parseQuantity, tidyIngredient } from './ingredients.js'
+import { UNIT_LOOKUP, parseQuantity, seasoningParts, tidyIngredient } from './ingredients.js'
 
 // Scaling recipes and adding up shopping lists. Amounts are the editable
 // text fields of a recipe ("400", "1,5–2", "½"), units are free text.
@@ -116,6 +116,17 @@ export function sumRow(ing) {
   return tidyIngredient(ing)
 }
 
+/**
+ * The rows a saved ingredient adds up as: sumRow's row, or one per seasoning for rows saved
+ * before imports split them ("Salt and pepper, to taste" → salt and pepper, each with the amount).
+ */
+export function sumRows(ing) {
+  const row = sumRow(ing)
+  if (!row) return []
+  const parts = seasoningParts(row.name)
+  return parts ? parts.map((p) => ({ ...row, name: p.note ? `${p.name}, ${p.note}` : p.name })) : [row]
+}
+
 // Units that add up with each other, in their base unit
 export const BASE = { g: ['g', 1], kg: ['g', 1000], ml: ['ml', 1], dl: ['ml', 100], l: ['ml', 1000], oz: ['g', 28.35], lb: ['g', 453.6], floz: ['ml', 29.57], pint: ['ml', 473.2], quart: ['ml', 946.4], cup: ['ml', 240] }
 
@@ -175,7 +186,7 @@ function foldTotals(totals, entry) {
 export function buildShoppingList(selection, match = () => null) {
   const items = new Map()
   for (const { recipe, factor } of selection) {
-    for (const ing of (recipe.ingredients ?? []).map(sumRow).filter(Boolean)) {
+    for (const ing of (recipe.ingredients ?? []).flatMap(sumRows)) {
       const name = String(ing.name ?? '').trim()
       const entry = match(name)
       const key = shopKey(name, match)

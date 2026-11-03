@@ -4,7 +4,8 @@ PAGE | Jak připravit nejlepší bramboráky S tímto návodem budou luxusní ja
   4 | clove | Česneku
   4 | tsp | Majoránky
   2 |  | Vejce
-   |  | Sůl a pepř
+   |  | Sůl
+   |  | Pepř
    |  | Můžete přidat uzené maso nebo slaninu
 steps:
   Oloupejte brambory a nastrouhejte je. Vyberte struhadlo pro jemnější strouhání.

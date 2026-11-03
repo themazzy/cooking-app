@@ -29,7 +29,8 @@ it('reads a Czech blog recipe with question headings', () => {
   expect(d.ingredients.map((i) => [i.qty, i.unit, i.name])).toEqual([
     ['12', 'slice', 'Knedlíků (houskových – najdete je např. tady)'],
     ['10', '', 'Vajec'],
-    ['', '', 'Sůl a pepř'],
+    ['', '', 'Sůl'],
+    ['', '', 'Pepř'],
     ['100', 'ml', 'Smetany ke šlehání (33 %)'],
     ['200', 'g', 'Anglické slaniny'],
     ['5', '', 'Jarních cibulek'],
@@ -79,7 +80,8 @@ it('reads the devilled mince toast recipe', () => {
     ['1', 'can', 'Loupaných rajčat'],
     ['1', '', 'Chilli papričku (dle chuti)'],
     ['3', 'tbsp', 'Ajvaru'],
-    ['', '', 'Sůl a pepř'],
+    ['', '', 'Sůl'],
+    ['', '', 'Pepř'],
     ['160', 'g', 'Strouhaného ementálu'],
   ])
   expect(d.steps.split('\n')).toHaveLength(3)
@@ -102,7 +104,7 @@ it('reads the buřtguláš recipe', () => {
   const d = draftFromImport({ platform: 'web', url: 'x', ...parseRecipePage(gulas), comments: [] })
   expect([d.servings, d.prepMin]).toEqual([4, 60])
   const names = d.ingredients.map((i) => [i.qty, i.unit, i.name])
-  expect(names).toHaveLength(15)
+  expect(names).toHaveLength(16)
   expect(names[9]).toEqual(['8', '', 'Středně velkých brambor typu B'])
   expect(names[8]).toEqual(['1', 'l', 'Domácího vývaru (např. kuřecí)'])
   expect(names.slice(-3)).toEqual([['4', '', 'Vejce vařená natvrdo'], ['', '', 'Čerstvá petrželka'], ['', '', 'Pečivo na podávání']])

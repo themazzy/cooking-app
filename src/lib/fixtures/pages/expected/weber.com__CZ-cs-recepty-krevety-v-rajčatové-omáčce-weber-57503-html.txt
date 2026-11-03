@@ -6,7 +6,8 @@ JSON-LD | Krevety v rajčatové omáčce | servings null | prep 30 cook null tot
   1 |  | Tyčinka skořice
   1 | kg | Tygřích krevet, neloupaných
   200 | g | Feta sýra
-   |  | Sůl a pepř
+   |  | Sůl
+   |  | Pepř
    |  | Řepkový olej
   1 | tbsp | Nápoje Ouzo
 steps:

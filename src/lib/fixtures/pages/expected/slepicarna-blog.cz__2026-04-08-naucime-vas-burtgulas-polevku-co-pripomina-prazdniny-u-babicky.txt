@@ -10,7 +10,8 @@ PAGE | Naučíme vás buřtguláš, polévku, co připomíná prázdniny u babi�
   1 | l | Domácího vývaru (např. kuřecí)
   8 |  | Středně velkých brambor typu B
   1 | tbsp | Sušené majoránky
-   |  | Sůl a pepř
+   |  | Sůl
+   |  | Pepř
   4 |  | Vejce vařená natvrdo
    |  | Čerstvá petrželka
    |  | Pečivo na podávání

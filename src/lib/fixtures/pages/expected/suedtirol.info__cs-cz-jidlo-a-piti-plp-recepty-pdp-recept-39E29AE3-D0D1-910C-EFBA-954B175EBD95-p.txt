@@ -6,7 +6,8 @@ JSON-LD | Placaté knedlíky (sýrové knedlíky) | servings null | prep 40 cook
   20 | g | Mouky
   20 | g | Pohankové mouky
   1 | tbsp | Petrželky
-   |  | Sůl, pepř
+   |  | Sůl
+   |  | Pepř
   600 | ml | Masové polévky  [Ostatní]
   20 | g | Cibule, nakrájené na kolečka  [Ostatní]
    |  | Máslo, množství, podle chuti  [Ostatní]

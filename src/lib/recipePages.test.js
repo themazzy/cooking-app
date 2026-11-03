@@ -68,7 +68,7 @@ describe('recipe pages without recipe data', () => {
 
   it('leaves out equipment and the tools list after the method', () => {
     const d = draft('weber')
-    expect(rows(d).map((r) => r[2])).toEqual(['Jemně nasekaná cibule', 'Rajských rajčat, oloupaných a nasekaných', 'Jemně nakrájeného čínského česneku', 'Bobkový list', 'Tyčinka skořice', 'Tygřích krevet, neloupaných', 'Feta sýra', 'Sůl a pepř', 'Řepkový olej', 'Nápoje Ouzo'])
+    expect(rows(d).map((r) => r[2])).toEqual(['Jemně nasekaná cibule', 'Rajských rajčat, oloupaných a nasekaných', 'Jemně nakrájeného čínského česneku', 'Bobkový list', 'Tyčinka skořice', 'Tygřích krevet, neloupaných', 'Feta sýra', 'Sůl', 'Pepř', 'Řepkový olej', 'Nápoje Ouzo'])
     expect(d.steps.split('\n')).toHaveLength(4)
   })
 

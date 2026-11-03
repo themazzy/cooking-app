@@ -205,6 +205,51 @@ export function tidyIngredient(i) {
   return pepperSpice(rest === name ? i : { ...i, name: rest }, unitOf(String(i.unit ?? '')) ?? i.unit)
 }
 
+// "Salt and pepper", "sůl a pepř", "сол и черен пипер": two seasonings on one line are two ingredients.
+// Each part has to end in salt or pepper (in any language the parser reads), with only words like
+// "freshly ground" before it or "mletý" after it, so "sweet and sour sauce" or "salt and pepper squid" stay.
+const SEASONING_CORE = '(?:salt|pepper|peppercorns|sůl|soli|soľ|pepř|pepře|pepra|korenie|сол|сола|пипер|соль|перец|salz|pfeffer|sel|poivre|sale|pepe|sal|pimienta|sól|pieprz)'
+const SEASONING_AFTER = '(?:mletý|mletého|mleté|mletá|čerstvě|čerstvý|černý|černého|bílý|bílého|mořská|mořské|hrubá|jemná|čierne|čierneho|mleté|mletého|черен|черния|бял|мелен|смлян|морска|чёрный|черный|молотый|белый|морская|gemahlen|schwarz|schwarzer|weiß|moulu|noir|blanc|macinato|nero|bianco|molida|negra|blanca|mielony|czarny|biały|morska)'
+const SEASONING = new RegExp(`^(?:each\\s+(?:of\\s+)?)?(?:[\\p{L}-]+\\s+){0,3}${SEASONING_CORE}(?:\\s+${SEASONING_AFTER}){0,2}$`, 'iu')
+const SEASONING_SEP = /(\s*,\s*|\s*[&+/]\s*|\s+(?:and|a|i|и|und|et|e|y)\s+)/iu
+
+/**
+ * The seasonings a name holds ("Salt and pepper" → ["Salt", "pepper"]), with what was written
+ * after them as their `note` ("Sůl a pepř, dle chuti"). Null when the name is one ingredient.
+ */
+export function seasoningParts(name) {
+  // "Seasoning: salt and pepper" names the two; "(to taste)" after them is their note
+  let text = String(name ?? '').trim().replace(/^[^:,]{1,30}:\s*(?=\p{L})/u, '')
+  let note = ''
+  const bracket = text.match(/\s*\(([^()]*)\)\s*$/)
+  if (bracket) [text, note] = [text.slice(0, bracket.index), bracket[1].trim()]
+  const bits = text.split(SEASONING_SEP)
+  const names = []
+  let at = 0
+  for (; at < bits.length; at += 2) {
+    const part = bits[at].trim()
+    if (!SEASONING.test(part)) break
+    // Bulgarian "пипер" alone is also a bell pepper; next to salt it is black pepper
+    names.push(part.replace(/^each\s+(?:of\s+)?/i, '').replace(/^(п)ипер$/iu, (all, p) => `${p === 'П' ? 'Ч' : 'ч'}ерен пипер`))
+  }
+  if (names.length < 2) return null
+  // What follows has to be a note after a comma ("…, to taste"), not "salt and pepper and chicken"
+  if (at < bits.length && bits[at - 1].trim() !== ',') return null
+  const rest = [bits.slice(at).join('').replace(/^\s*,\s*/, '').trim(), note].filter(Boolean).join(', ')
+  return names.map((n) => ({ name: n, note: rest }))
+}
+
+/** An ingredient whose name holds two seasonings, as one ingredient each (with the same amount and note). */
+export function splitSeasonings(ing) {
+  const parts = seasoningParts(ing?.name)
+  if (!parts) return [ing]
+  return parts.map(({ name, note }) => {
+    const notes = [note, ing.note].filter(Boolean).join(', ')
+    const { note: _, ...rest } = ing
+    return { ...rest, name, ...(notes ? { note: notes } : {}) }
+  })
+}
+
 // Amounts written as words at the start of a line: "половин чаша", "půl lžičky", "две яйца"
 const WORD_AMOUNTS = {
   половин: '½', půl: '½', един: '1', една: '1', едно: '1', два: '2', две: '2', три: '3', четири: '4', пет: '5', шест: '6',
@@ -535,7 +580,9 @@ export function parseRecipeText(text) {
   const notes = []
   let section = null // 'ingredients' | 'steps' | 'notes' | 'skip' | null
   let group = null // sub-list inside the ingredients, e.g. "Tzatziki sauce"
-  const add = (ing) => ingredients.push(group ? { ...ing, group } : ing)
+  const add = (ing) => {
+    for (const one of splitSeasonings(ing)) ingredients.push(group ? { ...one, group } : one)
+  }
 
   let leadGroup = null // a group from a "Meat Sauce:" line above the list, see the end
   let bareNo = 0 // the last step number written with no dot ("3 Stir in the onion")

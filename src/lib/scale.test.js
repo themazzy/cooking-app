@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildShoppingList, formatAmount, parseAmount, scaleAmount, scaleSteps } from './scale.js'
+import { buildShoppingList, formatAmount, parseAmount, scaleAmount, scaleSteps, sumRows } from './scale.js'
 
 describe('scaling', () => {
   it('reads amounts', () => {
@@ -51,9 +51,14 @@ describe('shopping list', () => {
     const cream = list.find((i) => i.key === 'smetana')
     expect([cream.qty, cream.unit]).toEqual(['500', 'ml'])
     expect(list.find((i) => i.key === 'flatbreads').qty).toBe('4')
-    const salt = list.find((i) => i.key === 'salt and pepper')
-    expect(salt.qty).toBe('')
-    expect(salt.extra).toEqual(['pinch'])
+    // Rows saved before imports split "Salt and pepper" count as two ingredients
+    expect(list.find((i) => i.key === 'salt and pepper')).toBeUndefined()
+    for (const key of ['salt', 'pepper']) {
+      const item = list.find((i) => i.key === key)
+      expect(item.qty).toBe('')
+      expect(item.extra).toEqual(['pinch'])
+      expect(item.from).toEqual(['Shawarma', 'Chili'])
+    }
   })
 })
 
@@ -83,5 +88,16 @@ describe('scaleSteps', () => {
   })
   it('leaves the text alone at the original size', () => {
     expect(scaleSteps('Add 200 g flour', 1, ings)).toBe('Add 200 g flour')
+  })
+})
+
+describe('sumRows', () => {
+  it('counts an old "Salt and pepper" row as two', () => {
+    expect(sumRows({ qty: '1', unit: 'tsp', name: 'Salt and pepper, to taste' }).map((r) => [r.qty, r.unit, r.name])).toEqual([
+      ['1', 'tsp', 'Salt, to taste'],
+      ['1', 'tsp', 'pepper, to taste'],
+    ])
+    expect(sumRows({ qty: '', unit: '', name: 'Sweet and sour sauce' })).toHaveLength(1)
+    expect(sumRows({ qty: '', unit: '', name: 'For the sauce' })).toEqual([])
   })
 })

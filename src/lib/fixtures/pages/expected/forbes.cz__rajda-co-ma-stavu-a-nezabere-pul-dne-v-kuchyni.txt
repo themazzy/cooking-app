@@ -5,7 +5,8 @@ PAGE | Rajda, co má šťávu. A nezabere půl dne v kuchyni | servings 5 | prep
   1 |  | Vejce
   1 |  | Velký stroužek česneku
   1 | tsp | Bylinek (bazalka, tymián, oregano)
-   |  | Sůl & pepř
+   |  | Sůl
+   |  | Pepř
   1 |  | Cibule  [Na rajčatovou omáčku]
   1 |  | Velká mrkev  [Na rajčatovou omáčku]
   2 |  | Řapíky celeru  [Na rajčatovou omáčku]
@@ -14,7 +15,8 @@ PAGE | Rajda, co má šťávu. A nezabere půl dne v kuchyni | servings 5 | prep
   1 |  | Svitek skořice  [Na rajčatovou omáčku]
   2 |  | Bobkové listy  [Na rajčatovou omáčku]
   4 | pcs | Nového koření  [Na rajčatovou omáčku]
-   |  | Sůl & pepř  [Na rajčatovou omáčku]
+   |  | Sůl  [Na rajčatovou omáčku]
+   |  | Pepř  [Na rajčatovou omáčku]
   2 | tbsp | Cukru krupice  [Na rajčatovou omáčku]
   0,5–1 |  | Kelímek smetany ke šlehání  [Na rajčatovou omáčku]
 steps:

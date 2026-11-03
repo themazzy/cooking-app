@@ -1,7 +1,8 @@
 PAGE | Vláčné, křupavé & zlatavé. Knedlíky s vejci vypilované k dokonalosti | servings 2 | prep null cook null total null
   6 | slice | Houskového knedlíku
   4 |  | Domácí vejce
-   |  | Sůl & pepř
+   |  | Sůl
+   |  | Pepř
   2 | tbsp | Sádla nebo přepuštěného másla
    |  | Pažitka
    |  | Kyselé okurky
