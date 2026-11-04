@@ -111,7 +111,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
           <p className="hint">Open a recipe and tap Add to list, or pick several recipes at once.</p>
           <button onClick={onNew}>Pick recipes</button>
         </div>
-        <section className="card">{adder}</section>
+        <section className="list-page">{adder}</section>
       </>
     )
   }
@@ -194,7 +194,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
           onClose={() => setOrdering(false)}
         />
       )}
-      <section className="card">
+      <section className="list-page">
         {list.recipes.length > 0 && (
           <p className="note top">For {list.recipes.map((r) => `${r.title} (${r.servings ? `${r.portions} portions` : `×${r.portions}`})`).join(', ')}</p>
         )}
@@ -224,7 +224,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
                     <input type="checkbox" checked={!!i.checked} onChange={() => toggle(i.key)} />
                     <IngredientIcon entry={match(i.name)} />
                   </label>
-                  {/* Tapping the name ticks it off too; the pencil opens it to change or remove */}
+                  {/* Tapping the name ticks it off too; the pencil opens it to change, remove or find on eBag */}
                   <button className="item-text" onClick={() => toggle(i.key)}>
                     {amountText(convertIngredient(i, units, match)) && <strong>{amountText(convertIngredient(i, units, match))} </strong>}
                     {i.name}
@@ -233,11 +233,6 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
                     {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
                     {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}
                   </button>
-                  {ebag && !i.checked && ebagQuery(i.name, match(i.name)) && (
-                    <button className="ebag" aria-label={`Search ${i.name} on eBag`} onClick={() => openExternal(ebagUrl(ebagQuery(i.name, match(i.name)), ebag))}>
-                      eBag <Icon name="external" size={13} />
-                    </button>
-                  )}
                   <button className="icon item-edit" aria-label={`Change or remove ${i.name}`} title="Change or remove" onClick={() => setEditing(i.key)}>
                     <Icon name="pencil" size={18} />
                   </button>
@@ -281,6 +276,11 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
           units={units}
           packs={list.packs}
           onClose={() => setEditing(null)}
+          onEbag={(() => {
+            const it = list.items.find((i) => i.key === editing)
+            const q = ebag && it && ebagQuery(it.name, match(it.name))
+            return q ? () => openExternal(ebagUrl(q, ebag)) : null
+          })()}
           onSave={(patch) => {
             onChange(editItem(list, editing, patch, match))
             setEditing(null)

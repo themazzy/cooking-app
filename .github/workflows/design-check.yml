@@ -1,0 +1,32 @@
+# Looks for common "AI-made" design patterns in the app's CSS and JSX with
+# Impeccable's detector (github.com/pbakaus/impeccable, Apache-2.0).
+# It only reports: the findings go to the run's summary and never fail a build.
+name: Design check
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**.css', 'src/**.jsx', '.github/workflows/design-check.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run the detector
+        continue-on-error: true
+        run: |
+          {
+            echo '## Design check'
+            echo
+            echo '```'
+            npx --yes impeccable@4.8.0 detect src/ 2>&1 || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"

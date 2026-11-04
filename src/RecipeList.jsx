@@ -124,6 +124,7 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
   const categories = byCount(recipes.flatMap((r) => r.categories ?? []))
   const cuisines = byCount(recipes.map((r) => r.cuisine))
   const tags = byCount(recipes.flatMap((r) => r.tags ?? []))
+  const [filtering, setFiltering] = useState(false)
   const toggleTag = (t) => setPicked(picked.includes(t) ? picked.filter((p) => p !== t) : [...picked, t])
   const collections = allCollections(recipes)
   const open = collections.find((c) => c.name.toLowerCase() === collection?.toLowerCase()) ?? null
@@ -169,6 +170,9 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
     ...(rated ? [['top', `${TOP_RATED}+ stars`, topRated, () => setTopRated(!topRated)]] : []),
     ...(cooked ? [['new', 'Not cooked yet', notCooked, () => setNotCooked(!notCooked)]] : []),
   ]
+  const moreFilters = quickFilters.length > 0 || tags.length > 0 || cuisines.length > 0
+  const moreOn = (maxTime ? 1 : 0) + (maxKcal ? 1 : 0) + (topRated ? 1 : 0) + (notCooked ? 1 : 0) + picked.length + (cuisine ? 1 : 0)
+  const clearMore = () => (setMaxTime(null), setMaxKcal(null), setTopRated(false), setNotCooked(false), setPicked([]), setCuisine(null))
   return (
     <>
       {collections.length > 0 && (
@@ -207,6 +211,11 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
       {showFilters ? (
         <div className="recipe-filters">
           <div className="aisle-chips">
+            {moreFilters && (
+              <button className={`chip-btn filters-btn${moreOn ? ' on' : ''}`} aria-haspopup="dialog" onClick={() => setFiltering(true)}>
+                <Icon name="filters" size={16} /> Filters{moreOn ? ` · ${moreOn}` : ''}
+              </button>
+            )}
             <button className={`chip-btn${!filtered ? ' on' : ''}`} onClick={clearFilters}>
               All
             </button>
@@ -221,31 +230,56 @@ export default function RecipeList({ recipes, pantry = [], onOpen, selection, on
               </button>
             ))}
           </div>
-          {quickFilters.length > 0 && (
-            <div className="aisle-chips" role="group" aria-label="Time, calories and rating">
-              {quickFilters.map(([k, label, on, toggle]) => (
-                <button key={k} className={`chip-btn${on ? ' on' : ''}`} aria-pressed={on} onClick={toggle}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-          {tags.length > 0 && (
-            <div className="aisle-chips" role="group" aria-label="Diet and style">
-              {tags.map((t) => (
-                <button key={t} className={`chip-btn soft${picked.includes(t) ? ' on' : ''}`} aria-pressed={picked.includes(t)} onClick={() => toggleTag(t)}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          )}
-          {cuisines.length > 0 && (
-            <div className="aisle-chips">
-              {cuisines.map((c) => (
-                <button key={c} className={`chip-btn soft${cuisine === c ? ' on' : ''}`} aria-pressed={cuisine === c} onClick={() => setCuisine(cuisine === c ? null : c)}>
-                  {c}
-                </button>
-              ))}
+          {filtering && (
+            <div className="sheet-backdrop" onClick={() => setFiltering(false)}>
+              <div className="sheet filter-sheet" role="dialog" aria-label="Filters" onClick={(e) => e.stopPropagation()}>
+                <div className="sheet-handle" aria-hidden="true" />
+                <h2>Filters</h2>
+                {quickFilters.length > 0 && (
+                  <>
+                    <h3>Time, calories and rating</h3>
+                    <div className="aisle-chips wrap" role="group" aria-label="Time, calories and rating">
+                      {quickFilters.map(([k, label, on, toggle]) => (
+                        <button key={k} className={`chip-btn${on ? ' on' : ''}`} aria-pressed={on} onClick={toggle}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {tags.length > 0 && (
+                  <>
+                    <h3>Diet and style</h3>
+                    <div className="aisle-chips wrap" role="group" aria-label="Diet and style">
+                      {tags.map((t) => (
+                        <button key={t} className={`chip-btn soft${picked.includes(t) ? ' on' : ''}`} aria-pressed={picked.includes(t)} onClick={() => toggleTag(t)}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {cuisines.length > 0 && (
+                  <>
+                    <h3>Cuisine</h3>
+                    <div className="aisle-chips wrap" role="group" aria-label="Cuisine">
+                      {cuisines.map((c) => (
+                        <button key={c} className={`chip-btn soft${cuisine === c ? ' on' : ''}`} aria-pressed={cuisine === c} onClick={() => setCuisine(cuisine === c ? null : c)}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                <div className="sheet-actions">
+                  <button className="secondary" disabled={!moreOn} onClick={clearMore}>
+                    Clear
+                  </button>
+                  <button onClick={() => setFiltering(false)}>
+                    Show {shown.length} recipe{shown.length === 1 ? '' : 's'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
           <div className="sort-row">

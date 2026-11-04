@@ -20,7 +20,7 @@ export default function GoalsSettings({ body = {}, onChange, focus = false }) {
   const act = ACTIVITY[body.activity ?? 'light']
 
   return (
-    <section className="card goals" id="goals" ref={ref}>
+    <section className="group goals" id="goals" ref={ref}>
       <h3>Your daily goals</h3>
       <p className="hint">Recipe pages then show each portion against your own day instead of a general 2000 kcal one. Saved on this phone only, so each of you sets your own.</p>
 

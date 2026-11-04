@@ -1191,8 +1191,9 @@ export default function App() {
     return (
       <main data-dir={dir}>
         {topbar}
-        <section className="card">
-          <h2>Settings</h2>
+        <h1 className="page-title">Settings</h1>
+        <section className="group">
+          <h3>Account</h3>
           <Account
             user={user}
             onChanged={() => {
@@ -1201,20 +1202,21 @@ export default function App() {
             }}
           />
           {user && (
-            <label>
-              Your name on this phone
+            <div className="name-field">
+              <label htmlFor="my-name">Your name on this phone</label>
               <input
+                id="my-name"
                 type="text"
                 placeholder="e.g. Jan"
                 value={settings.myName ?? ''}
                 onChange={(e) => setSettings({ ...settings, myName: e.target.value.replace(':', '') })}
               />
-              <span className="hint">Ratings and cooked entries are kept per person. Set a name when you share one login, so each of you rates separately.</span>
-            </label>
+              <p className="hint">Set it when you share one login, so each of you keeps your own ratings.</p>
+            </div>
           )}
         </section>
         <GoalsSettings body={settings.body ?? {}} onChange={(body) => setSettings((s) => ({ ...s, body }))} focus={route.id === 'goals'} />
-        <section className="card">
+        <section className="group">
           <h3>Look</h3>
           <span className="settings-label">Theme</span>
           <div className="theme-pick" role="group" aria-label="Theme">
@@ -1245,7 +1247,7 @@ export default function App() {
           </div>
           <p className="hint">Saved on this phone only, so each of you can pick your own.</p>
         </section>
-        <section className="card">
+        <section className="group">
           <h3>Importing</h3>
           <div className="settings">
             <label>
@@ -1290,8 +1292,7 @@ export default function App() {
               </label>
             )}
             <p className="hint">
-              Phones with Gemini Nano translate on the phone; others use Google Translate (needs internet). The translation is saved with the recipe, and the
-              recipe page can switch back to the original.
+              The original stays with the recipe, so you can switch back on the recipe page.
             </p>
             {settings.translateTo !== 'off' && <NanoCheck />}
             {ai && (
@@ -1319,7 +1320,7 @@ export default function App() {
             )}
           </div>
         </section>
-        <section className="card">
+        <section className="group">
           <h3>Units</h3>
           <div className="settings">
             <label>
@@ -1331,16 +1332,16 @@ export default function App() {
               </Select>
             </label>
           </div>
-          <p className="hint">Recipes keep their own units; this changes how amounts and oven temperatures are shown. You can also switch on any recipe.</p>
+          <p className="hint">Changes how amounts and oven temperatures are shown. Recipes keep their own units.</p>
         </section>
         {canSpeak && (
-          <section className="card">
+          <section className="group">
             <h3>Read aloud</h3>
             <p className="hint">The voice that reads steps in cooking mode. Saved on this phone only.</p>
             <VoicePicker />
           </section>
         )}
-        <section className="card">
+        <section className="group">
           <h3>Cooking timers</h3>
           <div className="settings">
             <label>
@@ -1367,9 +1368,9 @@ export default function App() {
               <Icon name="play" /> Try it
             </button>
           </div>
-          <p className="hint">A finished timer rings every few seconds until you stop it, for up to two minutes.</p>
+          <p className="hint">Rings until you stop it, for up to two minutes.</p>
         </section>
-        <section className="card">
+        <section className="group">
           <h3>Shopping on eBag.bg</h3>
           <div className="settings">
             <label>
@@ -1388,10 +1389,10 @@ export default function App() {
               </button>
             )}
           </div>
-          <p className="hint">Each item opens eBag's search in Bulgarian. Your own ingredients search by their name, or by what they count as.</p>
+          <p className="hint">Each item can open eBag's search in Bulgarian, from its edit sheet.</p>
         </section>
         {native && (
-          <section className="card">
+          <section className="group">
             <h3>Instagram</h3>
             <p>{igSignedIn ? 'Signed in' : 'Not signed in'}</p>
             <p className="hint">
@@ -1418,7 +1419,7 @@ export default function App() {
           </section>
         )}
         {native && (
-          <section className="card">
+          <section className="group">
             <h3>Facebook</h3>
             <p>{fbSignedIn ? 'Signed in' : 'Not signed in'}</p>
             <p className="hint">
@@ -1452,8 +1453,8 @@ export default function App() {
     return (
       <main data-dir={dir}>
         {topbar}
+        <h1 className="page-title">Import a recipe</h1>
         <section className="card">
-          <h2>Import a recipe</h2>
           <label htmlFor="link">Link to a reel, Short or recipe page</label>
           <div className="row">
             <input
@@ -1479,7 +1480,7 @@ export default function App() {
         <section className="card">
           <label>From photos</label>
           <p className="hint top">
-            A cookbook page, a recipe card or a screenshot. Add a photo for each page, in order; where they overlap, the repeated lines are kept once. Czech, English or Bulgarian is found by itself, and neat handwriting may work too.
+            A cookbook page, recipe card or screenshot. Add one photo per page, in order.
           </p>
           {photoPages.length > 0 && (
             <ol className="photo-pages">
@@ -1514,7 +1515,7 @@ export default function App() {
         <section className="card">
           <label htmlFor="pasted">Paste a recipe</label>
           <p className="hint top">
-            The whole recipe or a part of it, from a post, a message or a note: title, ingredients (headings like "Sauce:" become groups) and steps. You can check and fix everything before saving.
+            From a post, message or note. You can check everything before saving.
           </p>
           <textarea
             id="pasted"
@@ -1530,7 +1531,7 @@ export default function App() {
 
         <section className="card">
           <label>From a video file</label>
-          <p className="hint top">A cooking video or a voice recording saved on this device. What is said in it is written down and read as a recipe.</p>
+          <p className="hint top">A cooking video or voice recording on this device. What is said becomes the recipe.</p>
           <label className="button secondary">
             <Icon name="file" /> Pick a video file
             <input type="file" accept="video/*,audio/*" hidden disabled={busy} onChange={onFile} />

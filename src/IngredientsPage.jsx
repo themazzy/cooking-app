@@ -202,16 +202,16 @@ export default function IngredientsPage() {
         </button>
       </header>
       {message && !formOpen && <p className="hint">{message}</p>}
-      <section className="card">
+      <section className="list-page">
         <input className="search" type="search" placeholder="Search ingredients" value={query} onChange={(e) => setQuery(e.target.value)} />
         <h3>Your own ({own.length})</h3>
         {own.length ? (
           <ul className="catalog">{own.map(row)}</ul>
         ) : (
-          <p className="hint">Local brands and anything missing from the list. What you put At home that is not in the list shows up here too. Tap + Add your own. Tap one of yours to change it.</p>
+          <p className="hint">Local brands and anything missing from the list. Things you keep at home that aren't listed show up here too.</p>
         )}
-        <p className="hint">Tap an everyday ingredient to give it your own picture (e.g. the local product you buy) or change its calories.</p>
         <h3>Everyday ingredients ({shared.length})</h3>
+        <p className="hint top">Tap one to give it your own picture or calories.</p>
         <ul className="catalog">
           {shared.map((e, n) => (
             <Fragment key={e.id ?? e.name}>

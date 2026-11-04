@@ -7,7 +7,7 @@ export const THEMES = { system: 'Like the phone', light: 'Light', dark: 'Dark' }
 
 // Accent colour on the light and on the dark theme; styles.css mixes the tints from them
 export const ACCENTS = {
-  herb: { label: 'Herb', light: '#2f7a52', dark: '#5cc08d' },
+  herb: { label: 'Herb', light: '#2f7a52', dark: '#56b083' },
   tomato: { label: 'Tomato', light: '#c2410c', dark: '#f28b5b' },
   saffron: { label: 'Saffron', light: '#9a5b00', dark: '#f0b552' },
   berry: { label: 'Berry', light: '#b5306a', dark: '#f07fae' },
@@ -32,7 +32,7 @@ export function applyTheme({ theme = 'system', accent = 'herb' } = {}) {
   root.dataset.theme = resolved
   root.dataset.accent = ACCENTS[accent] ? accent : 'herb'
   const bar = document.querySelector('meta[name="theme-color"]')
-  if (bar) bar.content = resolved === 'dark' ? '#141412' : '#faf1e3'
+  if (bar) bar.content = resolved === 'dark' ? '#16120e' : '#faf1e3'
   // Status bar icons: light on the dark theme, dark on the light one
   if (Capacitor.isNativePlatform()) SystemBars.setStyle({ style: resolved === 'dark' ? SystemBarsStyle.Dark : SystemBarsStyle.Light }).catch(() => {})
 }

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import Icon from './Icon.jsx'
 import { SEED_INGREDIENTS } from './data/ingredients.js'
 import { buildCatalogIndex, imageUrl, matchIngredient, normalizeName } from './lib/catalog.js'
 import { supabase } from './lib/supabase.js'
@@ -267,7 +268,24 @@ const AISLE_COLORS = {
   Drinks: '#7b6fc9',
 }
 
-/** Small picture of a catalog ingredient (own photo, TheMealDB picture), or its first letter. */
+const AISLE_ICONS = {
+  Vegetables: 'aisleVegetables',
+  Fruit: 'aisleFruit',
+  Herbs: 'aisleHerbs',
+  Meat: 'aisleMeat',
+  Fish: 'aisleFish',
+  'Dairy & eggs': 'aisleDairy',
+  Bakery: 'aisleBakery',
+  'Pasta & grains': 'aisleGrains',
+  Baking: 'aisleBaking',
+  Spices: 'aisleSpices',
+  'Oils & sauces': 'aisleOils',
+  'Nuts & seeds': 'aisleNuts',
+  Frozen: 'aisleFrozen',
+  Drinks: 'aisleDrinks',
+}
+
+/** Small picture of a catalog ingredient (own photo, TheMealDB picture), or its aisle's icon on a tinted tile. */
 export function IngredientIcon({ entry, size = 28 }) {
   const src = entry?.image_data || imageUrl(entry)
   const [failedSrc, setFailedSrc] = useState(null)
@@ -275,8 +293,8 @@ export function IngredientIcon({ entry, size = 28 }) {
     return <img className="ing-icon" src={src} alt="" width={size} height={size} loading="lazy" onError={() => setFailedSrc(src)} />
   }
   return (
-    <span className="ing-icon letter" style={{ width: size, height: size, background: AISLE_COLORS[entry?.aisle] ?? 'var(--border)' }} aria-hidden="true">
-      {entry?.name?.[0] ?? '?'}
+    <span className="ing-icon aisle-tile" style={{ width: size, height: size, '--aisle': AISLE_COLORS[entry?.aisle] ?? 'var(--muted)' }} aria-hidden="true">
+      <Icon name={AISLE_ICONS[entry?.aisle] ?? 'aisleOther'} size={Math.round(size * 0.56)} />
     </span>
   )
 }

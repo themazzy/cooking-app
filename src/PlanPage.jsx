@@ -168,7 +168,7 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
         <h1>Meal plan</h1>
         <div className="actions">
           <button className="small" disabled={!freeDays.length || !recipes.length} onClick={() => setProposing(true)}>
-            <Icon name="wand" /> Plan my week
+            <Icon name="planWeek" /> Plan my week
           </button>
         </div>
       </header>

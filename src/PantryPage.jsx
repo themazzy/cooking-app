@@ -460,11 +460,11 @@ export default function PantryPage({ items, loading = false, onChanged }) {
       <header className="main-header">
         <h1>At home</h1>
         <div className="actions">
-          <button className="small secondary" onClick={() => (setMessage(null), setScanning(true))}>
-            <Icon name="barcode" /> Scan
+          <button className="small secondary square" aria-label="Scan a barcode" title="Scan a barcode" onClick={() => (setMessage(null), setScanning(true))}>
+            <Icon name="barcode" />
           </button>
-          <button className="small secondary" disabled={!!receipt && !receipt.found} onClick={() => setShots([])}>
-            <Icon name="camera" /> Receipt
+          <button className="small secondary square" aria-label="Read a receipt" title="Read a receipt" disabled={!!receipt && !receipt.found} onClick={() => setShots([])}>
+            <Icon name="receipt" />
           </button>
           <button className="small" onClick={() => (setAdded(null), setPicking(true))}>
             <Icon name="plus" size={16} strokeWidth={2.5} /> Add
@@ -495,7 +495,7 @@ export default function PantryPage({ items, loading = false, onChanged }) {
           <button onClick={() => setPicking(true)}>Add ingredients</button>
         </div>
       ) : (
-        <section className="card">
+        <section className="list-page">
           {items.length > 8 && <input className="search" type="search" placeholder="Search what you have" value={query} onChange={(e) => setQuery(e.target.value)} />}
           <ul className="catalog stock">
             {sorted.map((i, n) => {

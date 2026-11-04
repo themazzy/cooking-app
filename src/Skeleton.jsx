@@ -41,14 +41,7 @@ export function RecipePageSkeleton() {
       <span className="skel hero" />
       <span className="skel h1" />
       <span className="skel line short" />
-      <div className="stats">
-        {[0, 1, 2, 3].map((n) => (
-          <div key={n} className="stat">
-            <span className="skel title" style={{ width: 40, height: 16 }} />
-            <span className="skel line" style={{ width: 50, height: 8 }} />
-          </div>
-        ))}
-      </div>
+      <span className="skel line" style={{ width: 180, margin: '12px 0 16px' }} />
       <div className="recipe-actions">
         <span className="skel button" />
         <span className="skel button" />

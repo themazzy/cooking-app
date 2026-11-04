@@ -75,6 +75,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const [edit, setEdit] = useState(!recipe.id)
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [pickingPhoto, setPickingPhoto] = useState(false)
   const [cooking, setCooking] = useState(false)
   const [shopping, setShopping] = useState(false)
   const [added, setAdded] = useState(false)
@@ -544,8 +545,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
                 Really delete?
               </button>
             ) : (
-              <button className="secondary" onClick={() => setConfirmDelete(true)}>
-                Delete
+              <button className="danger-text" onClick={() => setConfirmDelete(true)}>
+                <Icon name="trash" /> Delete
               </button>
             )
           ) : (
@@ -585,6 +586,17 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           <Icon name="back" /> Recipes
         </button>
         <span className="topbar-actions">
+          {!video && (
+            <button
+              className={`small secondary square${pickingPhoto ? ' on' : ''}`}
+              aria-label="Add a photo"
+              aria-expanded={pickingPhoto}
+              title="Add a photo"
+              onClick={() => setPickingPhoto((v) => !v)}
+            >
+              <Icon name="camera" />
+            </button>
+          )}
           <button className="small secondary" onClick={() => setSharing(true)}>
             <Icon name="share" /> Share
           </button>
@@ -594,7 +606,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
         </span>
       </div>
 
-      {video ?? <section className="card photo-empty">{photoButtons}</section>}
+      {video ?? (pickingPhoto && <div className="photo-pick">{photoButtons}</div>)}
 
       <header className="recipe-head">
         <h1>{recipe.title || 'Untitled recipe'}</h1>
@@ -604,6 +616,28 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             <OtherRatings recipe={recipe} me={me} />
           </span>
         </div>
+        {(totalMinutes(recipe) || hasCalories || lastCooked(recipe)) && (
+          <p className="meta-line">
+            {totalMinutes(recipe) ? (
+              <span>
+                <Icon name="clock" size={15} />
+                {recipe.timesEstimated ? '~' : ''}
+                {/* Prep and cook time while both are under an hour */}
+                {recipe.prepMin && recipe.cookMin && recipe.prepMin < 60 && recipe.cookMin < 60
+                  ? `${recipe.prepMin} + ${recipe.cookMin} min`
+                  : formatMinutes(totalMinutes(recipe))}
+              </span>
+            ) : null}
+            {hasCalories && (
+              <span>
+                <Icon name="flame" size={15} />
+                {calories.missing.length ? '~' : ''}
+                {formatKcal(perPortion ?? calories.total)} {perPortion != null ? 'kcal a portion' : 'kcal in all'}
+              </span>
+            )}
+            {lastCooked(recipe) && <span>Cooked {cookedAgo(lastCooked(recipe))}</span>}
+          </p>
+        )}
         <div className="tag-scroll">
           {(recipe.collections ?? []).map((c) => (
             <button key={c} className="meta-chip folder" onClick={() => setFiling(true)}>
@@ -627,42 +661,6 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             </button>
           )}
         </div>
-        <div className="stats">
-          {totalMinutes(recipe) ? (
-            <div className="stat">
-              <strong>
-                {recipe.timesEstimated ? '~' : ''}
-                {formatMinutes(totalMinutes(recipe))}
-              </strong>
-              {/* Prep and cook time fit under it only while both are under an hour */}
-              <span>{recipe.prepMin && recipe.cookMin && recipe.prepMin < 60 && recipe.cookMin < 60 ? `${recipe.prepMin} + ${recipe.cookMin} min` : 'total'}</span>
-            </div>
-          ) : null}
-          {recipe.servings ? (
-            <div className="stat">
-              <strong>{recipe.servings}</strong>
-              <span>{recipe.servings === 1 ? 'portion' : 'portions'}</span>
-            </div>
-          ) : null}
-          <div className="stat">
-            <strong>{ingredientCount}</strong>
-            <span>ingredients</span>
-          </div>
-          {hasCalories ? (
-            <div className="stat">
-              <strong>
-                {calories.missing.length ? '~' : ''}
-                {formatKcal(perPortion ?? calories.total)}
-              </strong>
-              <span>{perPortion != null ? 'kcal/portion' : 'kcal total'}</span>
-            </div>
-          ) : (
-            <div className="stat">
-              <strong>{steps.length}</strong>
-              <span>{steps.length === 1 ? 'step' : 'steps'}</span>
-            </div>
-          )}
-        </div>
         <p className="source-line">
           {recipe.sourceUrl ? (
             <button className="link" onClick={() => openExternal(recipe.sourceUrl)}>
@@ -670,11 +668,6 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
             </button>
           ) : (
             PLATFORM[recipe.platform] && <span>{PLATFORM[recipe.platform]}</span>
-          )}
-          {lastCooked(recipe) && (
-            <span>
-              {recipe.sourceUrl || PLATFORM[recipe.platform] ? '· ' : ''}Cooked {cookedAgo(lastCooked(recipe))}
-            </span>
           )}
         </p>
         {recipe.note?.trim() && (

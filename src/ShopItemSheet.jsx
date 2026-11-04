@@ -1,3 +1,4 @@
+import Icon from './Icon.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import NumberField, { unitStep } from './NumberField.jsx'
@@ -15,7 +16,7 @@ const fromChip = (unit) => (unit === 'pcs' ? '' : unit)
  * One shopping list item: how much to buy (and its name, for things added
  * by hand), what each recipe needs of it, and removing it from the list.
  */
-export default function ShopItemSheet({ item, many, units, packs, onSave, onDelete, onClose }) {
+export default function ShopItemSheet({ item, many, units, packs, onEbag, onSave, onDelete, onClose }) {
   const { match } = useCatalog()
   const entry = match(item.name)
   const own = String(item.key).startsWith('extra-')
@@ -113,6 +114,11 @@ export default function ShopItemSheet({ item, many, units, packs, onSave, onDele
               </li>
             ))}
           </ul>
+        )}
+        {onEbag && (
+          <button className="link ebag-link" onClick={onEbag}>
+            Find it on eBag <Icon name="external" size={14} />
+          </button>
         )}
         <div className="sheet-actions">
           <button className="secondary" onClick={onDelete}>

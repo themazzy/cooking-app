@@ -4,6 +4,7 @@ import App from './App.jsx'
 import Toaster from './Toaster.jsx'
 import { CatalogProvider } from './catalog.jsx'
 import { startTheme } from './lib/theme.js'
+import './fonts.css'
 import './styles.css'
 
 startTheme()
