@@ -13,7 +13,7 @@ import { parseRecipeText } from './lib/ingredients.js'
 import { addFromTranscript, addRaw, pickRecipe } from './lib/recipeSource.js'
 import { recipeToText, toEditable } from './lib/recipeEdit.js'
 import { openExternal } from './lib/pageReader.js'
-import { scaleIngredients, scaleSteps } from './lib/scale.js'
+import { amountLabel, scaleIngredients, scaleSteps } from './lib/scale.js'
 import { swapIngredient, swapsFor } from './lib/swaps.js'
 import SwapSheet from './SwapSheet.jsx'
 import ShareSheet from './ShareSheet.jsx'
@@ -32,7 +32,7 @@ import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
 
 const mb = (bytes) => `${(bytes / 1e6).toFixed(1)} MB`
-const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
+const amount = (i) => amountLabel(i.qty, i.unit)
 const PLATFORM = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', youtube: 'YouTube', web: 'Website', photo: 'Photo', pasted: 'Pasted text', file: 'Video file' }
 const hostOf = (url) => {
   try {

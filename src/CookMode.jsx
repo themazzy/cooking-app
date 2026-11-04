@@ -1,3 +1,4 @@
+import { amountLabel } from './lib/scale.js'
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import StockReview from './StockReview.jsx'
@@ -10,7 +11,7 @@ import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTime
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
 
-const amount = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
+const amount = (i) => amountLabel(i.qty, i.unit)
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
 const RING_FOR = 2 * 60 * 1000 // then it stays red but quiet
 const VOICE_KEY = 'cooking-app:voice' // listening was on last time, so it starts again

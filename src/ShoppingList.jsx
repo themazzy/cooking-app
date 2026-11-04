@@ -1,3 +1,4 @@
+import { amountLabel } from './lib/scale.js'
 import { Fragment, useRef, useState } from 'react'
 import { aisleOrder, isDefaultOrder, moveAisle } from './lib/aisles.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
@@ -12,7 +13,7 @@ import ShopItemSheet from './ShopItemSheet.jsx'
 import ToHomeSheet from './ToHomeSheet.jsx'
 import Icon from './Icon.jsx'
 
-const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
+const amountText = (i) => amountLabel(i.qty, i.unit)
 
 /** Putting the shop's sections in the order you walk past them; both phones share it. */
 function AisleSheet({ order, inUse, onChange, onClose }) {

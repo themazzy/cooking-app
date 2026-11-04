@@ -96,6 +96,16 @@ function parseRoute() {
 const savedWhat = (patch) =>
   'ratings' in patch ? 'Rating saved' : 'collections' in patch ? 'Collections saved' : 'cooked' in patch ? 'Cooking history saved' : 'photo' in patch ? (patch.photo ? 'Photo saved' : 'Photo removed') : 'title' in patch ? 'Text saved' : 'Saved'
 
+// Settings pages: key (#/settings/<key>), title, icon, what is in it
+const SETTINGS_SECTIONS = [
+  ['account', 'Account and household', 'user', 'Sign in, invite code, your name'],
+  ['goals', 'Your daily goals', 'goals', 'Calories and protein for your body'],
+  ['look', 'Look', 'palette', 'Light or dark, colour'],
+  ['importing', 'Importing', 'download', 'Transcripts, translation, AI, sign-ins'],
+  ['cooking', 'Cooking', 'pot', 'Units, read aloud, timers'],
+  ['shopping', 'Shopping', 'cart', 'eBag links'],
+]
+
 // Order of the tabs, so switching slides the right way
 const TAB_ORDER = ['home', 'plan', 'shopping', 'pantry', 'ingredients']
 const slideDir = (from, to) => {
@@ -1188,10 +1198,29 @@ export default function App() {
 
 
   if (route.page === 'settings') {
+    const section = SETTINGS_SECTIONS.some(([k]) => k === route.id) ? route.id : null
     return (
-      <main data-dir={dir}>
+      <main data-dir={dir} className={section === 'importing' || section === 'cooking' ? 'settings-page' : 'settings-page single'}>
         {topbar}
-        <h1 className="page-title">Settings</h1>
+        <h1 className="page-title">{SETTINGS_SECTIONS.find(([k]) => k === section)?.[1] ?? 'Settings'}</h1>
+        {!section && (
+          <nav className="settings-menu" aria-label="Settings">
+            {SETTINGS_SECTIONS.map(([key, label, icon, about]) => (
+              <button key={key} className="settings-item" onClick={() => go(`#/settings/${key}`)}>
+                <span className="settings-icon" aria-hidden="true">
+                  <Icon name={icon} size={20} />
+                </span>
+                <span className="settings-text">
+                  <strong>{label}</strong>
+                  <span>{about}</span>
+                </span>
+                <Icon name="right" className="settings-chevron" />
+              </button>
+            ))}
+          </nav>
+        )}
+        {section === 'account' && (
+          <>
         <section className="group">
           <h3>Account</h3>
           <Account
@@ -1215,7 +1244,15 @@ export default function App() {
             </div>
           )}
         </section>
-        <GoalsSettings body={settings.body ?? {}} onChange={(body) => setSettings((s) => ({ ...s, body }))} focus={route.id === 'goals'} />
+          </>
+        )}
+        {section === 'goals' && (
+          <>
+        <GoalsSettings body={settings.body ?? {}} onChange={(body) => setSettings((s) => ({ ...s, body }))} focus={false} />
+          </>
+        )}
+        {section === 'look' && (
+          <>
         <section className="group">
           <h3>Look</h3>
           <span className="settings-label">Theme</span>
@@ -1247,6 +1284,10 @@ export default function App() {
           </div>
           <p className="hint">Saved on this phone only, so each of you can pick your own.</p>
         </section>
+          </>
+        )}
+        {section === 'importing' && (
+          <>
         <section className="group">
           <h3>Importing</h3>
           <div className="settings">
@@ -1320,6 +1361,10 @@ export default function App() {
             )}
           </div>
         </section>
+          </>
+        )}
+        {section === 'cooking' && (
+          <>
         <section className="group">
           <h3>Units</h3>
           <div className="settings">
@@ -1370,6 +1415,10 @@ export default function App() {
           </div>
           <p className="hint">Rings until you stop it, for up to two minutes.</p>
         </section>
+          </>
+        )}
+        {section === 'shopping' && (
+          <>
         <section className="group">
           <h3>Shopping on eBag.bg</h3>
           <div className="settings">
@@ -1391,6 +1440,10 @@ export default function App() {
           </div>
           <p className="hint">Each item can open eBag's search in Bulgarian, from its edit sheet.</p>
         </section>
+          </>
+        )}
+        {section === 'importing' && (
+          <>
         {native && (
           <section className="group">
             <h3>Instagram</h3>
@@ -1444,6 +1497,8 @@ export default function App() {
               )}
             </div>
           </section>
+        )}
+          </>
         )}
       </main>
     )

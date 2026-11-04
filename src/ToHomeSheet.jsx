@@ -1,3 +1,4 @@
+import { amountLabel } from './lib/scale.js'
 import { useEffect, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import NumberField, { unitStep } from './NumberField.jsx'
@@ -92,7 +93,7 @@ export default function ToHomeSheet({ items, pantry, packs: ownPacks = {}, onDon
             const r = rows[i.key]
             const have = atHome(i)
             const after = addTo(have && !isOut(have) ? have.amount : '', r.qty, r.unit)
-            const listAmount = amountText(i.qty, i.unit)
+            const listAmount = amountLabel(i.qty, i.unit)
             return (
               <li key={i.key} className={r.on ? '' : 'checked'}>
                 <label className="shop-tick">

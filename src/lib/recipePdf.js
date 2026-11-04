@@ -1,3 +1,4 @@
+import { amountLabel } from './scale.js'
 // A recipe as a PDF: photo, ingredients and steps on A4 pages in the app's
 // cream look, with the Simmer pot in the header. The pages are drawn on a
 // canvas with the phone's own fonts (so Czech and Bulgarian letters print
@@ -257,7 +258,7 @@ export async function recipePdf({ title, meta = '', nutrition = null, picture = 
           group = i.group ?? ''
           if (group) heading(group)
         }
-        const amount = [i.qty, i.unit].map((s) => String(s ?? '').trim()).filter(Boolean).join(' ')
+        const amount = amountLabel(i.qty, i.unit)
         const amountLines = amount ? lines(amount, TEXT, 700, AMOUNT_W - 14) : []
         const nameLines = lines(i.name ?? '', TEXT, 400, width - AMOUNT_W)
         const rows = Math.max(amountLines.length, nameLines.length, 1)

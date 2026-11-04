@@ -259,3 +259,53 @@ export function scaleSteps(text, factor, ingredients = []) {
     return scaled === amount ? all : `${scaled}${space}`
   })
 }
+
+// English units that take an -s (or -es) after more than one; spoons and metric units don't
+const PLURALS = {
+  cup: 'cups',
+  clove: 'cloves',
+  can: 'cans',
+  pack: 'packs',
+  packet: 'packets',
+  head: 'heads',
+  slice: 'slices',
+  bunch: 'bunches',
+  handful: 'handfuls',
+  pinch: 'pinches',
+  stick: 'sticks',
+  sprig: 'sprigs',
+  piece: 'pieces',
+  jar: 'jars',
+  bottle: 'bottles',
+  bag: 'bags',
+  box: 'boxes',
+  glass: 'glasses',
+  mug: 'mugs',
+  drop: 'drops',
+  dash: 'dashes',
+  leaf: 'leaves',
+  sheet: 'sheets',
+  stalk: 'stalks',
+}
+const SINGULARS = Object.fromEntries(Object.entries(PLURALS).map(([one, many]) => [many, one]))
+
+/**
+ * An amount as people write it, for display only: "0,75" stick → "¾ stick",
+ * "5" cup → "5 cups", "1 ½" cup → "1 ½ cups". Whole numbers and text that
+ * isn't a number stay as written, so 113 g is not rounded to 115 g.
+ */
+export function amountLabel(qty, unit = '') {
+  const q = String(qty ?? '').trim()
+  let u = String(unit ?? '').trim()
+  const a = parseAmount(q)
+  let shown = q
+  if (a && /[.,/]/.test(q)) {
+    shown = a.max != null ? `${formatAmount(a.min, u)}–${formatAmount(a.max, u)}` : formatAmount(a.min, u)
+  }
+  if (a && u) {
+    const lower = u.toLowerCase()
+    const one = SINGULARS[lower] ?? (PLURALS[lower] ? lower : null)
+    if (one && u === lower) u = (a.max ?? a.min) > 1 ? PLURALS[one] : one
+  }
+  return [shown, u].filter(Boolean).join(' ')
+}

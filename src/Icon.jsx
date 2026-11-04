@@ -1,4 +1,7 @@
 import {
+  Palette,
+  Download,
+  Target,
   Trash2,
   Receipt,
   CalendarCheck,
@@ -128,6 +131,9 @@ const ICONS = {
   quiet: VolumeX,
   close: X,
   trash: Trash2,
+  palette: Palette,
+  download: Download,
+  goals: Target,
   receipt: Receipt,
   planWeek: CalendarCheck,
   filters: SlidersHorizontal,

@@ -1,8 +1,9 @@
+import { amountLabel } from './lib/scale.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { swapIngredient, swapsFor } from './lib/swaps.js'
 import Icon from './Icon.jsx'
 
-const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
+const amountText = (i) => amountLabel(i.qty, i.unit)
 
 /**
  * What to use instead of one ingredient, with the amount for the portions

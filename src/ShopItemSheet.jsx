@@ -1,3 +1,4 @@
+import { amountLabel } from './lib/scale.js'
 import Icon from './Icon.jsx'
 import { useEffect, useRef, useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
@@ -7,7 +8,7 @@ import { defaultUnit } from './lib/defaultUnit.js'
 import { packFor } from './lib/packs.js'
 import { convertIngredient } from './lib/units.js'
 
-const amountText = (i) => [i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')
+const amountText = (i) => amountLabel(i.qty, i.unit)
 // Recipes keep pieces as no unit; the chips call them pcs
 const toChip = (unit) => (String(unit ?? '').trim() ? unit : 'pcs')
 const fromChip = (unit) => (unit === 'pcs' ? '' : unit)

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
-import { scaleIngredients } from './lib/scale.js'
+import { scaleIngredients, amountLabel } from './lib/scale.js'
 import { isOut } from './lib/stock.js'
 import Icon from './Icon.jsx'
 
@@ -49,7 +49,7 @@ export default function ShopSheet({ recipe, portions: startPortions, pantry, onA
                 <input type="checkbox" checked={!skip.has(n)} onChange={() => toggle(n)} />
                 <IngredientIcon entry={match(i.name)} />
                 <span>
-                  {[i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ') && <strong>{[i.qty, i.unit].filter((x) => String(x ?? '').trim()).join(' ')} </strong>}
+                  {amountLabel(i.qty, i.unit) && <strong>{amountLabel(i.qty, i.unit)} </strong>}
                   {i.name}
                   {atHome.has(canonical(i.name)) && <span className="badge">at home</span>}
                 </span>

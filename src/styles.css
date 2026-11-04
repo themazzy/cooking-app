@@ -1381,3 +1381,14 @@ ul.shopping.to-home .to-home-amount .num-field input { width: 100%; height: auto
 .goals-how ul { padding-left: 18px; margin: 6px 0; color: var(--muted); }
 .goals-how li { margin-bottom: 4px; }
 .ebag-link { margin: 4px 0 8px; }
+
+/* Settings menu */
+.settings-menu { display: grid; border-top: 1px solid var(--border); }
+.settings-item { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 0; background: none; color: var(--text); border-bottom: 1px solid var(--border); border-radius: 0; text-align: left; justify-content: flex-start; font-weight: 400; }
+.settings-icon { flex: 0 0 40px; height: 40px; display: grid; place-items: center; border-radius: var(--r-md); background: var(--accent-soft); color: var(--accent); }
+.settings-icon .icon-svg, .settings-chevron { margin: 0; }
+.settings-text { display: grid; gap: 1px; flex: 1 1 auto; min-width: 0; }
+.settings-text strong { font-weight: 600; }
+.settings-text span { color: var(--muted); font-size: var(--fs-sm); }
+.settings-chevron { color: var(--muted); flex: 0 0 auto; }
+.settings-page.single .page-title + .group > h3:first-child { display: none; }
