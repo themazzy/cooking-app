@@ -35,6 +35,31 @@ describe('ingredient catalog', () => {
     expect(m('dashi')).toBe('Dashi')
     expect(m('silken tofu')).toBe('Silken tofu')
   })
+  it('reads sauces and condiments, also in Czech and Bulgarian', () => {
+    const m = (text) => matchIngredient(index, text)?.name
+    expect(m('Worcester sauce')).toBe('Worcestershire sauce')
+    expect(m('worcestershire')).toBe('Worcestershire sauce')
+    expect(m('worcestrová omáčka')).toBe('Worcestershire sauce')
+    expect(m('worcesterové omáčky')).toBe('Worcestershire sauce')
+    expect(m('уорчестършър сос')).toBe('Worcestershire sauce')
+    expect(m('sójová omáčka')).toBe('Soy sauce')
+    expect(m('rybí omáčka')).toBe('Fish sauce')
+    expect(m('kecap manis')).toBe('Sweet soy sauce')
+    expect(m('chipotle peppers in adobo')).toBe('Chipotle in adobo')
+    expect(m('mango chutney')).toBe('Chutney')
+    expect(m('steak seasoning')).toBe('Grill seasoning')
+    expect(m('grilovací koření')).toBe('Grill seasoning')
+    expect(m('kapary')).toBe('Capers')
+    expect(m('olivy')).toBe('Olives')
+    expect(m('javorový sirup')).toBe('Maple syrup')
+    expect(m('tatarská omáčka')).toBe('Tartar sauce')
+    expect(m('piškoty')).toBe('Ladyfingers')
+    expect(m('дзадзики')).toBe('Tzatziki')
+    expect(m('bešamel')).toBe('Béchamel')
+    expect(m('guacamole')).toBe('Guacamole')
+    expect(m('sambal oelek')).toBe('Sambal oelek')
+    expect(m('kostka bujónu')).toBe('Stock cubes')
+  })
   it('tells fresh herbs from dried, and whole spices from ground', () => {
     const m = (text) => matchIngredient(index, text)?.name
     const cases = {

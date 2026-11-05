@@ -417,7 +417,7 @@ Flour | mouka, mouky, mouku
 Wholemeal flour | celozrnná mouka, celozrnnou mouku
 Rye flour | žitná mouka, žitnou mouku
 Spelt flour | špaldová mouka
-Cornstarch | kukuřičný škrob, solamyl, maizena
+Cornstarch | kukuřičný škrob, solamyl, maizena, škrob, škrobu
 Potato starch | bramborový škrob, holandský škrob
 Sugar | cukr, cukru, krystal, krystalový cukr, krupicový cukr, krupicák, cukr krupice, cukru krupice, cukr krystal
 Icing sugar | moučkový cukr, moučkového cukru, moučka, cukr moučka, cukru moučky
@@ -449,12 +449,48 @@ Olive oil | olivový olej, olivovým olejem
 Vegetable oil | olej, rostlinný olej, slunečnicový olej, oleje, olejem
 Vinegar | ocet, octa, octem, kvasný ocet
 Mustard | hořčice, hořčici, plnotučná hořčice
-Ketchup | kečup
+Ketchup | kečup, kečupu, kečupem, rajčatový kečup
+Worcestershire sauce | worcestrová omáčka, worcestrové omáčky, worcestrovou omáčku, worcesterová omáčka, worcesterové omáčky, worcesterovou omáčku, worcester omáčka, worcesterská omáčka, worcestr, worčestr, worčestrová omáčka
+Soy sauce | sójová omáčka, sójové omáčky, sójovou omáčku, sojová omáčka, sojové omáčky, sojovou omáčku
+Sweet soy sauce | sladká sójová omáčka, sladké sójové omáčky
+Fish sauce | rybí omáčka, rybí omáčky, rybí omáčku
+Oyster sauce | ústřicová omáčka, ústřicové omáčky, ústřicovou omáčku
+BBQ sauce | bbq omáčka, barbecue omáčka, grilovací omáčka, bbq omáčky
+Tartar sauce | tatarská omáčka, tatarské omáčky, tatarskou omáčku, tatarka
+Remoulade | remuláda, remulády
+Hot sauce | pálivá omáčka, chilli omáčka, pálivé omáčky
+Capers | kapary, kaparů, kapar
+Olives | olivy, oliv, černé olivy, černých oliv
+Green olives | zelené olivy, zelených oliv
+Maple syrup | javorový sirup, javorového sirupu, javorovým sirupem
+Curry powder | kari, kari koření, karí
+Ghee | ghí, přepuštěné máslo, přepuštěného másla
+Vegan butter | margarín, margarínu, rama, hera
+Ladyfingers | piškoty, piškotů, cukrářské piškoty
+Macadamia nuts | makadamové ořechy, makadamových ořechů, makadamie
+Liquid smoke | tekutý kouř, kouřové aroma
+Maggi seasoning | polévkové koření, tekuté koření, maggi koření
+Hollandaise | holandská omáčka, holandské omáčky, holandskou omáčku
+Béchamel | bešamel, bešamelu, bešamelová omáčka
+Pizza sauce | pizza omáčka, omáčka na pizzu, rajčatová omáčka na pizzu
+Cocktail sauce | koktejlová omáčka, koktejlové omáčky
+Truffle paste | lanýžová pasta, lanýžový krém
+Marmalade | pomerančová marmeláda, pomerančový džem
+Chutney | čatní
+Tapenade | olivová pasta
+Kimchi | kimči
+Vegeta | vegetu
+Gyros seasoning | gyros koření, koření na gyros
+Grill seasoning | grilovací koření, grilovacího koření, koření na grilování, koření na steak
+Pectin | pektin, gelfix, želírovací cukr
+Fondant | potahovací hmota, potahovací hmoty, fondán
+Candied fruit | kandované ovoce, kandovaného ovoce, kandovaná kůra, kandované třešně
+Cornflakes | kukuřičné lupínky, kukuřičných lupínků
 Mayonnaise | majonéza, majonézu
 Tomato paste | rajčatový protlak, protlak, protlaku
 Canned tomatoes | loupaná rajčata, drcená rajčata, rajčata v plechovce
 Stock | vývar, vývaru, bujón, bujon
-Stock cubes | masox, bujónová kostka, bujon kostka
+Stock cubes | masox, bujónová kostka, bujon kostka, kostka bujónu, kostky bujónu, maggi cube
 Jam | marmeláda, marmeládu, džem, džemu
 Lard | sádlo, sádla, vepřové sádlo
 Water | voda, vody, vodu

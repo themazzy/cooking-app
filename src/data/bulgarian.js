@@ -198,6 +198,53 @@ Soy sauce | соев сос
 Fish sauce | рибен сос
 Oyster sauce | стридиев сос
 Worcestershire sauce | уорчестър сос
+Sweet soy sauce | сладък соев сос
+Chipotle in adobo | чипотле
+Liquid smoke | течен дим
+Maggi seasoning | маги
+Ranch dressing | ранч дресинг
+Thousand island dressing | дресинг хиляда острова
+Aioli | айоли
+Chimichurri | чимичури
+Tzatziki | дзадзики
+Guacamole | гуакамоле
+Sambal oelek | самбал
+Peri peri sauce | пири пири сос
+Buffalo sauce | бъфало сос
+Brown sauce | кафяв сос
+Chutney | чътни
+Relish | релиш
+Hollandaise | холандез сос
+Béchamel | бешамел
+Alfredo sauce | сос алфредо
+Pizza sauce | сос за пица
+Cocktail sauce | коктейлен сос
+Remoulade | ремулад
+Truffle paste | трюфелова паста
+Tikka masala paste | паста тика масала
+Tandoori paste | тандури паста
+Korma paste | паста корма
+Marmalade | портокалов мармалад
+Demi-glace | деми глас
+Mole | моле сос
+Ssamjang | самджанг
+Yakitori sauce | сос якитори
+Caperberries | каперси плодове
+Pepperoncini | пеперончини
+Tapenade | тапенада
+Baba ganoush | баба гануш
+Pico de gallo | пико де гайо
+Kimchi | кимчи
+Vegeta | вегета
+Gochugaru | гочугару
+Ras el hanout | рас ел ханут
+Old Bay | подправка за морски дарове
+Gyros seasoning | подправка за гирос
+Grill seasoning | подправка за скара
+Pectin | пектин
+Fondant | фондан
+Candied fruit | захаросани плодове
+Cornflakes | корнфлейкс
 Hot sauce | лют сос
 Ketchup | кетчуп
 Mustard | горчица
@@ -824,6 +871,13 @@ export const SEARCH_ONLY = new Set(['cheese', 'clotted cream', 'fromage frais', 
 // How Bulgarian recipes name ingredients, besides the search words above
 // ("масло", "лимон", "гъби"); words ending in -та, -те, -ът are matched without them
 export const BULGARIAN_ALIASES = `
+Worcestershire sauce | уорчестършър сос, сос уорчестършър, сос уорчестър, уорчестър, устършър сос
+Tzatziki | цацики
+Béchamel | сос бешамел
+Hollandaise | холандез, холандски сос, сос холандез
+Cornflakes | царевични флейкс
+Gyros seasoning | подправка за дюнер
+Grill seasoning | подправка за барбекю
 Butter | масло, краве масло
 Milk | мляко
 Chicken | пиле, пилешко, пилешко месо

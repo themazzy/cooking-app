@@ -461,10 +461,10 @@ Vegetable oil | Oils & sauces | Vegetable Oil | oil, frying oil
 Sesame oil | Oils & sauces | Sesame Seed Oil | toasted sesame oil
 Vinegar | Oils & sauces | Vinegar | white wine vinegar
 Balsamic vinegar | Oils & sauces | Balsamic Vinegar | balsamic
-Soy sauce | Oils & sauces | Soy Sauce | tamari
+Soy sauce | Oils & sauces | Soy Sauce | tamari, liquid aminos
 Fish sauce | Oils & sauces | Fish Sauce | thai fish sauce
 Oyster sauce | Oils & sauces | Oyster Sauce |
-Worcestershire sauce | Oils & sauces | Worcestershire Sauce |
+Worcestershire sauce | Oils & sauces | Worcestershire Sauce | worcester sauce, worcestershire, worcester, lea & perrins, lea and perrins
 Hot sauce | Oils & sauces | Hotsauce |
 Ketchup | Oils & sauces | Tomato Ketchup | tomato ketchup
 Mustard | Oils & sauces | Mustard |
@@ -533,6 +533,53 @@ Lard | Oils & sauces | Lard | pork lard, shortening, vegetable shortening
 Duck fat | Oils & sauces | Duck Fat | goose fat
 Suet | Oils & sauces | Suet |
 Cooking spray | Oils & sauces |  | oil spray
+Sweet soy sauce | Oils & sauces |  | kecap manis, ketjap manis, indonesian sweet soy sauce | Soy sauce
+Chipotle in adobo | Oils & sauces |  | chipotle peppers in adobo, chipotles in adobo, chipotle peppers in adobo sauce, adobo sauce, chipotle paste
+Liquid smoke | Oils & sauces |  | smoke flavouring, hickory liquid smoke
+Maggi seasoning | Oils & sauces |  | maggi, maggi sauce, maggi seasoning sauce, maggi würze, liquid seasoning, soup seasoning
+Ranch dressing | Oils & sauces |  | ranch | Salad dressing
+Thousand island dressing | Oils & sauces |  | thousand island | Salad dressing
+Aioli | Oils & sauces |  | aïoli, garlic mayo, garlic mayonnaise
+Chimichurri | Oils & sauces |  | chimichurri sauce
+Tzatziki | Dairy & eggs |  | tzatziki sauce, tsatsiki, cacık
+Guacamole | Oils & sauces |  | guac
+Sambal oelek | Oils & sauces |  | sambal, sambal olek, sambal ulek | Hot sauce
+Peri peri sauce | Oils & sauces |  | piri piri, piri piri sauce, peri-peri sauce, peri peri | Hot sauce
+Buffalo sauce | Oils & sauces |  | buffalo wing sauce, wing sauce, frank's redhot, franks red hot | Hot sauce
+Brown sauce | Oils & sauces |  | hp sauce, hp brown sauce, steak sauce, a1 sauce
+Chutney | Oils & sauces |  | mango chutney, tomato chutney, onion chutney
+Relish | Oils & sauces |  | pickle relish, sweet relish, sweet pickle relish, hot dog relish
+Hollandaise | Oils & sauces |  | hollandaise sauce
+Béchamel | Oils & sauces |  | bechamel, béchamel sauce, bechamel sauce, white sauce
+Alfredo sauce | Oils & sauces |  | alfredo
+Pizza sauce | Oils & sauces |  | pizza tomato sauce | Tomato sauce
+Cocktail sauce | Oils & sauces |  | marie rose sauce, prawn cocktail sauce
+Remoulade | Oils & sauces |  | rémoulade, remoulade sauce | Mayonnaise
+Truffle paste | Oils & sauces |  | truffle sauce, truffle cream
+Tikka masala paste | Oils & sauces |  | tikka paste, tikka masala curry paste | Curry paste
+Tandoori paste | Oils & sauces |  | tandoori curry paste | Curry paste
+Korma paste | Oils & sauces |  | korma curry paste | Curry paste
+Marmalade | Oils & sauces |  | orange marmalade, seville orange marmalade | Jam
+Demi-glace | Oils & sauces |  | demi glace, demiglace, glace de viande
+Mole | Oils & sauces |  | mole sauce, mole poblano, mole paste
+Ssamjang | Oils & sauces |  | 쌈장
+Yakitori sauce | Oils & sauces |  | yakitori tare, tare sauce
+Caperberries | Oils & sauces |  | caper berries | Capers
+Pepperoncini | Oils & sauces |  | peperoncini, pickled pepperoncini, friggitelli
+Tapenade | Oils & sauces |  | olive tapenade, black olive tapenade
+Baba ganoush | Oils & sauces |  | baba ghanoush, baba ghanouj, baba ganouj, moutabal
+Pico de gallo | Oils & sauces |  | salsa fresca | Salsa
+Kimchi | Vegetables |  | kimchee, 김치
+Vegeta | Spices |  | vegeta seasoning, all-purpose seasoning
+Gochugaru | Spices |  | korean chilli flakes, korean chili flakes, korean red pepper flakes, 고춧가루 | Chilli flakes
+Ras el hanout | Spices |  | ras-el-hanout
+Old Bay | Spices |  | old bay seasoning, seafood seasoning
+Gyros seasoning | Spices |  | gyros spice, kebab seasoning, doner seasoning
+Grill seasoning | Spices |  | grill spice, bbq seasoning, bbq rub, dry rub, steak seasoning
+Pectin | Baking |  | fruit pectin, jam setting sugar, gelling sugar
+Fondant | Baking |  | sugar paste, ready-to-roll icing, rolled fondant
+Candied fruit | Baking |  | candied peel, glacé cherries, glace cherries, candied cherries
+Cornflakes | Pasta & grains |  | corn flakes
 Almonds | Nuts & seeds | Almonds |
 Walnuts | Nuts & seeds | Walnuts | walnut
 Hazelnuts | Nuts & seeds | Hazlenuts | hazelnut
@@ -545,7 +592,7 @@ Sunflower seeds | Nuts & seeds |  |
 Chestnuts | Nuts & seeds | Chestnuts |
 Flaked almonds | Nuts & seeds | Flaked Almonds | sliced almonds | Almonds
 Pistachios | Nuts & seeds |  |
-Macadamia nuts | Nuts & seeds |  |
+Macadamia nuts | Nuts & seeds |  | macadamia, macadamias
 Brazil nuts | Nuts & seeds |  |
 Pumpkin seeds | Nuts & seeds |  | pepitas
 Chia seeds | Nuts & seeds |  | chia
