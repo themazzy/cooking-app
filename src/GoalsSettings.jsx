@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import NumberField from './NumberField.jsx'
 import Select from './Select.jsx'
+import useSegmentPill from './useSegmentPill.js'
 import { ACTIVITY, GOALS, dailyTargets, hasProfile } from './lib/goals.js'
 
 // Settings card for one person's daily targets. Saved on this phone, so each
@@ -10,6 +11,8 @@ const fmt = (n) => Math.round(n).toLocaleString('cs-CZ')
 
 export default function GoalsSettings({ body = {}, onChange, focus = false }) {
   const ref = useRef(null)
+  const sexPill = useSegmentPill()
+  const goalPill = useSegmentPill()
   useEffect(() => {
     if (focus) ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [focus])
@@ -25,7 +28,7 @@ export default function GoalsSettings({ body = {}, onChange, focus = false }) {
       <p className="hint">Recipe pages then show each portion against your own day instead of a general 2000 kcal one. Saved on this phone only, so each of you sets your own.</p>
 
       <span className="settings-label">Body</span>
-      <div className="segmented" role="group" aria-label="Sex">
+      <div ref={sexPill} className="segmented" role="group" aria-label="Sex">
         {[
           ['female', 'Woman'],
           ['male', 'Man'],
@@ -63,7 +66,7 @@ export default function GoalsSettings({ body = {}, onChange, focus = false }) {
       <p className="hint">{act.hint}.</p>
 
       <span className="settings-label">Goal</span>
-      <div className="segmented" role="group" aria-label="Goal">
+      <div ref={goalPill} className="segmented" role="group" aria-label="Goal">
         {Object.entries(GOALS).map(([k, g]) => (
           <button key={k} type="button" className={(body.goal ?? 'maintain') === k ? 'on' : ''} aria-pressed={(body.goal ?? 'maintain') === k} onClick={() => set({ goal: k })}>
             {g.label}

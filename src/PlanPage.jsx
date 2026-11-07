@@ -226,8 +226,10 @@ export default function PlanPage({ plan = {}, recipes, pantry, onChange, onShop,
       </ol>
 
       {planned > 0 && (
-        <button className="big plan-shop" disabled={!entries.length} onClick={() => (onShop(entries), setShopped(start))}>
-          {shopped === start ? <><Icon name="check" /> On the shopping list</> : <><Icon name="cart" /> {`Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}</>}
+        <button className={`big plan-shop${shopped === start ? ' confirmed' : ''}`} disabled={!entries.length} onClick={() => (onShop(entries), setShopped(start))}>
+          <span className={shopped === start ? 'swap' : 'swap-off'} key={shopped === start ? 'on' : 'off'}>
+            {shopped === start ? <><Icon name="check" /> On the shopping list</> : <><Icon name="cart" /> {`Shop for this week (${entries.length} recipe${entries.length === 1 ? '' : 's'})`}</>}
+          </span>
         </button>
       )}
       {planned > 0 && <p className="hint">Recipes already on the list get this week&apos;s portions; the rest of the list stays.</p>}

@@ -680,8 +680,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           <button className="big" disabled={!steps.length} onClick={() => setCooking(true)}>
             <Icon name="play" fill /> Start cooking
           </button>
-          <button className="big secondary" disabled={!ingredientCount} onClick={() => setShopping(true)}>
-            {added ? <><Icon name="check" /> On the list</> : <><Icon name="cart" /> Add to list</>}
+          <button className={`big secondary${added ? ' confirmed' : ''}`} disabled={!ingredientCount} onClick={() => setShopping(true)}>
+            <span className={added ? 'swap' : 'swap-off'} key={added ? 'on' : 'off'}>{added ? <><Icon name="check" /> On the list</> : <><Icon name="cart" /> Add to list</>}</span>
           </button>
         </div>
       </header>
@@ -764,8 +764,8 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
           </ol>
         )}
         <div className="row">
-          <button className="secondary" onClick={() => copyText(recipeToText({ ingredients: shown, steps: stepsText }, recipe.title))}>
-            {copied ? 'Copied' : 'Copy recipe'}
+          <button className={`secondary${copied ? ' confirmed' : ''}`} onClick={() => copyText(recipeToText({ ingredients: shown, steps: stepsText }, recipe.title))}>
+            <span className={copied ? 'swap' : 'swap-off'} key={copied ? 'on' : 'off'}>{copied ? 'Copied' : 'Copy recipe'}</span>
           </button>
         </div>
       </section>

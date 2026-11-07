@@ -244,7 +244,9 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
         </ul>
         {adder}
         <div className="row">
-          <button onClick={copy}>{copied ? 'Copied' : 'Copy list'}</button>
+          <button className={copied ? 'confirmed' : ''} onClick={copy}>
+            <span className={copied ? 'swap' : 'swap-off'} key={copied ? 'on' : 'off'}>{copied ? 'Copied' : 'Copy list'}</span>
+          </button>
           <button
             className="secondary"
             disabled={!list.items.some((i) => i.checked)}

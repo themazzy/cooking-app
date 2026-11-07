@@ -956,13 +956,59 @@ main[data-dir='up'] > :not(.tabbar, .bottom-bar, .sheet-backdrop, .toasts) { ani
 .recipe-cards > li:nth-child(5) { animation-delay: 120ms; }
 .recipe-cards > li:nth-child(n + 6) { animation-delay: 150ms; }
 .tab-icon { transition: background-color 0.2s ease, transform 0.2s var(--ease-out), filter 0.2s ease, opacity 0.2s ease; }
-.tabbar button.active .tab-icon { animation: tab-pop 0.3s var(--ease-out); }
-@keyframes tab-pop { 40% { transform: scale(1.15); } }
 .tabbar button:active:not(:disabled) { transform: none; }
-.tab-badge { animation: tab-pop 0.3s var(--ease-out); }
+/* No bounce on things tapped all day: the active tab only changes tint, a new badge settles in from 0.8 */
+.tab-badge { animation: settle-in 0.2s var(--ease-out); }
+@keyframes settle-in { from { opacity: 0; transform: scale(0.8); } }
 .sheet-backdrop, .sheet { animation-timing-function: var(--ease-out); }
 .sheet { animation-duration: 0.26s; }
 @keyframes rise { from { transform: translateY(100%); } }
+/* Closing (src/lib/sheetExit.js): a copy of the sheet slides back down, quicker than it rose, while the shade lifts */
+.sheet-backdrop.sheet-ghost { pointer-events: none; animation: fade-out 0.2s ease-in forwards; }
+.sheet-ghost .sheet { animation: sink 0.2s cubic-bezier(0.4, 0, 1, 1) forwards; }
+@keyframes fade-out { to { background-color: transparent; } }
+@keyframes sink { to { transform: translateY(100%); } }
+@keyframes sink-small { to { transform: scale(0.97); opacity: 0; } }
+
+/* A row of lists: rows come in 30 ms apart, the first eight only, so long lists don't wait */
+ul.shopping > li, ul.catalog.stock > li, ol.plan-days > li { animation: page-up 0.24s var(--ease-out) backwards; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(2) { animation-delay: 30ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(3) { animation-delay: 60ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(4) { animation-delay: 90ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(5) { animation-delay: 120ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(6) { animation-delay: 150ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(7) { animation-delay: 180ms; }
+:is(ul.shopping, ul.catalog.stock, ol.plan-days) > li:nth-child(n + 8) { animation-delay: 210ms; }
+
+/* Icons and labels that change (ticks, Copy → Copied, Add to list → On the list) cross-fade with a little blur */
+.swap, .swap-off { display: inline-flex; align-items: center; gap: inherit; }
+.swap { animation: swap-in 0.2s var(--ease-out); }
+.cook-tick .icon-svg, .tick .icon-svg, .select-options .icon-svg { animation: swap-in 0.18s var(--ease-out); }
+@keyframes swap-in { from { opacity: 0; transform: scale(0.7); filter: blur(3px); } }
+ul.shopping input[type='checkbox']:checked { animation: settle-in 0.18s var(--ease-out); }
+
+/* One ring to say it worked; it doesn't loop or bounce */
+.confirmed { animation: confirm 0.6s ease-out; }
+@keyframes confirm { from { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 45%, transparent); } to { box-shadow: 0 0 0 10px transparent; } }
+
+/* Segmented switches: the white pill slides to the picked option (src/useSegmentPill.js places it) */
+.segmented[data-pill] { position: relative; isolation: isolate; }
+.segmented[data-pill]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  width: var(--pill-w);
+  height: var(--pill-h);
+  transform: translate(var(--pill-x), var(--pill-y));
+  border-radius: var(--r-sm);
+  background: var(--card);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+  transition: transform 0.25s var(--ease-out), width 0.25s var(--ease-out), height 0.25s var(--ease-out);
+}
+.segmented[data-pill] button.on { background: transparent; box-shadow: none; }
+.segmented button { transition: color 0.2s ease, transform 0.08s ease; }
 .chip-btn, .segmented button, .card-main, .meta-chip { transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0s !important; transition-duration: 1ms !important; }
@@ -1158,7 +1204,7 @@ button.select.sort-select { min-height: 36px; padding: 4px 10px 4px 12px; font-s
 .select-options button.on { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
 .select-check { font-weight: 800; }
 /* With a sheet open, toasts move to the top so they don't cover its choices */
-body:has(.sheet-backdrop) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
+body:has(.sheet-backdrop:not(.sheet-ghost)) .toasts { bottom: auto; top: calc(12px + env(safe-area-inset-top)); }
 .kcal-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .kcal-fields input { width: 100%; }
 .kcal-sum { margin-top: 12px; background: var(--sunken); border-radius: var(--r-md); padding: 8px 12px; }
@@ -1314,6 +1360,7 @@ button.meta-chip.add { background: transparent; border: 1px dashed var(--border)
   .sheet:not(.tall) { max-width: 560px; }
   .sheet-handle { display: none; }
   .sheet-actions { bottom: -16px; }
+  .sheet-ghost .sheet { animation-name: sink-small; }
 }
 
 /* Number boxes with up/down buttons (NumberField.jsx) */

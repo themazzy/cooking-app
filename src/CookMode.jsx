@@ -10,6 +10,7 @@ import { toast } from './lib/toast.js'
 import { adjustTimer, findTimers, formatClock, newTimer, pauseTimer, restartTimer, resumeTimer, splitSteps, stepIngredients, stepParts, stepTextScale, timeLeft } from './lib/cook.js'
 import Icon from './Icon.jsx'
 import NumberField from './NumberField.jsx'
+import useSegmentPill from './useSegmentPill.js'
 
 const amount = (i) => amountLabel(i.qty, i.unit)
 const RING_EVERY = 4000 // ms between alarm rounds while a finished timer is not stopped
@@ -154,6 +155,7 @@ export default function CookMode({
   const [at, setAt] = useState(0) // steps.length means "done"
   const [view, setView] = useState(steps.length ? 'ingredients' : 'steps')
   const [ticked, setTicked] = useState(() => new Set()) // indexes of ingredients measured out or added
+  const switchPill = useSegmentPill()
   const [timers, setTimers] = useState([])
   const [now, setNow] = useState(Date.now())
   const [sheet, setSheet] = useState(null) // 'timer' (new one), 'steps', or a timer id
@@ -538,7 +540,7 @@ export default function CookMode({
       </div>
 
       {steps.length > 0 && !wide && (
-        <div className="segmented cook-switch" role="group" aria-label="Show">
+        <div ref={switchPill} className="segmented cook-switch" role="group" aria-label="Show">
           <button className={showList ? 'on' : ''} aria-pressed={showList} onClick={() => setView('ingredients')}>
             Ingredients
           </button>
