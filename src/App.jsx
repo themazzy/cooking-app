@@ -25,7 +25,7 @@ import { useCatalog } from './catalog.jsx'
 import IngredientsPage from './IngredientsPage.jsx'
 import PantryPage from './PantryPage.jsx'
 import { addToPantry, cachedPantry, loadPantry, removeFromPantry, updatePantryItem } from './lib/pantry.js'
-import { addTo, isOut, shortfall, usesUp } from './lib/stock.js'
+import { addTo, atHomeTest, isOut, shortfall, usesUp } from './lib/stock.js'
 import { joinAmount } from './lib/defaultUnit.js'
 import { loadPhoto, loadVideo, markDeleted, subscribeHousehold, syncRecipes, syncShopping } from './lib/sync.js'
 import { mergeRecipe } from './lib/recipeMerge.js'
@@ -604,11 +604,11 @@ export default function App() {
 
   /** Puts the planned recipes on the list; ingredients at home start left out, as in Add to list. */
   const shopPlan = (entries) => {
-    const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => catalog.canonical(p.name)))
+    const atHome = atHomeTest(pantry, catalog.canonical)
     const byId = new Map(recipes.map((r) => [r.id, r]))
     const planned = entries.map((e) => ({
       ...e,
-      skip: (byId.get(e.id)?.ingredients ?? []).flatMap((i, n) => (i.name?.trim() && atHome.has(catalog.canonical(i.name)) ? [n] : [])),
+      skip: (byId.get(e.id)?.ingredients ?? []).flatMap((i, n) => (i.name?.trim() && atHome(i.name) ? [n] : [])),
     }))
     const others = (shopping?.recipes ?? []).filter((r) => !entries.some((e) => e.id === r.id))
     updateShopping(makeList([...others, ...planned], recipes, catalog.match, shopping))

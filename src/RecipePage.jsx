@@ -22,7 +22,7 @@ import { toast } from './lib/toast.js'
 import { seekableBlob } from './lib/webmFix.js'
 import { recipePhoto } from './lib/thumb.js'
 import { splitSteps } from './lib/cook.js'
-import { isOut, stockReview } from './lib/stock.js'
+import { atHomeTest, stockReview } from './lib/stock.js'
 import { convertIngredients, convertTemperatures, hasUnits } from './lib/units.js'
 import { formatMinutes, totalMinutes } from './lib/recipeMeta.js'
 import { formatGrams, formatKcal, recipeCalories, recipeMacros } from './lib/calories.js'
@@ -139,7 +139,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
   const raw = recipe.raw ?? {}
   const comments = raw.comments ?? []
   const steps = splitSteps(stepsText)
-  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  const atHome = atHomeTest(pantry, canonical)
   const ingredientCount = recipe.ingredients.filter((i) => i.name?.trim()).length
   // Estimated calories of one portion (of the whole recipe when it has no portion count)
   // Salt, pepper, sugar and oil "to taste" count as a typical amount per portion (4 without a count)
@@ -727,7 +727,7 @@ export default function RecipePage({ me = 'me', recipe, videoBlob, shrink, dirty
                     <IngredientIcon entry={match(i.name)} size={36} />
                     <span className="ing-name">
                       {i.name}
-                      {atHome.has(canonical(i.name)) && <span className="badge">at home</span>}
+                      {atHome(i.name) && <span className="badge">at home</span>}
                       {i.swappedFrom && <span className="from">instead of {i.swappedFrom.name}</span>}
                     </span>
                     <span className="ing-qty">{amount(i)}</span>

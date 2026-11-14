@@ -4,7 +4,7 @@ import { aisleOrder, isDefaultOrder, moveAisle } from './lib/aisles.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
-import { isOut } from './lib/stock.js'
+import { atHomeTest } from './lib/stock.js'
 import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
 import { addExtra, countBought, editItem, quickAdds, removeItems } from './lib/shopping.js'
@@ -116,9 +116,9 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
       </>
     )
   }
-  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  const atHome = atHomeTest(pantry, canonical)
   // Staples on the list are there because the stock is low
-  const isAtHome = (i) => !String(i.key).startsWith('stock-') && atHome.has(canonical(i.name))
+  const isAtHome = (i) => !String(i.key).startsWith('stock-') && atHome(i.name)
   const aisleOf = (i) => i.aisle ?? match(i.name)?.aisle ?? 'Other'
   // To buy by aisle, then what is probably at home, then the basket
   const order = aisleOrder(list.aisles)

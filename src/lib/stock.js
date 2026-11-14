@@ -113,6 +113,39 @@ function totalUsed(amounts) {
 }
 
 /**
+ * Which pantry item stands for an ingredient, as name → item (or null).
+ * The item with the ingredient's own name comes first: when that one is used
+ * up the ingredient is not at home, even if something it counts as is (ground
+ * caraway used up, caraway seeds still there). Only an ingredient the pantry
+ * does not list by its own name falls back to anything it counts as.
+ * `canonical(name)` gives the shared key (a brand → what it stands for);
+ * `canonical.exact(name)`, when there, the ingredient's own catalog name.
+ */
+export function pantryLookup(pantry, canonical) {
+  const exact = canonical.exact ?? canonical
+  const own = new Map() // own name → an item that is not used up, or null when all are
+  const kind = new Map() // shared key → an item that is not used up
+  for (const p of pantry) {
+    if (!String(p?.name ?? '').trim()) continue
+    const out = isOut(p)
+    const k = exact(p.name)
+    if (!own.get(k)) own.set(k, out ? null : p)
+    if (!out && !kind.has(canonical(p.name))) kind.set(canonical(p.name), p)
+  }
+  return (name) => {
+    if (!String(name ?? '').trim()) return null
+    const k = exact(name)
+    return own.has(k) ? own.get(k) : (kind.get(canonical(name)) ?? null)
+  }
+}
+
+/** name → true when the ingredient is at home (see pantryLookup). */
+export const atHomeTest = (pantry, canonical) => {
+  const find = pantryLookup(pantry, canonical)
+  return (name) => !!find(name)
+}
+
+/**
  * What cooking could take out of the stock, for the cook to check after
  * cooking: [{ item, used, next, on }] for every ingredient kept at home.
  * `next` is what would be left; `on` is false when the amounts don't
@@ -120,11 +153,11 @@ function totalUsed(amounts) {
  * unless the cook says how much is left.
  */
 export function stockReview(ingredients, pantry, canonical) {
-  const byKey = new Map(pantry.filter((p) => !isOut(p)).map((p) => [canonical(p.name), p]))
+  const find = pantryLookup(pantry, canonical)
   const uses = new Map()
   for (const ing of ingredients) {
     if (!String(ing.name ?? '').trim()) continue
-    const item = byKey.get(canonical(ing.name))
+    const item = find(ing.name)
     if (!item) continue
     if (!uses.has(item.id)) uses.set(item.id, { item, amounts: [] })
     uses.get(item.id).amounts.push([ing.qty, ing.unit])
@@ -144,8 +177,8 @@ export const usesUp = (item, next) => (parseStock(next)?.value ?? 1) <= 0 && !St
  * ingredients. `canonical` maps a name to its catalog name.
  */
 export function homeMatch(recipe, pantry, canonical) {
-  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  const atHome = atHomeTest(pantry, canonical)
   const names = (recipe.ingredients ?? []).flatMap(sumRows).map((i) => i.name.trim())
-  const missing = names.filter((n) => !atHome.has(canonical(n)))
+  const missing = names.filter((n) => !atHome(n))
   return { have: names.length - missing.length, total: names.length, missing }
 }

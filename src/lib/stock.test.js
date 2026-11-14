@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addTo, daysLeft, isOut, parseStock, shortfall, stockReview, takeFrom, takeUsed, usesUp } from './stock.js'
+import { addTo, atHomeTest, daysLeft, homeMatch, isOut, parseStock, shortfall, stockReview, takeFrom, takeUsed, usesUp } from './stock.js'
 
 describe('stock amounts', () => {
   it('parses amounts into base units', () => {
@@ -80,4 +80,45 @@ it('usesUp: used up and not a staple', () => {
   expect(usesUp({ min_amount: '' }, '0 g')).toBe(true)
   expect(usesUp({ min_amount: '1 kg' }, '0 g')).toBe(false)
   expect(usesUp({ min_amount: '' }, '')).toBe(false)
+})
+
+describe('what is at home', () => {
+  // A tiny catalog: ground caraway and whole seeds count as one kind, a brand counts as cola
+  const BASE = { 'ground caraway': 'caraway seeds', 'coca cola zero': 'cola' }
+  const canonical = (n) => BASE[n.trim().toLowerCase()] ?? n.trim().toLowerCase()
+  canonical.exact = (n) => n.trim().toLowerCase()
+  const item = (name, amount = '') => ({ id: name, name, amount, min_amount: '' })
+
+  it('leaves out what is used up', () => {
+    const has = atHomeTest([item('Chocolate chips', '0 g'), item('Eggs', '12'), item('Rice', '')], canonical)
+    expect(has('Chocolate chips')).toBe(false)
+    expect(has('Eggs')).toBe(true)
+    expect(has('Rice')).toBe(true) // no amount: some at home
+  })
+  it('a used-up ingredient is not at home because of something it counts as', () => {
+    const pantry = [item('Ground caraway', '0 g'), item('Caraway seeds', '30 g')]
+    const has = atHomeTest(pantry, canonical)
+    expect(has('Ground caraway')).toBe(false)
+    expect(has('Caraway seeds')).toBe(true)
+    // ...the other way round too
+    expect(atHomeTest([item('Ground caraway', '20 g'), item('Caraway seeds', '0 g')], canonical)('Caraway seeds')).toBe(false)
+  })
+  it('an ingredient the pantry does not list by name still counts what it stands for', () => {
+    expect(atHomeTest([item('Coca Cola Zero', '1 l')], canonical)('Cola')).toBe(true)
+    expect(atHomeTest([item('Caraway seeds', '30 g')], canonical)('Ground caraway')).toBe(true)
+    expect(atHomeTest([item('Coca Cola Zero', '0 ml')], canonical)('Cola')).toBe(false)
+  })
+  it('two entries of one name: at home when any of them has some', () => {
+    expect(atHomeTest([item('Milk', '0 ml'), item('Milk', '1 l')], canonical)('Milk')).toBe(true)
+  })
+  it('counts recipes and takes stock with the same rule', () => {
+    const pantry = [item('Ground caraway', '0 g'), item('Caraway seeds', '30 g'), item('Eggs', '6')]
+    const recipe = { ingredients: [{ name: 'Ground caraway', qty: '1', unit: 'tsp' }, { name: 'Eggs', qty: '2', unit: '' }] }
+    expect(homeMatch(recipe, pantry, canonical)).toEqual({ have: 1, total: 2, missing: ['Ground caraway'] })
+    expect(stockReview(recipe.ingredients, pantry, canonical).map((r) => r.item.name)).toEqual(['Eggs'])
+  })
+  it('works without exact names (old behaviour)', () => {
+    const plain = (n) => n.toLowerCase()
+    expect(atHomeTest([item('Salt', '0 g')], plain)('Salt')).toBe(false)
+  })
 })

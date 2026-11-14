@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { scaleIngredients, amountLabel } from './lib/scale.js'
-import { isOut } from './lib/stock.js'
+import { atHomeTest } from './lib/stock.js'
 import Icon from './Icon.jsx'
 
 /**
@@ -10,9 +10,9 @@ import Icon from './Icon.jsx'
  */
 export default function ShopSheet({ recipe, portions: startPortions, pantry, onAdd, onClose }) {
   const { match, canonical } = useCatalog()
-  const atHome = new Set(pantry.filter((p) => !isOut(p)).map((p) => canonical(p.name)))
+  const atHome = atHomeTest(pantry, canonical)
   const [portions, setPortions] = useState(startPortions)
-  const [skip, setSkip] = useState(() => new Set(recipe.ingredients.flatMap((i, n) => (atHome.has(canonical(i.name)) ? [n] : []))))
+  const [skip, setSkip] = useState(() => new Set(recipe.ingredients.flatMap((i, n) => (atHome(i.name) ? [n] : []))))
   const factor = recipe.servings ? portions / recipe.servings : portions
   const scaled = scaleIngredients(recipe.ingredients, factor)
   const real = scaled.map((i, n) => [i, n]).filter(([i]) => i.name?.trim())
@@ -51,7 +51,7 @@ export default function ShopSheet({ recipe, portions: startPortions, pantry, onA
                 <span>
                   {amountLabel(i.qty, i.unit) && <strong>{amountLabel(i.qty, i.unit)} </strong>}
                   {i.name}
-                  {atHome.has(canonical(i.name)) && <span className="badge">at home</span>}
+                  {atHome(i.name) && <span className="badge">at home</span>}
                 </span>
               </label>
             </li>

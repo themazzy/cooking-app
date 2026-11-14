@@ -187,6 +187,11 @@ export function CatalogProvider({ children }) {
       const e = match(name)
       return e ? (e.base ?? e.name).toLowerCase() : normalizeName(name)
     }
+    /** The ingredient's own name, not what it counts as ("Ground caraway", not "Caraway seeds"). */
+    canonical.exact = (name) => {
+      const e = match(name)
+      return e ? e.name.toLowerCase() : normalizeName(name)
+    }
     /** The entry with exactly this name, the household's own first. */
     const named = (name) => {
       const key = normalizeName(name)
