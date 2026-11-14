@@ -23,7 +23,7 @@ export async function loadAi({ fresh = false } = {}) {
   if (cached && !fresh) return cached
   cached = (async () => {
     try {
-      const { data, error } = await supabase.from('household_ai').select('gemini_key, model').maybeSingle()
+      const { data, error } = await supabase.from('household_ai').select('gemini_key, model').abortSignal(AbortSignal.timeout(15000)).maybeSingle()
       loadError = error ? error.message : data ? null : 'no key saved for this household'
       if (error || !data?.gemini_key?.trim() || /PASTE/.test(data.gemini_key)) return null
       return { key: data.gemini_key.trim(), model: data.model || DEFAULT_MODEL }
@@ -124,16 +124,26 @@ const AUTH_WAYS = {
   bearer: (url, key) => [url, { Authorization: `Bearer ${key}` }],
 }
 let authWay = null
-let fastOk = true
 
-async function post(ai, body) {
+// Gemini 3 and newer (what gemini-flash-latest points to) set thinking with a
+// level; 2.x models with a token budget. Tried in this order, and the first
+// one the model takes is remembered. No temperature: Gemini 3 is meant to run
+// at its default, and a low one can make it repeat itself until the token limit.
+const THINKING = [{ thinkingLevel: 'minimal' }, { thinkingBudget: 0 }, null]
+let thinkingWay = 0
+let lowMedia = true
+
+// A request that never answers would leave the import on "Gemini is watching…" for good
+export const AI_TIMEOUT_MS = { text: 75000, video: 180000 }
+
+async function post(ai, body, signal) {
   const url = `${API}/${encodeURIComponent(ai.model)}:generateContent`
   const json = JSON.stringify(body)
   const order = ai.key.startsWith('AIza') ? ['header'] : [...new Set([authWay ?? 'header', 'header', 'query', 'bearer'])]
   let res
   for (const way of order) {
     const [to, headers] = AUTH_WAYS[way](url, ai.key)
-    res = await fetch(to, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: json })
+    res = await fetch(to, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: json, signal })
     if (res.ok) {
       authWay = way
       return res
@@ -144,35 +154,65 @@ async function post(ai, body) {
   return res
 }
 
+/** The generation settings for one try (see THINKING). */
+export function aiConfig({ thinking = THINKING[0], lowMediaResolution = false } = {}) {
+  return {
+    responseMimeType: 'application/json',
+    responseSchema: SCHEMA,
+    // A recipe fits easily; a looping answer stops here instead of running for minutes
+    maxOutputTokens: 8192,
+    ...(thinking ? { thinkingConfig: thinking } : {}),
+    ...(lowMediaResolution ? { mediaResolution: 'MEDIA_RESOLUTION_LOW' } : {}),
+  }
+}
+
 /**
  * Asks Gemini for the recipe in a reel: its caption, comments, what is said,
  * and the video itself when it is small enough. Returns recipe text (see
  * aiRecipeText) or null when there is no recipe in it.
  */
-export async function aiRecipe(ai, source, video = null) {
+export async function aiRecipe(ai, source, video = null, { timeoutMs } = {}) {
   const sendVideo = video && video.byteLength > 0 && video.byteLength <= MAX_VIDEO_BYTES
   const parts = [{ text: aiPrompt({ ...source, hasVideo: !!sendVideo }) }]
   if (sendVideo) parts.push({ inlineData: { mimeType: 'video/mp4', data: toBase64(video) } })
-  const config = { temperature: 0.2, responseMimeType: 'application/json', responseSchema: SCHEMA }
-  // Faster: little "thinking" (copying a recipe needs none) and fewer tokens per video frame
-  const fast = { ...config, thinkingConfig: { thinkingBudget: 0 }, ...(sendVideo ? { mediaResolution: 'MEDIA_RESOLUTION_LOW' } : {}) }
-  let res = await post(ai, { contents: [{ role: 'user', parts }], generationConfig: fastOk ? fast : config })
-  if (fastOk && res.status === 400 && /thinking|media_?resolution/i.test(await errorText(res))) {
-    fastOk = false // this model wants its own settings; not tried again
-    res = await post(ai, { contents: [{ role: 'user', parts }], generationConfig: config })
+  const limit = timeoutMs ?? (sendVideo ? AI_TIMEOUT_MS.video : AI_TIMEOUT_MS.text)
+  const abort = new AbortController()
+  const timer = setTimeout(() => abort.abort(), limit)
+  let res
+  try {
+    // Settings a model does not know get a 400 naming them: the next way is tried
+    for (;;) {
+      const config = aiConfig({ thinking: THINKING[thinkingWay], lowMediaResolution: sendVideo && lowMedia })
+      res = await post(ai, { contents: [{ role: 'user', parts }], generationConfig: config }, abort.signal)
+      if (res.status !== 400) break
+      const why = await errorText(res)
+      if (sendVideo && lowMedia && /media_?resolution/i.test(why)) lowMedia = false
+      else if (THINKING[thinkingWay] && /thinking/i.test(why)) thinkingWay++
+      else break
+    }
+  } catch (err) {
+    if (abort.signal.aborted) throw new Error(`Gemini did not answer within ${Math.round(limit / 1000)} s.`)
+    throw new Error(`Could not reach Gemini: ${err?.message ?? err}`)
+  } finally {
+    clearTimeout(timer)
   }
   const json = await res.json().catch(() => null)
   if (!res.ok) {
     const msg = json?.error?.message ?? `HTTP ${res.status}`
     if (res.status === 429) throw new Error('The free Gemini limit is used up for now. Try again later.')
+    if (res.status === 404) throw new Error(`Gemini: the model "${ai.model}" is not available any more (${msg}).`)
     throw new Error(`Gemini: ${msg}`)
   }
-  const text = json?.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? ''
+  const candidate = json?.candidates?.[0]
+  const text = candidate?.content?.parts?.filter((p) => !p.thought).map((p) => p.text ?? '').join('') ?? ''
+  if (!text && (json?.promptFeedback?.blockReason || candidate?.finishReason)) {
+    throw new Error(`Gemini sent no answer (${json?.promptFeedback?.blockReason ?? candidate.finishReason}).`)
+  }
   let answer
   try {
     answer = JSON.parse(text)
   } catch {
-    throw new Error('Gemini sent an answer the app could not read.')
+    throw new Error(candidate?.finishReason === 'MAX_TOKENS' ? 'Gemini\'s answer was cut off.' : 'Gemini sent an answer the app could not read.')
   }
   return aiRecipeText(answer)
 }

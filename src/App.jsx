@@ -1608,7 +1608,7 @@ export default function App() {
             )}
             {busy && !download && (
               <div className="spinner">
-                Working…
+                Working… <Elapsed since={log[log.length - 1]?.at} />
                 <div className="busy-bar" />
               </div>
             )}
@@ -1750,4 +1750,15 @@ export default function App() {
       )}
     </main>
   )
+}
+
+/** Seconds since the last import step, so a slow step does not look frozen. */
+function Elapsed({ since }) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  const s = since ? Math.floor((now - since) / 1000) : 0
+  return s >= 5 ? <span style={{ color: 'var(--muted)' }}>{s} s</span> : null
 }

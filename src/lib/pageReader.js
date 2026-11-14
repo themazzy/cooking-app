@@ -12,7 +12,10 @@ import { PageReader, canFetchCrossSite, recordTrace } from './http.js'
 export async function runInPage(url, fn, args = {}, { timeoutMs = 25000, userAgent, reinject = false } = {}) {
   if (!canFetchCrossSite()) return null
   const script = `(${fn.toString()})(${JSON.stringify(args)})`
-  const res = await PageReader.read({ url, script, timeoutMs, reinject, ...(userAgent ? { userAgent } : {}) })
+  // The plugin stops itself after timeoutMs; this is a backstop in case it never answers
+  let timer
+  const backstop = new Promise((resolve) => (timer = setTimeout(() => resolve({ timedOut: true }), timeoutMs + 15000)))
+  const res = await Promise.race([PageReader.read({ url, script, timeoutMs, reinject, ...(userAgent ? { userAgent } : {}) }), backstop]).finally(() => clearTimeout(timer))
   let value = null
   try {
     value = res?.value ? JSON.parse(JSON.parse(res.value)) : null
