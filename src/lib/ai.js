@@ -6,7 +6,8 @@ import { supabase } from './supabase.js'
 // added by hand in the Supabase dashboard. Other accounts see no AI at all.
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/models'
-const DEFAULT_MODEL = 'gemini-flash-latest'
+// Newest free Flash model with video input (stable since 2026-09)
+const DEFAULT_MODEL = 'gemini-3.8-flash'
 // A request may carry about 20 MB; base64 makes the video a third bigger
 export const MAX_VIDEO_BYTES = 14e6
 
