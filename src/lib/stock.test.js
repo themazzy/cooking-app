@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addTo, atHomeTest, daysLeft, homeMatch, isOut, parseStock, shortfall, stockReview, takeFrom, takeUsed, usesUp } from './stock.js'
+import { addTo, atHomeTest, covers, daysLeft, homeMatch, isOut, parseStock, shortfall, stockReview, takeFrom, takeUsed, usesUp } from './stock.js'
 
 describe('stock amounts', () => {
   it('parses amounts into base units', () => {
@@ -120,5 +120,22 @@ describe('what is at home', () => {
   it('works without exact names (old behaviour)', () => {
     const plain = (n) => n.toLowerCase()
     expect(atHomeTest([item('Salt', '0 g')], plain)('Salt')).toBe(false)
+  })
+})
+
+describe('enough at home', () => {
+  it('is short only when both amounts are known and compare', () => {
+    expect(covers({ amount: '200 g' }, { qty: '500', unit: 'g' })).toBe(false)
+    expect(covers({ amount: '1 kg' }, { qty: '500', unit: 'g' })).toBe(true)
+    expect(covers({ amount: '0,5 kg' }, { qty: '500', unit: 'g' })).toBe(true)
+    expect(covers({ amount: '2' }, { qty: '3', unit: '' })).toBe(false)
+    expect(covers({ amount: '1 l' }, { qty: '2', unit: 'tbsp' })).toBe(true)
+    expect(covers({ amount: '' }, { qty: '500', unit: 'g' })).toBe(true) // "some"
+    expect(covers({ amount: '1 bottle' }, { qty: '2', unit: 'tbsp' })).toBe(true) // can't tell
+    expect(covers({ amount: '200 g' }, { qty: '', unit: '' })).toBe(true) // to taste
+  })
+  it('uses the weighed amount when cups meet grams', () => {
+    expect(covers({ amount: '100 g' }, { qty: '2', unit: 'cup' }, { qty: '260', unit: 'g' })).toBe(false)
+    expect(covers({ amount: '500 g' }, { qty: '2', unit: 'cup' }, { qty: '260', unit: 'g' })).toBe(true)
   })
 })

@@ -4,7 +4,7 @@ import { aisleOrder, isDefaultOrder, moveAisle } from './lib/aisles.js'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { ebagQuery, ebagUrl } from './lib/ebag.js'
 import { openExternal } from './lib/pageReader.js'
-import { atHomeTest } from './lib/stock.js'
+import { covers, pantryLookup } from './lib/stock.js'
 import { pantryError } from './lib/pantry.js'
 import { convertIngredient } from './lib/units.js'
 import { addExtra, countBought, editItem, quickAdds, removeItems } from './lib/shopping.js'
@@ -116,9 +116,19 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
       </>
     )
   }
-  const atHome = atHomeTest(pantry, canonical)
+  const findHome = pantryLookup(pantry, canonical)
   // Staples on the list are there because the stock is low
-  const isAtHome = (i) => !String(i.key).startsWith('stock-') && atHome(i.name)
+  const homeItem = (i) => (String(i.key).startsWith('stock-') ? null : findHome(i.name))
+  // Probably at home: kept at home, and not less than the list needs (when the amounts compare)
+  const isAtHome = (i) => {
+    const h = homeItem(i)
+    return !!h && covers(h, i, convertIngredient(i, 'metric', match))
+  }
+  // Some at home, but less than the list needs: still to buy, with what is there
+  const someAtHome = (i) => {
+    const h = homeItem(i)
+    return h && !isAtHome(i) ? h.amount : null
+  }
   const aisleOf = (i) => i.aisle ?? match(i.name)?.aisle ?? 'Other'
   // To buy by aisle, then what is probably at home, then the basket
   const order = aisleOrder(list.aisles)
@@ -230,6 +240,7 @@ export default function ShoppingList({ list, recipes = [], pantry = [], ebag = n
                     {amountText(convertIngredient(i, units, match)) && <strong>{amountText(convertIngredient(i, units, match))} </strong>}
                     {i.name}
                     {isAtHome(i) && !i.checked && <span className="badge">at home</span>}
+                    {!i.checked && someAtHome(i) && <span className="badge muted">{someAtHome(i)} at home</span>}
                     {String(i.key).startsWith('stock-') && <span className="badge muted">staple</span>}
                     {i.extra.length > 0 && <span className="note"> + {i.extra.join(', ')}</span>}
                     {list.recipes.length > 1 && i.from.length > 0 && <span className="from">{i.from.join(', ')}</span>}

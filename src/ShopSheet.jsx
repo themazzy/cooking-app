@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { IngredientIcon, useCatalog } from './catalog.jsx'
 import { scaleIngredients, amountLabel } from './lib/scale.js'
-import { atHomeTest } from './lib/stock.js'
+import { covers, pantryLookup } from './lib/stock.js'
+import { convertIngredient } from './lib/units.js'
 import Icon from './Icon.jsx'
 
 /**
@@ -10,10 +11,16 @@ import Icon from './Icon.jsx'
  */
 export default function ShopSheet({ recipe, portions: startPortions, pantry, onAdd, onClose }) {
   const { match, canonical } = useCatalog()
-  const atHome = atHomeTest(pantry, canonical)
+  const findHome = pantryLookup(pantry, canonical)
+  // At home, and enough of it for this amount (when the amounts compare)
+  const atHome = (i) => {
+    const h = findHome(i.name)
+    return !!h && covers(h, i, convertIngredient(i, 'metric', match))
+  }
+  const factorFor = (p) => (recipe.servings ? p / recipe.servings : p)
   const [portions, setPortions] = useState(startPortions)
-  const [skip, setSkip] = useState(() => new Set(recipe.ingredients.flatMap((i, n) => (atHome(i.name) ? [n] : []))))
-  const factor = recipe.servings ? portions / recipe.servings : portions
+  const [skip, setSkip] = useState(() => new Set(scaleIngredients(recipe.ingredients, factorFor(startPortions)).flatMap((i, n) => (i.name?.trim() && atHome(i) ? [n] : []))))
+  const factor = factorFor(portions)
   const scaled = scaleIngredients(recipe.ingredients, factor)
   const real = scaled.map((i, n) => [i, n]).filter(([i]) => i.name?.trim())
   const count = real.filter(([, n]) => !skip.has(n)).length
@@ -51,7 +58,7 @@ export default function ShopSheet({ recipe, portions: startPortions, pantry, onA
                 <span>
                   {amountLabel(i.qty, i.unit) && <strong>{amountLabel(i.qty, i.unit)} </strong>}
                   {i.name}
-                  {atHome(i.name) && <span className="badge">at home</span>}
+                  {atHome(i) && <span className="badge">at home</span>}
                 </span>
               </label>
             </li>

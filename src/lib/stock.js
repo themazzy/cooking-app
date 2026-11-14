@@ -139,6 +139,24 @@ export function pantryLookup(pantry, canonical) {
   }
 }
 
+/**
+ * Whether the amount kept at home covers what is needed ({ qty, unit }; `weighed`,
+ * the same amount in metric, for cups of flour against grams at home). False only
+ * when both amounts are known, compare, and there is less at home; a pantry item
+ * without an amount ("some") or in another kind of unit still counts as enough.
+ */
+export function covers(item, need, weighed) {
+  const have = parseStock(item?.amount)
+  if (!have) return true
+  for (const n of [need, weighed]) {
+    const a = parseAmount(n?.qty)
+    if (!a) continue
+    const use = toBase(a.max ?? a.min, n.unit)
+    if (use.base === have.base) return have.value + 1e-9 >= use.value
+  }
+  return true
+}
+
 /** name → true when the ingredient is at home (see pantryLookup). */
 export const atHomeTest = (pantry, canonical) => {
   const find = pantryLookup(pantry, canonical)
